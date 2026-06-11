@@ -277,6 +277,7 @@ export default function ChatBox({ currentUser }) {
     return (
       <button
         onClick={() => { setIsOpen(true); setHasUnread(false); }}
+        className="chat-launcher hover-scale"
         style={{
           position: 'fixed',
           bottom: '24px',
@@ -295,7 +296,6 @@ export default function ChatBox({ currentUser }) {
           zIndex: 9999,
           transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
         }}
-        className="hover-scale"
         title="Trò chuyện hỗ trợ"
       >
         <MessageSquare size={26} style={{ color: 'white' }} />
@@ -329,18 +329,19 @@ export default function ChatBox({ currentUser }) {
 
   return (
     <div
+      className="chat-panel"
       style={{
         position: 'fixed',
         bottom: '24px',
         right: '24px',
         width: '390px',
         height: isMinimized ? '55px' : '540px',
-        borderRadius: '16px',
-        background: 'rgba(255, 255, 255, 0.92)',
+        borderRadius: '12px',
+        background: 'var(--jp-card-bg)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(15, 44, 89, 0.12)',
-        boxShadow: '0 16px 48px rgba(15, 44, 89, 0.18)',
+        border: '1px solid var(--jp-border)',
+        boxShadow: 'var(--jp-shadow-lg)',
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
@@ -418,7 +419,7 @@ export default function ChatBox({ currentUser }) {
           <div
             style={{
               display: 'flex',
-              background: '#f8fafc',
+              background: 'var(--jp-surface-raised)',
               borderBottom: '1px solid var(--jp-border)',
               fontSize: '0.75rem',
               fontWeight: 600
@@ -436,7 +437,7 @@ export default function ChatBox({ currentUser }) {
                   flex: 1,
                   padding: '0.6rem 0.25rem',
                   border: 'none',
-                  background: chatMode === tab.key ? '#fff' : 'transparent',
+                  background: chatMode === tab.key ? 'var(--jp-card-bg)' : 'transparent',
                   color: chatMode === tab.key
                     ? (tab.key === 'ai' ? 'var(--jp-red)' : 'var(--jp-blue)')
                     : 'var(--jp-text-muted)',
@@ -460,7 +461,7 @@ export default function ChatBox({ currentUser }) {
           {chatMode === 'ai' && aiMode !== 'gemini' && (
             <div style={{
               padding: '0.5rem 0.75rem',
-              background: 'rgba(243, 156, 18, 0.08)',
+              background: 'var(--jp-soft-red)',
               borderBottom: '1px solid rgba(243,156,18,0.25)',
               display: 'flex',
               alignItems: 'center',
@@ -478,7 +479,7 @@ export default function ChatBox({ currentUser }) {
             <div
               style={{
                 padding: '0.5rem 0.75rem',
-                background: 'rgba(230, 238, 252, 0.35)',
+                background: 'var(--jp-soft-surface)',
                 borderBottom: '1px solid var(--jp-border)',
                 display: 'flex',
                 gap: '0.4rem',
@@ -499,8 +500,8 @@ export default function ChatBox({ currentUser }) {
                   onClick={() => setInputValue(chip.text)}
                   style={{
                     fontSize: '0.7rem',
-                    background: '#fff',
-                    border: '1px solid #cbd5e1',
+                    background: 'var(--jp-card-bg)',
+                    border: '1px solid var(--jp-border)',
                     padding: '0.2rem 0.55rem',
                     borderRadius: '12px',
                     cursor: 'pointer',
@@ -509,7 +510,7 @@ export default function ChatBox({ currentUser }) {
                     flexShrink: 0
                   }}
                   onMouseEnter={e => { e.target.style.borderColor = 'var(--jp-blue)'; e.target.style.background = '#eff6ff'; }}
-                  onMouseLeave={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.background = '#fff'; }}
+                  onMouseLeave={e => { e.target.style.borderColor = 'var(--jp-border)'; e.target.style.background = 'var(--jp-card-bg)'; }}
                 >
                   {chip.emoji} {chip.label}
                 </span>
@@ -523,7 +524,7 @@ export default function ChatBox({ currentUser }) {
               flex: 1,
               padding: '1rem',
               overflowY: 'auto',
-              background: 'linear-gradient(180deg, #f8fafe 0%, #fafbff 100%)',
+              background: 'linear-gradient(180deg, var(--jp-bg) 0%, var(--jp-surface-raised) 100%)',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.85rem'
@@ -549,7 +550,7 @@ export default function ChatBox({ currentUser }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: '#fff',
+                      background: 'var(--jp-card-bg)',
                       borderRadius: '50%',
                       border: '1px solid var(--jp-border)',
                       flexShrink: 0
@@ -563,7 +564,7 @@ export default function ChatBox({ currentUser }) {
                         padding: '0.6rem 0.85rem',
                         background: isUser
                           ? 'linear-gradient(135deg, var(--jp-blue) 0%, #1e457e 100%)'
-                          : '#fff',
+                          : 'var(--jp-card-bg)',
                         color: isUser ? 'white' : 'var(--jp-text)',
                         fontSize: '0.84rem',
                         lineHeight: 1.5,
@@ -601,14 +602,14 @@ export default function ChatBox({ currentUser }) {
                 <div style={{
                   fontSize: '1.1rem', width: '28px', height: '28px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: '#fff', borderRadius: '50%', border: '1px solid var(--jp-border)', flexShrink: 0
+                  background: 'var(--jp-card-bg)', borderRadius: '50%', border: '1px solid var(--jp-border)', flexShrink: 0
                 }}>
                   🤖
                 </div>
                 <div style={{ maxWidth: '78%' }}>
                   <div style={{
                     padding: '0.6rem 0.85rem',
-                    background: '#fff',
+                    background: 'var(--jp-card-bg)',
                     color: 'var(--jp-text)',
                     fontSize: '0.84rem',
                     lineHeight: 1.5,
@@ -639,12 +640,12 @@ export default function ChatBox({ currentUser }) {
                 <div style={{
                   fontSize: '1.1rem', width: '28px', height: '28px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: '#fff', borderRadius: '50%', border: '1px solid var(--jp-border)'
+                  background: 'var(--jp-card-bg)', borderRadius: '50%', border: '1px solid var(--jp-border)'
                 }}>
                   {getPartnerAvatar()}
                 </div>
                 <div style={{
-                  background: '#fff',
+                  background: 'var(--jp-card-bg)',
                   padding: '0.55rem 0.85rem',
                   borderRadius: '14px 14px 14px 2px',
                   border: '1px solid rgba(15,44,89,0.07)',
@@ -675,7 +676,7 @@ export default function ChatBox({ currentUser }) {
             onSubmit={handleSendMessage}
             style={{
               padding: '0.75rem 0.85rem',
-              background: '#fff',
+              background: 'var(--jp-card-bg)',
               borderTop: '1px solid var(--jp-border)',
               display: 'flex',
               gap: '0.5rem',
@@ -695,7 +696,7 @@ export default function ChatBox({ currentUser }) {
                 borderRadius: '20px',
                 fontSize: '0.84rem',
                 outline: 'none',
-                background: isStreaming ? '#f5f7fa' : '#f8fafc',
+                background: isStreaming ? 'var(--jp-surface-raised)' : 'var(--jp-bg)',
                 transition: 'border-color 0.2s',
                 color: 'var(--jp-text)'
               }}
@@ -748,7 +749,7 @@ export default function ChatBox({ currentUser }) {
           {/* Footer: Powered by */}
           <div style={{
             padding: '0.3rem 1rem',
-            background: '#f8fafe',
+            background: 'var(--jp-surface-raised)',
             borderTop: '1px solid var(--jp-border)',
             display: 'flex',
             alignItems: 'center',

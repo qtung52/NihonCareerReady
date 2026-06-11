@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, Award, FileText, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export default function Home({ score, roadmap, onViewChange }) {
@@ -21,35 +20,29 @@ export default function Home({ score, roadmap, onViewChange }) {
             </button>
           </div>
         </div>
-        <div className="hero-illustration">
-          <svg viewBox="0 0 200 120" className="hero-img-svg">
-            {/* Background elements */}
-            <circle cx="100" cy="60" r="50" fill="rgba(15, 44, 89, 0.03)" />
-            <circle cx="160" cy="30" r="15" fill="rgba(188, 0, 45, 0.08)" />
-            
-            {/* Flat design office scene */}
-            {/* Table */}
-            <rect x="30" y="85" width="140" height="6" fill="var(--jp-blue)" rx="2" />
-            <rect x="50" y="91" width="6" height="25" fill="var(--jp-blue)" />
-            <rect x="144" y="91" width="6" height="25" fill="var(--jp-blue)" />
-
-            {/* Laptop */}
-            <rect x="85" y="70" width="30" height="15" fill="var(--jp-border)" rx="1" />
-            <line x1="80" y1="85" x2="120" y2="85" stroke="var(--jp-text-muted)" strokeWidth="2" />
-
-            {/* Character 1 (Kouhai / Student) */}
-            <circle cx="60" cy="50" r="10" fill="var(--jp-text)" />
-            <path d="M45 85 Q60 60 75 85" fill="var(--jp-blue-light)" stroke="var(--jp-blue)" strokeWidth="2" />
-            <path d="M52 65 Q60 55 68 65" stroke="var(--jp-text)" strokeWidth="2" fill="none" />
-
-            {/* Character 2 (Senpai / Colleague) */}
-            <circle cx="140" cy="45" r="10" fill="var(--jp-red)" />
-            <path d="M125 85 Q140 55 155 85" fill="var(--jp-red-hover)" stroke="var(--jp-red)" strokeWidth="2" />
-            
-            {/* Bowing guideline arc */}
-            <path d="M80 40 Q100 25 120 40" fill="none" stroke="var(--jp-red)" strokeWidth="2" strokeDasharray="3 3" />
-            <text x="92" y="22" fontSize="6" fill="var(--jp-red)" fontWeight="bold">Ojigi Bow</text>
-          </svg>
+        <div className="hero-illustration" aria-hidden="true">
+          <div className="career-scene">
+            <div className="scene-card scene-card-main">
+              <span className="scene-dot"></span>
+              <span className="scene-line wide"></span>
+              <span className="scene-line"></span>
+              <span className="scene-line short"></span>
+            </div>
+            <div className="scene-card scene-card-side">
+              <span className="scene-kana">履歴書</span>
+              <span className="scene-line"></span>
+              <span className="scene-line short"></span>
+            </div>
+            <div className="scene-laptop">
+              <div className="scene-screen">
+                <span>日本</span>
+              </div>
+              <div className="scene-base"></div>
+            </div>
+            <div className="scene-person scene-person-left"></div>
+            <div className="scene-person scene-person-right"></div>
+            <div className="scene-floor"></div>
+          </div>
         </div>
       </div>
 

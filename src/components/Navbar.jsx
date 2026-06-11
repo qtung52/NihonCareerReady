@@ -1,7 +1,6 @@
-import React from 'react';
-import { BookOpen, Award, FileText, Users, Home, Settings, LogOut } from 'lucide-react';
+import { BookOpen, Award, FileText, Users, Home, Settings, LogOut, Moon, Sun } from 'lucide-react';
 
-export default function Navbar({ activeView, onViewChange, currentUser, onLogout }) {
+export default function Navbar({ activeView, onViewChange, currentUser, onLogout, theme, onToggleTheme }) {
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: Home },
     { id: 'dictionary', label: 'Sổ tay văn hóa', icon: BookOpen },
@@ -20,7 +19,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
       position: 'sticky',
       top: 0,
       zIndex: 1000,
-      background: 'rgba(255, 255, 255, 0.85)',
+      background: 'var(--jp-nav-bg)',
       backdropFilter: 'blur(16px) saturate(180%)',
       WebkitBackdropFilter: 'blur(16px) saturate(180%)',
       borderBottom: '2px solid var(--jp-red)',
@@ -42,7 +41,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
             gap: '0.6rem',
             textDecoration: 'none',
             fontWeight: 800,
-            fontSize: '1.25rem',
+            fontSize: '1.15rem',
             color: 'var(--jp-blue)',
             transition: 'color 0.3s ease'
           }}
@@ -71,7 +70,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
             <ul className="nav-links" style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
+              gap: '0.35rem',
               listStyle: 'none',
               margin: 0,
               padding: 0
@@ -89,10 +88,10 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.4rem',
-                        padding: '0.5rem 0.85rem',
+                        padding: '0.52rem 0.78rem',
                         borderRadius: '20px',
                         textDecoration: 'none',
-                        fontSize: '0.85rem',
+                        fontSize: '0.82rem',
                         fontWeight: 600,
                         color: isActive ? '#fff' : 'var(--jp-blue)',
                         background: isActive ? 'var(--jp-blue)' : 'transparent',
@@ -168,6 +167,26 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
               borderLeft: '1px solid var(--jp-border)', 
               paddingLeft: '1.25rem' 
             }}>
+              <button
+                onClick={onToggleTheme}
+                className="theme-toggle-btn"
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  border: '1px solid var(--jp-border)',
+                  background: 'var(--jp-card-bg)',
+                  color: 'var(--jp-blue)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                title={theme === 'dark' ? 'Chuyển sang sáng' : 'Chuyển sang tối'}
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+
               <div 
                 style={{ 
                   display: 'flex', 
@@ -176,7 +195,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                   cursor: 'pointer',
                   padding: '0.35rem 0.75rem',
                   borderRadius: '24px',
-                  background: activeView === 'profile' ? 'var(--jp-blue-light)' : 'rgba(15, 44, 89, 0.03)',
+                  background: activeView === 'profile' ? 'var(--jp-blue-light)' : 'var(--jp-soft-surface)',
                   border: activeView === 'profile' ? '1px solid var(--jp-blue)' : '1px solid transparent',
                   transition: 'all 0.25s ease'
                 }}
@@ -187,7 +206,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                 }}
                 onMouseLeave={(e) => {
                   if (activeView !== 'profile') {
-                    e.currentTarget.style.background = 'rgba(15, 44, 89, 0.03)';
+                    e.currentTarget.style.background = 'var(--jp-soft-surface)';
                     e.currentTarget.style.borderColor = 'transparent';
                   }
                 }}
@@ -200,7 +219,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: '#fff',
+                  background: 'var(--jp-card-bg)',
                   borderRadius: '50%',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
                 }}>
@@ -224,7 +243,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                   justifyContent: 'center', 
                   alignItems: 'center', 
                   color: 'var(--jp-red)',
-                  background: '#fff',
+                  background: 'var(--jp-card-bg)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -233,7 +252,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                   e.currentTarget.style.color = '#fff';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#fff';
+                  e.currentTarget.style.background = 'var(--jp-card-bg)';
                   e.currentTarget.style.color = 'var(--jp-red)';
                 }}
                 title="Đăng xuất"

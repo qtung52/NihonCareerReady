@@ -19,6 +19,7 @@ const DEFAULT_ROLEPLAY = SCENARIOS;
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeView, setActiveView] = useState('auth');
+  const [theme, setTheme] = useState(() => localStorage.getItem('nihon_theme') || 'light');
 
   // Dynamic Content States — initialized with clean defaults
   const [dictionary, setDictionary] = useState([]);
@@ -27,6 +28,11 @@ function App() {
   // Roadmap & Survey states
   const [surveyScore, setSurveyScore] = useState(null);
   const [surveyRoadmap, setSurveyRoadmap] = useState(null);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('nihon_theme', theme);
+  }, [theme]);
 
   // Load user session and shared content on mount
   useEffect(() => {
@@ -170,6 +176,10 @@ function App() {
     setActiveView('home');
   };
 
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   const renderView = () => {
     if (!currentUser) {
       return <Auth onLogin={handleLogin} />;
@@ -228,6 +238,8 @@ function App() {
         onViewChange={setActiveView}
         currentUser={currentUser}
         onLogout={handleLogout}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       
       <main className="container" style={{ padding: '2rem 1rem 4rem 1rem' }}>
@@ -240,7 +252,7 @@ function App() {
         borderTop: '1px solid var(--jp-border)',
         color: 'var(--jp-text-muted)',
         fontSize: '0.85rem',
-        background: '#fff',
+        background: 'var(--jp-card-bg)',
         marginTop: '3rem'
       }}>
         <div className="container">

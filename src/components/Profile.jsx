@@ -109,7 +109,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       <div className="profile-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
         
         {/* Left Card: Personal Information */}
-        <div className="card-face" style={{ padding: '2rem', height: 'fit-content', background: '#fff', border: '1px solid var(--jp-border)', borderRadius: 'var(--jp-radius)', transform: 'none', position: 'relative', display: 'block' }}>
+        <div className="card-face profile-card" style={{ padding: '2rem', height: 'fit-content', background: 'var(--jp-card-bg)', border: '1px solid var(--jp-border)', borderRadius: 'var(--jp-radius)', transform: 'none', position: 'relative', display: 'block' }}>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.2rem', borderBottom: '2px solid var(--jp-red)', paddingBottom: '0.5rem' }}>
             <User size={20} /> Thông tin cá nhân
           </h3>
@@ -149,7 +149,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
                         fontSize: '1.5rem',
                         padding: '0.3rem',
                         border: avatar === av.emoji ? '2px solid var(--jp-red)' : '1px solid var(--jp-border)',
-                        background: avatar === av.emoji ? '#fff5f5' : '#fff',
+                        background: avatar === av.emoji ? 'var(--jp-soft-red)' : 'var(--jp-surface-raised)',
                         borderRadius: '6px',
                         cursor: 'pointer',
                         transition: '0.2s'
@@ -185,7 +185,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
                 className="form-control"
                 value={currentUser.email}
                 disabled
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px', background: '#f1f5f9', cursor: 'not-allowed' }}
+                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px', background: 'var(--jp-surface-raised)', cursor: 'not-allowed' }}
               />
             </div>
 
@@ -287,7 +287,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
         </div>
 
         {/* Right Card: Security & Password */}
-        <div className="card-face" style={{ padding: '2rem', height: 'fit-content', background: '#fff', border: '1px solid var(--jp-border)', borderRadius: 'var(--jp-radius)', transform: 'none', position: 'relative', display: 'block' }}>
+        <div className="card-face profile-card" style={{ padding: '2rem', height: 'fit-content', background: 'var(--jp-card-bg)', border: '1px solid var(--jp-border)', borderRadius: 'var(--jp-radius)', transform: 'none', position: 'relative', display: 'block' }}>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.2rem', borderBottom: '2px solid var(--jp-red)', paddingBottom: '0.5rem' }}>
             <Key size={20} /> Đổi mật khẩu tài khoản
           </h3>

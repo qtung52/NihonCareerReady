@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Download, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+
+/* eslint-disable no-irregular-whitespace */
 
 const STEPS = [
   { id: 1, label: "Thông tin cá nhân" },
@@ -72,7 +74,7 @@ export default function CVBuilder() {
 
       <div className="cv-builder-layout">
         {/* Left Form Panel */}
-        <div className="cv-form-panel">
+        <div className="cv-form-panel app-surface">
           <div className="step-indicator">
             {STEPS.map((step) => (
               <div
@@ -87,7 +89,7 @@ export default function CVBuilder() {
             ))}
           </div>
 
-          <h3 style={{ color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+          <h3 className="panel-title" style={{ color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
             Bước {currentStep}: {STEPS[currentStep - 1].label}
           </h3>
 
@@ -325,7 +327,7 @@ export default function CVBuilder() {
         </div>
 
         {/* Right Preview Sheet */}
-        <div className="rirekisho-container">
+        <div className="rirekisho-container app-surface">
           <div className="rirekisho-header-actions">
             <h4 style={{ color: 'var(--jp-blue)', fontWeight: 700 }}>Bản xem trước Rirekisho (A4)</h4>
             <button className="btn btn-primary btn-sm" onClick={handlePrint}>

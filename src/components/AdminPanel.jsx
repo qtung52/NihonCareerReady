@@ -141,7 +141,7 @@ export default function AdminPanel({
     } else {
       onAddRoleplay({
         ...scenarioData,
-        id: Date.now()
+        id: `custom-role-${roleplay.length + 1}-${roleTitle.trim().toLowerCase().replace(/\s+/g, '-')}`
       });
       setNotification('Đã thêm tình huống trắc nghiệm mới thành công!');
     }
@@ -277,7 +277,7 @@ export default function AdminPanel({
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--jp-border)', textAlign: 'left', background: '#f8fafc' }}>
+                  <tr style={{ borderBottom: '2px solid var(--jp-border)', textAlign: 'left', background: 'var(--jp-blue-light)' }}>
                     <th style={{ padding: '0.75rem' }}>Thông tin thành viên</th>
                     <th style={{ padding: '0.75rem' }}>Mục tiêu nghề nghiệp</th>
                     <th style={{ padding: '0.75rem' }}>Câu hỏi bảo mật</th>
@@ -418,7 +418,7 @@ export default function AdminPanel({
                   <textarea className="form-textarea" value={roleDesc} onChange={(e) => setRoleDesc(e.target.value)} placeholder="Mô tả cụ thể chuyện gì xảy ra, ai đang làm gì..." required></textarea>
                 </div>
 
-                <div className="form-group" style={{ background: '#fff9f9', padding: '1rem', borderRadius: 'var(--jp-radius)', border: '1px dashed var(--jp-red)', marginBottom: '1.5rem' }}>
+                <div className="form-group admin-upload-zone" style={{ background: 'var(--jp-soft-red)', padding: '1rem', borderRadius: 'var(--jp-radius)', border: '1px dashed var(--jp-red)', marginBottom: '1.5rem' }}>
                   <label className="form-label" style={{ fontWeight: 700, color: 'var(--jp-red)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Upload size={14} /> Ảnh minh họa Tình huống (Tải từ máy tính)
                   </label>
@@ -448,7 +448,7 @@ export default function AdminPanel({
                   )}
                 </div>
 
-                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--jp-radius)', marginBottom: '1.5rem' }}>
+                <div className="admin-options-panel" style={{ background: 'var(--jp-surface-raised)', padding: '1rem', borderRadius: 'var(--jp-radius)', marginBottom: '1.5rem' }}>
                   <h4 style={{ fontSize: '0.85rem', color: 'var(--jp-blue)', marginBottom: '0.75rem', fontWeight: 700 }}>Thiết lập 3 Lựa chọn & Giải thích:</h4>
                   
                   <div className="form-group">
