@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Users, Cpu, WifiOff, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Cpu, WifiOff } from 'lucide-react';
 
-// AI config — auto-detects best available backend
+// Gemini API key from Google AI Studio. If missing, chat falls back to local canned replies.
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const OLLAMA_BASE_URL = import.meta.env.VITE_OLLAMA_URL || '/ollama';
-const OLLAMA_MODEL = 'gemini-3-flash-preview:latest'; // Cloud model via Ollama
 
 const SYSTEM_PROMPT = `Bạn là AI hỗ trợ tích hợp trên nền tảng NihonLink - nền tảng hỗ trợ người Việt Nam làm việc tại Nhật Bản.
 Nhiệm vụ của bạn:
@@ -66,13 +64,12 @@ export default function ChatBox({ currentUser }) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [chatMode, setChatMode] = useState('ai');
   const [inputValue, setInputValue] = useState('');
-  // aiMode: 'gemini' | 'ollama' | 'offline'
-  const [aiMode, setAiMode] = useState(GEMINI_API_KEY ? 'gemini' : 'checking');
+  const [aiMode, setAiMode] = useState(GEMINI_API_KEY ? 'gemini' : 'offline');
   const [isStreaming, setIsStreaming] = useState(false);
 
   const welcomeText = GEMINI_API_KEY
     ? 'Chào bạn! Mình là AI Trợ Lý NihonLink, chạy bằng Gemini AI ✨ Hỏi mình bất cứ điều gì về văn hóa doanh nghiệp Nhật, phỏng vấn, viết CV hay cuộc sống tại Nhật nhé! 🤖'
-    : 'Chào bạn! Mình là AI Trợ Lý NihonLink. Đang kết nối với Ollama... Hỏi mình về văn hóa Nhật, phỏng vấn, viết CV nhé! 🌸';
+    : 'Chào bạn! Mình là AI Trợ Lý NihonLink. Chưa có Gemini API key nên mình đang dùng chế độ trả lời mẫu. Hỏi mình về văn hóa Nhật, phỏng vấn, viết CV nhé! 🌸';
 
   const [aiMessages, setAiMessages] = useState([
     { id: 1, sender: 'bot', text: welcomeText, time: 'Vừa xong' }
@@ -86,36 +83,6 @@ export default function ChatBox({ currentUser }) {
 
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
-
-  // If Gemini API key is set, skip Ollama check
-  useEffect(() => {
-    if (GEMINI_API_KEY) {
-      setAiMode('gemini');
-      return;
-    }
-    checkOllamaStatus();
-    const interval = setInterval(checkOllamaStatus, 15000); // re-check every 15s
-    return () => clearInterval(interval);
-  }, []);
-
-  const checkOllamaStatus = async () => {
-    try {
-      const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
-        signal: AbortSignal.timeout(4000)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const hasModel = data.models?.some(m =>
-          m.name.includes('gemini-3-flash-preview') || m.name.includes('gemma3') || m.name.includes('llama')
-        );
-        setAiMode(hasModel ? 'ollama' : 'offline');
-      } else {
-        setAiMode('offline');
-      }
-    } catch {
-      setAiMode('offline');
-    }
-  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -165,51 +132,6 @@ export default function ChatBox({ currentUser }) {
     }
   };
 
-  // --- Ollama streaming (for local dev with Ollama cloud model) ---
-  const callOllamaStreaming = async (userText, onChunk, onDone, onError) => {
-    abortControllerRef.current = new AbortController();
-    try {
-      const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: abortControllerRef.current.signal,
-        body: JSON.stringify({
-          model: OLLAMA_MODEL,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userText }
-          ],
-          stream: true,
-          options: { temperature: 0.7, num_predict: 400 }
-        })
-      });
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Ollama ${response.status}: ${errText}`);
-      }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = '';
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(l => l.trim());
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.message?.content) { fullText += parsed.message.content; onChunk(fullText); }
-            if (parsed.done) { onDone(fullText); return; }
-          } catch { /* skip */ }
-        }
-      }
-      onDone(fullText);
-    } catch (error) {
-      if (error.name === 'AbortError') return;
-      onError(error);
-    }
-  };
-
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isTyping || isStreaming) return;
@@ -223,9 +145,7 @@ export default function ChatBox({ currentUser }) {
     if (chatMode === 'ai') {
       setAiMessages(prev => [...prev, userMsg]);
 
-      const callFn = aiMode === 'gemini' ? callGeminiStreaming
-                   : aiMode === 'ollama' ? callOllamaStreaming
-                   : null;
+      const callFn = aiMode === 'gemini' ? callGeminiStreaming : null;
 
       if (callFn) {
         setIsStreaming(true);
@@ -250,14 +170,12 @@ export default function ChatBox({ currentUser }) {
             setAiMessages(prev => [...prev, {
               id: Date.now() + 2,
               sender: 'bot',
-              text: aiMode === 'gemini'
-                ? '⚠️ Lỗi kết nối Gemini API. Kiểm tra lại API key trong cài đặt Vercel.'
-                : '⚠️ Lỗi kết nối Ollama. Đảm bảo Ollama đang chạy với model gemini-3-flash-preview.',
+              text: '⚠️ Lỗi kết nối Gemini API. Mình đã chuyển sang chế độ trả lời mẫu để app vẫn dùng được.',
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }]);
             setStreamingText('');
             setIsStreaming(false);
-            if (aiMode === 'ollama') setAiMode('offline');
+            setAiMode('offline');
           }
         );
       } else {
@@ -337,9 +255,7 @@ export default function ChatBox({ currentUser }) {
   const getPartnerName = () => {
     switch (chatMode) {
       case 'ai':
-        if (ollamaStatus === 'online') return 'Gemma3 AI (Local · Offline)';
-        if (ollamaStatus === 'no_model') return 'AI Hỗ trợ (Thiếu model)';
-        return 'AI Hỗ trợ (Offline)';
+        return aiMode === 'gemini' ? 'Gemini AI Hỗ trợ' : 'AI Hỗ trợ (Trả lời mẫu)';
       case 'minh': return 'Senpai Minh (Bridge SE)';
       case 'trang': return 'Senpai Trang (Logistics)';
       default: return 'NihonLink Help';
@@ -383,7 +299,7 @@ export default function ChatBox({ currentUser }) {
         title="Trò chuyện hỗ trợ"
       >
         <MessageSquare size={26} style={{ color: 'white' }} />
-        {/* Ollama status dot */}
+        {/* AI status dot */}
         <span style={{
           position: 'absolute',
           bottom: '4px',
@@ -391,7 +307,7 @@ export default function ChatBox({ currentUser }) {
           width: '12px',
           height: '12px',
           borderRadius: '50%',
-          backgroundColor: ollamaStatus === 'online' ? '#2ecc71' : '#e74c3c',
+          backgroundColor: aiMode === 'gemini' ? '#2ecc71' : '#f39c12',
           border: '2px solid white',
           transition: 'background-color 0.3s'
         }} />
@@ -457,7 +373,7 @@ export default function ChatBox({ currentUser }) {
                 width: '9px',
                 height: '9px',
                 borderRadius: '50%',
-                backgroundColor: ollamaStatus === 'online' ? '#2ecc71' : '#e74c3c',
+                backgroundColor: aiMode === 'gemini' ? '#2ecc71' : '#f39c12',
                 border: '1.5px solid var(--jp-blue)',
                 transition: 'background-color 0.3s'
               }}
@@ -470,8 +386,8 @@ export default function ChatBox({ currentUser }) {
             <span style={{ fontSize: '0.68rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '3px' }}>
               {chatMode === 'ai' ? (
                 <>
-                  {ollamaStatus === 'online' ? <Cpu size={10} /> : <WifiOff size={10} />}
-                  {ollamaStatus === 'online' ? 'Ollama đang chạy · gemma3' : 'Chế độ offline'}
+                  {aiMode === 'gemini' ? <Cpu size={10} /> : <WifiOff size={10} />}
+                  {aiMode === 'gemini' ? 'Gemini API đang bật' : 'Chế độ trả lời mẫu'}
                 </>
               ) : (
                 <><span style={{ color: '#2ecc71' }}>●</span> online</>
@@ -540,26 +456,20 @@ export default function ChatBox({ currentUser }) {
             ))}
           </div>
 
-          {/* Ollama Status Banner */}
-          {chatMode === 'ai' && ollamaStatus !== 'online' && (
+          {/* Gemini Status Banner */}
+          {chatMode === 'ai' && aiMode !== 'gemini' && (
             <div style={{
               padding: '0.5rem 0.75rem',
-              background: ollamaStatus === 'no_model'
-                ? 'rgba(243, 156, 18, 0.08)'
-                : 'rgba(231, 76, 60, 0.08)',
-              borderBottom: `1px solid ${ollamaStatus === 'no_model' ? 'rgba(243,156,18,0.25)' : 'rgba(231,76,60,0.2)'}`,
+              background: 'rgba(243, 156, 18, 0.08)',
+              borderBottom: '1px solid rgba(243,156,18,0.25)',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
               fontSize: '0.72rem',
-              color: ollamaStatus === 'no_model' ? '#d68910' : '#c0392b'
+              color: '#d68910'
             }}>
               <WifiOff size={12} />
-              {ollamaStatus === 'no_model' ? (
-                <span>Ollama đang chạy nhưng chưa có model gemma3. Chạy <code style={{ background: 'rgba(243,156,18,0.12)', padding: '0 3px', borderRadius: '3px' }}>ollama pull gemma3</code> để tải.</span>
-              ) : (
-                <span>Ollama offline — đang dùng chế độ giả lập. Chạy <code style={{ background: 'rgba(231,76,60,0.1)', padding: '0 3px', borderRadius: '3px' }}>ollama serve</code> để bật AI thật.</span>
-              )}
+              <span>Chưa cấu hình Gemini API key hoặc API vừa lỗi. Đang dùng chế độ trả lời mẫu.</span>
             </div>
           )}
 
@@ -848,7 +758,7 @@ export default function ChatBox({ currentUser }) {
             color: 'var(--jp-text-muted)'
           }}>
             <Cpu size={10} />
-            Powered by Ollama · {OLLAMA_MODEL} · chạy hoàn toàn trên máy bạn
+            {aiMode === 'gemini' ? 'Powered by Gemini API · gemini-1.5-flash' : 'Fallback mode · câu trả lời mẫu'}
           </div>
         </>
       )}
