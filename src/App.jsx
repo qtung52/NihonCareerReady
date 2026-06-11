@@ -9,6 +9,7 @@ import Community from './components/Community';
 import Auth from './components/Auth';
 import AdminPanel from './components/AdminPanel';
 import Profile from './components/Profile';
+import ChatBox from './components/ChatBox';
 
 // Defaults imported from component files (SVG-free, 100% JSON-safe for localStorage)
 const DEFAULT_DICT = MANNERS_DATA;
@@ -248,6 +249,9 @@ function App() {
           <p style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>Dành riêng cho sinh viên Việt Nam bước chân vào môi trường chuyên nghiệp.</p>
         </div>
       </footer>
+
+      {/* Floating Chat Assistant */}
+      <ChatBox currentUser={currentUser} />
     </div>
   );
 }

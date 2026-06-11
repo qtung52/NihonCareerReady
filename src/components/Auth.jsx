@@ -36,6 +36,12 @@ export default function Auth({ onLogin }) {
     setErrorMsg('');
     setSuccessMsg('');
 
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (email !== 'admin@nihon.com' && !gmailRegex.test(email)) {
+      setErrorMsg('Email tìm kiếm phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
+      return;
+    }
+
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     const found = users.find(u => u.email === email);
 
@@ -113,11 +119,19 @@ export default function Auth({ onLogin }) {
     setErrorMsg('');
     setSuccessMsg('');
 
+    // Regex check strict @gmail.com format
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+
     if (authMode === 'login') {
       if (email === 'admin@nihon.com' && password === 'admin123') {
         const adminUser = { name: 'Admin Senpai', email, isAdmin: true, avatar: '🦊' };
         localStorage.setItem('session_user', JSON.stringify(adminUser));
         onLogin(adminUser);
+        return;
+      }
+
+      if (!gmailRegex.test(email)) {
+        setErrorMsg('Email đăng nhập phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
         return;
       }
 
@@ -141,6 +155,11 @@ export default function Auth({ onLogin }) {
     } else if (authMode === 'register') {
       if (!name || !email || !password || !securityAnswer) {
         setErrorMsg('Vui lòng điền đầy đủ tất cả thông tin.');
+        return;
+      }
+
+      if (!gmailRegex.test(email)) {
+        setErrorMsg('Email đăng ký phải đúng định dạng @gmail.com (Ví dụ: user@gmail.com)');
         return;
       }
 

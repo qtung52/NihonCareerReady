@@ -9,7 +9,7 @@ const INITIAL_THREADS = [
     title: "Văn hóa Nomikai (Tiệc rượu công sở) - Có bắt buộc tham gia không?",
     author: "Kouhai_K9",
     authorEmail: "kouhai@nihon.com",
-    date: "10 giờ trước",
+    date: "2026-06-11T07:40:00Z", // Fixed ISO string representing a past time
     content: "Mọi người ơi, em chuẩn bị đi thực tập ở một công ty Nhật. Em nghe bảo đi làm bên Nhật tối ngày phải đi nhậu với sếp đúng không ạ? Em không biết uống bia rượu thì có sao không và có quy tắc gì đặc biệt khi rót bia cho sếp không ạ?",
     answers: [
       {
@@ -17,7 +17,7 @@ const INITIAL_THREADS = [
         author: "Senpai_Minh_N3",
         authorEmail: "minh@nihon.com",
         role: "Senpai (3 năm kinh nghiệm)",
-        date: "8 giờ trước",
+        date: "2026-06-11T09:40:00Z", // Fixed ISO string representing a past time
         content: "Chào em. Hiện nay văn hóa Nhật cũng thoáng hơn rồi, nếu không uống được rượu em cứ mạnh dạn gọi nước ngọt/trà ô long nhé, không ai ép đâu. Tuy nhiên có vài quy tắc cực kỳ quan trọng: 1. Đợi sếp hô 'Kanpai' nâng ly xong mình mới uống. 2. Khi rót bia cho sếp, phải cầm chai bằng cả 2 tay, nhãn chai hướng lên trên để sếp nhìn rõ nhãn hiệu. 3. Khi chạm cốc, hãy để cốc của mình thấp hơn cốc của sếp một chút nhé!"
       }
     ]
@@ -29,7 +29,7 @@ const INITIAL_THREADS = [
     title: "Sốc văn hóa khi tự ý sửa lỗi báo cáo mà không nói sếp",
     author: "Thu_Trang_2k3",
     authorEmail: "trang@nihon.com",
-    date: "1 ngày trước",
+    date: "2026-06-10T17:40:00Z", // Fixed ISO string representing a past time
     content: "Em mới đi làm tuần đầu, lỡ tay nhập sai một số liệu nhỏ trong báo cáo. Em tự phát hiện ra và sửa lại ngay lập tức. Nhưng lúc sếp phát hiện em tự sửa mà không báo cáo, sếp đã mắng em rất nghiêm trọng trước văn phòng. Em thấy rất tủi thân, lỗi nhỏ thôi mà sếp làm quá vậy ạ?",
     answers: [
       {
@@ -37,7 +37,7 @@ const INITIAL_THREADS = [
         author: "Senpai_Hieu_FPT",
         authorEmail: "hieu@nihon.com",
         role: "Tech Lead",
-        date: "20 giờ trước",
+        date: "2026-06-10T21:40:00Z", // Fixed ISO string representing a past time
         content: "Hi em, sếp mắng là đúng đấy! Trong môi trường Nhật, sự trung thực và tính minh bạch là số 1. Quy tắc Hou-Ren-So quy định rõ: khi phát hiện lỗi (dù cực nhỏ), việc đầu tiên là phải báo cáo ngay cho cấp trên để họ biết tình hình. Việc em tự ý sửa mà không báo cáo bị coi là tự tiện và che giấu thông tin (Houchi). Đừng buồn nhé, hãy rút kinh nghiệm và chủ động báo cáo nhiều hơn."
       }
     ]

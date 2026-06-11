@@ -348,13 +348,120 @@ export default function Profile({ currentUser, onUpdateProfile }) {
               />
             </div>
 
-            <button type="submit" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center', color: 'var(--jp-red)', borderColor: 'var(--jp-red)' }}>
+            <button type="submit" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center', color: 'var(--jp-red)', borderColor: 'var(--jp-red)', marginBottom: '2rem' }}>
               <Key size={16} /> Thay đổi mật khẩu
             </button>
           </form>
+
+          {/* Setup / Change Security Question */}
+          <SecurityQuestionSection currentUser={currentUser} onUpdateProfile={onUpdateProfile} />
         </div>
 
       </div>
+    </div>
+  );
+}
+
+// Sub-component for clean organization of the Security Question Form
+const SECURITY_QUESTIONS = [
+  "Tên thú cưng đầu tiên của bạn là gì?",
+  "Trường tiểu học của bạn tên là gì?",
+  "Thành phố nơi bạn đã sinh ra là gì?",
+  "Món ăn yêu thích nhất của bạn là gì?",
+  "Tên thần tượng thời thơ ấu của bạn là gì?"
+];
+
+function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const dbUser = users.find(u => u.email === currentUser.email) || {};
+
+  const [question, setQuestion] = useState(dbUser.securityQuestion || SECURITY_QUESTIONS[0]);
+  const [answer, setAnswer] = useState(dbUser.securityAnswer || '');
+  const [msg, setMsg] = useState({ type: '', text: '' });
+
+  const handleSaveQuestion = (e) => {
+    e.preventDefault();
+    setMsg({ type: '', text: '' });
+
+    if (!answer.trim()) {
+      setMsg({ type: 'error', text: 'Câu trả lời không được để trống.' });
+      return;
+    }
+
+    const updatedUsers = users.map(u => {
+      if (u.email === currentUser.email) {
+        return { ...u, securityQuestion: question, securityAnswer: answer.trim() };
+      }
+      return u;
+    });
+
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    
+    // Sync into currentUser session state
+    onUpdateProfile({
+      securityQuestion: question,
+      securityAnswer: answer.trim()
+    });
+
+    setMsg({ type: 'success', text: 'Cập nhật câu hỏi bảo mật thành công!' });
+    setTimeout(() => setMsg({ type: '', text: '' }), 4000);
+  };
+
+  return (
+    <div style={{ borderTop: '1px dashed var(--jp-border)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--jp-blue)', marginBottom: '1rem', fontSize: '1.1rem' }}>
+        <User size={18} /> Câu hỏi bảo mật reset password
+      </h3>
+      
+      {msg.text && (
+        <div style={{
+          padding: '0.75rem',
+          borderRadius: 'var(--jp-radius)',
+          background: msg.type === 'success' ? '#e6f4ea' : '#fce8e6',
+          color: msg.type === 'success' ? '#137333' : '#c5221f',
+          fontSize: '0.85rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          {msg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {msg.text}
+        </div>
+      )}
+
+      <form onSubmit={handleSaveQuestion}>
+        <div style={{ marginBottom: '1rem' }}>
+          <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Chọn câu hỏi</label>
+          <select
+            className="form-control"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
+          >
+            {SECURITY_QUESTIONS.map((q, idx) => (
+              <option key={idx} value={q}>{q}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Câu trả lời</label>
+          <input
+            type="text"
+            className="form-control"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Nhập câu trả lời để lấy lại mật khẩu sau này..."
+            style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
+            required
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
+          <Save size={16} /> Lưu câu hỏi bảo mật
+        </button>
+      </form>
     </div>
   );
 }
