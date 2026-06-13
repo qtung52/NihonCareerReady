@@ -143,7 +143,8 @@ export default function Auth({ onLogin }) {
         const loggedUser = { 
           name: user.name, 
           email: user.email, 
-          isAdmin: false, 
+          isAdmin: !!user.isAdmin, 
+          isSenpai: !!user.isSenpai,
           avatar: user.avatar || '🧑‍💻', 
           bio: user.bio || '',
           careerGoal: user.careerGoal || 'Software Engineer (Japan)'
