@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search } from 'lucide-react';
+import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search, MoreVertical, Edit3 } from 'lucide-react';
 import { getSharedArray, isSupabaseEnabled, setSharedArray } from '../lib/sharedStore';
+
+export const FORUM_TOPICS = [
+  { id: 'culture-shock', name: 'Sốc văn hóa', colorClass: 'culture-shock' },
+  { id: 'interview', name: 'Phỏng vấn / Shukatsu', colorClass: 'interview' },
+  { id: 'tips', name: 'Mẹo làm việc', colorClass: 'tips' },
+  { id: 'office-etiquette', name: 'Ứng xử công sở', colorClass: 'office-etiquette' },
+  { id: 'communication', name: 'Kỹ năng giao tiếp', colorClass: 'communication' },
+  { id: 'business-japanese', name: 'Tiếng Nhật công sở', colorClass: 'business-japanese' },
+  { id: 'career-guidance', name: 'Định hướng sự nghiệp', colorClass: 'career-guidance' }
+];
 
 const INITIAL_THREADS = [
   {
@@ -86,7 +96,7 @@ function maskEmail(email) {
   return `${maskedLocal}@${maskedDomain}`;
 }
 
-export default function Community({ currentUser }) {
+export default function Community({ currentUser, onViewProfile }) {
   const [threads, setThreads] = useState([]);
   const [activeTag, setActiveTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,8 +118,15 @@ export default function Community({ currentUser }) {
     }));
   };
 
-  // View User Profile Modal State
-  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
+  // Edit & Dropdown Action Menu states
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [editingThreadId, setEditingThreadId] = useState(null);
+  const [editingThreadTitle, setEditingThreadTitle] = useState('');
+  const [editingThreadContent, setEditingThreadContent] = useState('');
+  const [editingThreadTag, setEditingThreadTag] = useState('');
+  const [editingReplyId, setEditingReplyId] = useState(null);
+  const [editingReplyContent, setEditingReplyContent] = useState('');
+
   const [syncStatus, setSyncStatus] = useState('loading'); // loading | online | offline
   const [users, setUsers] = useState([]);
 
@@ -159,10 +176,11 @@ export default function Community({ currentUser }) {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) return;
 
+    const matchedTopic = FORUM_TOPICS.find(t => t.id === newTag);
     const newThread = {
       id: Date.now(),
       tag: newTag,
-      tagName: newTag === 'culture-shock' ? 'Sốc văn hóa' : newTag === 'interview' ? 'Phỏng vấn / Shukatsu' : 'Mẹo làm việc',
+      tagName: matchedTopic ? matchedTopic.name : 'Khác',
       title: newTitle,
       author: currentUser ? currentUser.name : "Học viên ẩn danh",
       authorEmail: currentUser ? currentUser.email : "anonymous@nihon.com",
@@ -176,6 +194,63 @@ export default function Community({ currentUser }) {
     
     setNewTitle('');
     setNewContent('');
+  };
+
+  const handleStartEditThread = (thread) => {
+    setEditingThreadId(thread.id);
+    setEditingThreadTitle(thread.title);
+    setEditingThreadContent(thread.content);
+    setEditingThreadTag(thread.tag);
+    setActiveMenu(null); // close dropdown
+  };
+
+  const handleSaveEditThread = (threadId) => {
+    if (!editingThreadTitle.trim() || !editingThreadContent.trim()) return;
+    const matchedTopic = FORUM_TOPICS.find(t => t.id === editingThreadTag);
+    const updated = threads.map(t => {
+      if (t.id === threadId) {
+        return {
+          ...t,
+          title: editingThreadTitle.trim(),
+          content: editingThreadContent.trim(),
+          tag: editingThreadTag,
+          tagName: matchedTopic ? matchedTopic.name : t.tagName
+        };
+      }
+      return t;
+    });
+    saveThreads(updated);
+    setEditingThreadId(null);
+  };
+
+  const handleStartEditReply = (reply) => {
+    setEditingReplyId(reply.id);
+    setEditingReplyContent(reply.content);
+    setActiveMenu(null); // close dropdown
+  };
+
+  const handleSaveEditReply = (threadId, replyId) => {
+    if (!editingReplyContent.trim()) return;
+    const updated = threads.map(t => {
+      if (t.id === threadId) {
+        const updatedAnswers = t.answers.map(ans => {
+          if (ans.id === replyId) {
+            return {
+              ...ans,
+              content: editingReplyContent.trim()
+            };
+          }
+          return ans;
+        });
+        return {
+          ...t,
+          answers: updatedAnswers
+        };
+      }
+      return t;
+    });
+    saveThreads(updated);
+    setEditingReplyId(null);
   };
 
   const handleAddReply = (threadId) => {
@@ -258,6 +333,18 @@ export default function Community({ currentUser }) {
     saveThreads(updated);
   };
 
+  const renderAvatar = (email, size = '16px') => {
+    if (email === 'admin@nihon.com') {
+      return <span style={{ fontSize: size }}>🦊</span>;
+    }
+    const u = users.find(user => user.email === email);
+    const avatar = u?.avatar || '🧑‍💻';
+    if (avatar.startsWith('data:')) {
+      return <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />;
+    }
+    return <span style={{ fontSize: size }}>{avatar}</span>;
+  };
+
   const getUserRole = (email, fallbackRole) => {
     const userObj = users.find(u => u.email === email);
     if (userObj) {
@@ -268,42 +355,6 @@ export default function Community({ currentUser }) {
     return fallbackRole || 'Học viên';
   };
 
-  const openUserProfile = async (email, name, role) => {
-    if (email === 'admin@nihon.com') {
-      setSelectedUserProfile({
-        name: 'Admin Senpai',
-        email: 'admin@nihon.com',
-        avatar: '🦊',
-        bio: 'Quản trị viên hệ thống Nihon Career Ready. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
-        careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản',
-        role: 'Quản trị viên'
-      });
-      return;
-    }
-
-    const matchedUser = users.find(u => u.email === email);
-
-    if (matchedUser) {
-      setSelectedUserProfile({
-        name: matchedUser.name || name,
-        email: matchedUser.email,
-        avatar: matchedUser.avatar || '🧑‍💻',
-        bio: matchedUser.bio || 'Chưa cập nhật giới thiệu bản thân.',
-        careerGoal: matchedUser.careerGoal || 'Học viên Nihon Career Ready',
-        role: getUserRole(email, role)
-      });
-    } else {
-      const safeEmail = email || '';
-      setSelectedUserProfile({
-        name: name,
-        email: safeEmail,
-        avatar: safeEmail.includes('minh') ? '👨‍💼' : safeEmail.includes('hieu') ? '🦊' : '🧑‍💻',
-        bio: 'Senpai giàu kinh nghiệm chia sẻ bài học về kỹ năng giao tiếp và ứng xử doanh nghiệp Nhật Bản.',
-        careerGoal: role || 'Senpai / Cố vấn chuyên môn',
-        role: getUserRole(email, role)
-      });
-    }
-  };
 
   const handleReplyTextChange = (threadId, val) => {
     setReplyTexts(prev => ({
@@ -331,6 +382,9 @@ export default function Community({ currentUser }) {
         const aReplies = a.answers?.length || 0;
         const bReplies = b.answers?.length || 0;
         return bReplies - aReplies;
+      }
+      if (sortBy === 'oldest') {
+        return new Date(a.date) - new Date(b.date);
       }
       return new Date(b.date) - new Date(a.date);
     });
@@ -361,9 +415,15 @@ export default function Community({ currentUser }) {
         <div>
           <div className="filter-tabs" style={{ justifyContent: 'flex-start', marginBottom: '1rem' }}>
             <button className={`tab-btn ${activeTag === 'all' ? 'active' : ''}`} onClick={() => setActiveTag('all')}>Tất cả</button>
-            <button className={`tab-btn ${activeTag === 'culture-shock' ? 'active' : ''}`} onClick={() => setActiveTag('culture-shock')}>Sốc văn hóa</button>
-            <button className={`tab-btn ${activeTag === 'interview' ? 'active' : ''}`} onClick={() => setActiveTag('interview')}>Phỏng vấn</button>
-            <button className={`tab-btn ${activeTag === 'tips' ? 'active' : ''}`} onClick={() => setActiveTag('tips')}>Mẹo làm việc</button>
+            {FORUM_TOPICS.map(topic => (
+              <button 
+                key={topic.id} 
+                className={`tab-btn ${activeTag === topic.id ? 'active' : ''}`} 
+                onClick={() => setActiveTag(topic.id)}
+              >
+                {topic.name}
+              </button>
+            ))}
           </div>
 
           {/* Search & Sort Bar */}
@@ -389,6 +449,7 @@ export default function Community({ currentUser }) {
                 style={{ width: 'auto', padding: '0.3rem 2rem 0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', height: 'auto', border: '1px solid var(--jp-border)' }}
               >
                 <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
                 <option value="popular">Yêu thích nhất</option>
                 <option value="replies">Thảo luận nhiều</option>
               </select>
@@ -402,6 +463,51 @@ export default function Community({ currentUser }) {
               const isLiked = currentUser ? likesList.includes(currentUser.email) : false;
               const likesCount = likesList.length;
               
+              if (editingThreadId === thread.id) {
+                return (
+                  <div key={thread.id} className="q-card">
+                    <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.1rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--jp-border)', paddingBottom: '0.5rem' }}>
+                      Chỉnh sửa câu hỏi
+                    </h3>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label className="form-label">Chủ đề</label>
+                      <select 
+                        className="form-input" 
+                        value={editingThreadTag} 
+                        onChange={(e) => setEditingThreadTag(e.target.value)}
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+                      >
+                        {FORUM_TOPICS.map(topic => (
+                          <option key={topic.id} value={topic.id}>{topic.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label className="form-label">Tiêu đề câu hỏi</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={editingThreadTitle} 
+                        onChange={(e) => setEditingThreadTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label className="form-label">Nội dung chi tiết</label>
+                      <textarea 
+                        className="form-textarea" 
+                        value={editingThreadContent} 
+                        onChange={(e) => setEditingThreadContent(e.target.value)}
+                        style={{ minHeight: '120px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                      <button className="btn btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => setEditingThreadId(null)}>Hủy</button>
+                      <button className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => handleSaveEditThread(thread.id)}>Lưu</button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={thread.id} className="q-card">
                   <div className="q-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -410,11 +516,18 @@ export default function Community({ currentUser }) {
                         <Tag size={10} style={{ marginRight: '3px', display: 'inline' }} />
                         {thread.tagName}
                       </span>
-                      <span className="q-meta" style={{ marginLeft: '10px' }}>
+                      <span className="q-meta" style={{ marginLeft: '10px', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', verticalAlign: 'middle' }}>
                         Đăng bởi{' '}
+                        <div 
+                          style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--jp-border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}
+                          onClick={() => onViewProfile && onViewProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
+                          title="Xem thông tin người dùng"
+                        >
+                          {renderAvatar(thread.authorEmail, '10px')}
+                        </div>
                         <strong 
                           style={{ cursor: 'pointer', color: 'var(--jp-blue)', textDecoration: 'underline' }}
-                          onClick={() => openUserProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
+                          onClick={() => onViewProfile && onViewProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
                           title="Xem thông tin người dùng"
                         >
                           {thread.author}
@@ -423,12 +536,41 @@ export default function Community({ currentUser }) {
                       </span>
                     </div>
                     {currentUser && (currentUser.email === thread.authorEmail || currentUser.isAdmin) && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteThread(thread.id); }}
-                        style={{ background: 'none', border: 'none', color: 'var(--jp-red)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
-                      >
-                        <Trash2 size={14} /> Xóa bài
-                      </button>
+                      <div className="action-menu-container">
+                        <button 
+                          className="action-dropdown-btn"
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setActiveMenu(activeMenu?.type === 'thread' && activeMenu.id === thread.id ? null : { type: 'thread', id: thread.id });
+                          }}
+                          title="Hành động"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        
+                        {activeMenu?.type === 'thread' && activeMenu.id === thread.id && (
+                          <>
+                            <div 
+                              style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent' }} 
+                              onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} 
+                            />
+                            <div className="action-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                              <button 
+                                className="action-dropdown-item"
+                                onClick={() => handleStartEditThread(thread)}
+                              >
+                                <Edit3 size={14} /> Sửa bài
+                              </button>
+                              <button 
+                                className="action-dropdown-item delete"
+                                onClick={() => { setActiveMenu(null); handleDeleteThread(thread.id); }}
+                              >
+                                <Trash2 size={14} /> Xóa bài
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                   <h3 className="q-title">{thread.title}</h3>
@@ -470,64 +612,125 @@ export default function Community({ currentUser }) {
                     {expandedThreads[thread.id] && (
                       <div className="answers-dropdown-container">
                         {thread.answers.map((ans) => {
-                      const canDeleteReply = currentUser && (currentUser.isAdmin || currentUser.email === ans.authorEmail);
-                      const displayRole = getUserRole(ans.authorEmail, ans.role);
-                      const isAdmin = displayRole === 'Quản trị viên';
-                      const isSenpai = displayRole.includes('Senpai') || displayRole.includes('Tech Lead') || displayRole.includes('Leader');
-                      
-                      return (
-                        <div key={ans.id || `ans-${Math.random()}`} className="fb-comment-wrapper" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
-                          <div 
-                            style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
-                            onClick={() => openUserProfile(ans.authorEmail, ans.author, displayRole)}
-                          >
-                            <span style={{ fontSize: '16px' }}>🧑‍💻</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100% - 40px)' }}>
-                            <div className="fb-comment-bubble" style={{ background: 'var(--jp-surface-raised)', padding: '8px 12px', borderRadius: '18px', display: 'inline-block' }}>
-                              <span 
-                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2px' }}
-                                onClick={() => openUserProfile(ans.authorEmail, ans.author, displayRole)}
+                          const canDeleteReply = currentUser && (currentUser.isAdmin || currentUser.email === ans.authorEmail);
+                          const displayRole = getUserRole(ans.authorEmail, ans.role);
+                          const isAdmin = displayRole === 'Quản trị viên';
+                          const isSenpai = displayRole.includes('Senpai') || displayRole.includes('Tech Lead') || displayRole.includes('Leader');
+                          
+                          if (editingReplyId === ans.id) {
+                            return (
+                              <div key={ans.id || `ans-${Math.random()}`} className="fb-comment-wrapper" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+                                <div 
+                                  style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
+                                  onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
+                                  title="Xem thông tin người dùng"
+                                >
+                                  {renderAvatar(ans.authorEmail, '16px')}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1 }}>
+                                  <div style={{ width: '100%' }}>
+                                    <textarea
+                                      className="form-textarea"
+                                      value={editingReplyContent}
+                                      onChange={(e) => setEditingReplyContent(e.target.value)}
+                                      style={{ minHeight: '60px', fontSize: '0.85rem', width: '100%', marginBottom: '0.5rem', background: 'var(--jp-surface-raised)' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                      <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setEditingReplyId(null)}>Hủy</button>
+                                      <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => handleSaveEditReply(thread.id, ans.id)}>Lưu</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={ans.id || `ans-${Math.random()}`} className="fb-comment-wrapper" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+                              <div 
+                                style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
+                                onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
                                 title="Xem thông tin người dùng"
                               >
-                                <strong style={{ fontSize: '0.85rem' }}>{ans.author}</strong>
-                                <span 
-                                  className={isAdmin ? 'admin-rgb-tag' : ''}
-                                  style={{ 
-                                    fontSize: '0.65rem', 
-                                    background: !isAdmin && isSenpai ? 'var(--jp-blue)' : !isAdmin ? 'var(--jp-border)' : undefined, 
-                                    color: !isAdmin && isSenpai ? 'white' : !isAdmin ? 'var(--jp-text-muted)' : undefined, 
-                                    padding: '2px 6px', 
-                                    borderRadius: '12px',
-                                    fontWeight: !isAdmin ? 'normal' : undefined,
-                                    border: 'none'
-                                }}>
-                                  {displayRole}
-                                </span>
-                              </span>
-                              <p className="ans-body" style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>{ans.content}</p>
+                                {renderAvatar(ans.authorEmail, '16px')}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100% - 40px)', position: 'relative', width: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%' }}>
+                                  <div className="fb-comment-bubble" style={{ background: 'var(--jp-surface-raised)', padding: '8px 12px', borderRadius: '18px', display: 'inline-block', flex: 1 }}>
+                                    <span 
+                                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2px' }}
+                                      onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
+                                      title="Xem thông tin người dùng"
+                                    >
+                                      <strong style={{ fontSize: '0.85rem' }}>{ans.author}</strong>
+                                      <span 
+                                        className={isAdmin ? 'admin-rgb-tag' : ''}
+                                        style={{ 
+                                          fontSize: '0.65rem', 
+                                          background: !isAdmin && isSenpai ? 'var(--jp-blue)' : !isAdmin ? 'var(--jp-border)' : undefined, 
+                                          color: !isAdmin && isSenpai ? 'white' : !isAdmin ? 'var(--jp-text-muted)' : undefined, 
+                                          padding: '2px 6px', 
+                                          borderRadius: '12px',
+                                          fontWeight: !isAdmin ? 'normal' : undefined,
+                                          border: 'none'
+                                      }}>
+                                        {displayRole}
+                                      </span>
+                                    </span>
+                                    <p className="ans-body" style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>{ans.content}</p>
+                                  </div>
+                                  
+                                  {/* Reply Action menu dropdown */}
+                                  {currentUser && (currentUser.email === ans.authorEmail || currentUser.isAdmin) && (
+                                    <div className="action-menu-container" style={{ alignSelf: 'center' }}>
+                                      <button 
+                                        className="action-dropdown-btn"
+                                        onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          setActiveMenu(activeMenu?.type === 'reply' && activeMenu.id === ans.id ? null : { type: 'reply', id: ans.id });
+                                        }}
+                                        title="Hành động"
+                                      >
+                                        <MoreVertical size={14} />
+                                      </button>
+                                      
+                                      {activeMenu?.type === 'reply' && activeMenu.id === ans.id && (
+                                        <>
+                                          <div 
+                                            style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent' }} 
+                                            onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} 
+                                          />
+                                          <div className="action-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                              className="action-dropdown-item"
+                                              onClick={() => handleStartEditReply(ans)}
+                                            >
+                                              <Edit3 size={12} /> Sửa trả lời
+                                            </button>
+                                            <button 
+                                              className="action-dropdown-item delete"
+                                              onClick={() => { setActiveMenu(null); handleDeleteReply(thread.id, ans.id); }}
+                                            >
+                                              <Trash2 size={12} /> Xóa trả lời
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '12px', marginTop: '4px' }}>
+                                  <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{timeAgo(ans.date) || ans.date}</span>
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '12px', marginTop: '4px' }}>
-                              <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{timeAgo(ans.date) || ans.date}</span>
-                              {canDeleteReply && (
-                                <button
-                                  onClick={() => handleDeleteReply(thread.id, ans.id)}
-                                  style={{ border: 'none', background: 'none', color: 'var(--jp-red)', cursor: 'pointer', padding: 0, fontSize: '0.75rem', fontWeight: 600 }}
-                                  title="Xóa bình luận này"
-                                >
-                                  Xóa
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
                     
                     {/* Reply Form */}
                     <div style={{ display: 'flex', gap: '8px', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                         {currentUser?.avatar && currentUser.avatar.startsWith('data:') ? <img src={currentUser.avatar} style={{width:'100%',height:'100%',borderRadius:'50%',objectFit:'cover'}} alt="avatar"/> : <span style={{fontSize:'16px'}}>🧑‍💻</span>}
+                        {renderAvatar(currentUser?.email, '16px')}
                       </div>
                       <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
                         <input
@@ -573,9 +776,9 @@ export default function Community({ currentUser }) {
             <div className="form-group">
               <label className="form-label">Chủ đề</label>
               <select className="form-input" value={newTag} onChange={(e) => setNewTag(e.target.value)}>
-                <option value="culture-shock">Sốc văn hóa</option>
-                <option value="interview">Phỏng vấn / Shukatsu</option>
-                <option value="tips">Mẹo làm việc</option>
+                {FORUM_TOPICS.map(topic => (
+                  <option key={topic.id} value={topic.id}>{topic.name}</option>
+                ))}
               </select>
             </div>
             
@@ -609,72 +812,7 @@ export default function Community({ currentUser }) {
         </div>
       </div>
 
-      {/* Profile Viewer Popup Modal */}
-      {selectedUserProfile && (
-        <div className="modal-overlay" onClick={() => setSelectedUserProfile(null)} style={{ zIndex: 1100 }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px', padding: '2rem', borderRadius: '12px', border: '1px solid var(--jp-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setSelectedUserProfile(null)} 
-                style={{ background: 'none', border: 'none', color: 'var(--jp-text-muted)', cursor: 'pointer' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '3.5rem', width: '80px', height: '80px', margin: '0 auto 1rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--jp-blue-light)', borderRadius: '50%', border: '2px solid var(--jp-blue)', overflow: 'hidden' }}>
-                {selectedUserProfile.avatar?.startsWith('data:image') ? (
-                  <img src={selectedUserProfile.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  selectedUserProfile.avatar || '🧑‍💻'
-                )}
-              </div>
-              <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>
-                {selectedUserProfile.name}
-              </h3>
-              <span 
-                className={selectedUserProfile.role === 'Quản trị viên' ? 'admin-rgb-tag' : ''}
-                style={{
-                  display: 'inline-block',
-                  padding: '0.3rem 0.8rem',
-                  borderRadius: '20px',
-                  background: selectedUserProfile.role !== 'Quản trị viên' && (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'var(--jp-blue)' : selectedUserProfile.role !== 'Quản trị viên' ? 'var(--jp-border)' : undefined, 
-                  color: selectedUserProfile.role !== 'Quản trị viên' && (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'white' : selectedUserProfile.role !== 'Quản trị viên' ? 'var(--jp-text-muted)' : undefined,
-                  fontSize: '0.85rem',
-                  marginTop: '0.5rem',
-                  fontWeight: selectedUserProfile.role !== 'Quản trị viên' ? 'normal' : undefined,
-                  border: 'none'
-              }}>
-                {selectedUserProfile.role}
-              </span>
-            </div>
 
-            <div style={{ borderTop: '1px solid var(--jp-border)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--jp-text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>Định hướng mục tiêu</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--jp-blue)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.2rem' }}>
-                  <Briefcase size={14} /> {selectedUserProfile.careerGoal}
-                </span>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--jp-text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>Mô tả (Bio)</span>
-                <p style={{ fontSize: '0.8rem', color: 'var(--jp-text)', margin: '0.2rem 0 0 0', background: 'var(--jp-surface-raised)', padding: '0.75rem', borderRadius: '6px', lineHeight: '1.4', fontStyle: 'italic', border: '1px solid var(--jp-border)' }}>
-                  {selectedUserProfile.bio}
-                </p>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--jp-text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>Email (Đã ẩn)</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--jp-text)', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  🔒 {maskEmail(selectedUserProfile.email)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -12,7 +12,8 @@ export default function AdminPanel({
   onDeleteDictionary,
   onAddRoleplay, 
   onUpdateRoleplay,
-  onDeleteRoleplay
+  onDeleteRoleplay,
+  onViewProfile
 }) {
   const [activeTab, setActiveTab] = useState('dashboard'); // Default to dashboard
 
@@ -406,7 +407,11 @@ export default function AdminPanel({
                     <tr key={user.email || idx} style={{ borderBottom: '1px solid var(--jp-border)' }}>
                       <td style={{ padding: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '1.5rem', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span 
+                            style={{ fontSize: '1.5rem', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}
+                            onClick={() => onViewProfile && onViewProfile(user.email, user.name, user.careerGoal)}
+                            title="Xem thông tin người dùng"
+                          >
                             {user.avatar?.startsWith('data:image') ? (
                               <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                             ) : (
@@ -414,7 +419,13 @@ export default function AdminPanel({
                             )}
                           </span>
                           <div>
-                            <strong style={{ display: 'block' }}>{user.name}</strong>
+                            <strong 
+                              style={{ display: 'block', cursor: 'pointer', color: 'var(--jp-blue)', textDecoration: 'underline' }}
+                              onClick={() => onViewProfile && onViewProfile(user.email, user.name, user.careerGoal)}
+                              title="Xem thông tin người dùng"
+                            >
+                              {user.name}
+                            </strong>
                             <span style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)' }}>{user.email}</span>
                           </div>
                         </div>

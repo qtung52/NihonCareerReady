@@ -1077,6 +1077,18 @@ body {
   box-shadow: 0 0 0 3px rgba(15, 44, 89, 0.1);
 }
 
+/* Inputs with icon prefix */
+.form-input-icon-left {
+  padding-left: 44px !important;
+}
+
+/* Inputs with icon on both sides (e.g. password with eye toggle) */
+.form-input-icon-both {
+  padding-left: 44px !important;
+  padding-right: 44px !important;
+}
+
+
 .form-textarea {
   width: 100%;
   padding: 0.65rem 0.85rem;
@@ -1243,6 +1255,115 @@ body {
 :root[data-theme="dark"] .q-tag.tips {
   background: rgba(24, 144, 255, 0.15);
   color: #40a9ff;
+}
+
+.q-tag.office-etiquette {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+:root[data-theme="dark"] .q-tag.office-etiquette {
+  background: rgba(82, 196, 26, 0.15);
+  color: #73d13d;
+}
+
+.q-tag.communication {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+:root[data-theme="dark"] .q-tag.communication {
+  background: rgba(250, 140, 22, 0.15);
+  color: #ffc069;
+}
+
+.q-tag.business-japanese {
+  background: #f9f0ff;
+  color: #722ed1;
+}
+
+:root[data-theme="dark"] .q-tag.business-japanese {
+  background: rgba(114, 46, 209, 0.15);
+  color: #b37feb;
+}
+
+.q-tag.career-guidance {
+  background: #f0f5ff;
+  color: #2f54eb;
+}
+
+:root[data-theme="dark"] .q-tag.career-guidance {
+  background: rgba(47, 84, 235, 0.15);
+  color: #597ef7;
+}
+
+/* Action dropdown menu style */
+.action-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.action-dropdown-btn {
+  background: none;
+  border: none;
+  color: var(--jp-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  outline: none;
+}
+
+.action-dropdown-btn:hover {
+  background: var(--jp-soft-surface);
+  color: var(--jp-blue);
+}
+
+.action-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 8px;
+  box-shadow: var(--jp-shadow);
+  padding: 0.4rem 0;
+  min-width: 140px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: slideDownFade 0.2s ease-out;
+}
+
+.action-dropdown-item {
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  color: var(--jp-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  transition: background 0.2s;
+  font-family: var(--font-primary);
+}
+
+.action-dropdown-item:hover {
+  background: var(--jp-soft-surface);
+}
+
+.action-dropdown-item.delete {
+  color: var(--jp-red);
+}
+
+.action-dropdown-item.delete:hover {
+  background: var(--jp-soft-red);
 }
 
 .q-meta {
@@ -1551,22 +1672,230 @@ body {
   display: none;
 }
 
-/* Authentication Screen */
+/* Authentication Screen - Modern Split-Screen & Glassmorphism */
 .auth-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(80vh - 100px);
+  min-height: calc(85vh - 80px);
+  padding: 1rem;
 }
 
-.auth-card {
+.auth-container {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
   background: var(--jp-card-bg);
   border: 1px solid var(--jp-border);
-  border-radius: var(--jp-radius-lg);
-  padding: 3rem 2.5rem;
-  width: 100%;
-  max-width: 420px;
+  border-radius: 16px;
   box-shadow: var(--jp-shadow-lg);
+  overflow: hidden;
+  min-height: 560px;
+  animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.auth-promo {
+  flex: 1;
+  background: linear-gradient(135deg, var(--jp-blue) 0%, var(--jp-blue-hover) 100%);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+.auth-promo::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  left: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(188, 0, 45, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-promo-wave {
+  position: absolute;
+  bottom: -40px;
+  right: -40px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79, 142, 247, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-promo-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #ffffff;
+}
+
+.auth-promo-tag {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 1rem;
+}
+
+.auth-promo-quote {
+  font-family: var(--font-japanese);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 2rem 0;
+  border-left: 3px solid var(--jp-red);
+  padding-left: 1rem;
+}
+
+.auth-form-side {
+  width: 460px;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .auth-promo {
+    display: none !important;
+  }
+  
+  .auth-form-side {
+    width: 100%;
+    padding: 2.25rem 1.75rem;
+  }
+  
+  .auth-container {
+    max-width: 440px;
+    min-height: auto;
+  }
+}
+
+/* Password strength meter styling */
+.password-strength-container {
+  margin-top: 0.5rem;
+}
+
+.password-strength-label {
+  font-size: 0.75rem;
+  color: var(--jp-text-muted);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.password-strength-bars {
+  display: flex;
+  gap: 4px;
+  height: 4px;
+}
+
+.password-strength-bar {
+  flex: 1;
+  background: var(--jp-border);
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+
+.password-strength-bar.weak {
+  background-color: var(--jp-red) !important;
+}
+
+.password-strength-bar.medium {
+  background-color: #f1c40f !important;
+}
+
+.password-strength-bar.strong {
+  background-color: #2ecc71 !important;
+}
+
+/* Eye icon absolute button */
+.pwd-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--jp-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s, background-color 0.2s;
+  z-index: 5;
+}
+
+.pwd-toggle-btn:hover {
+  color: var(--jp-blue);
+  background-color: var(--jp-soft-surface);
+}
+
+/* Quick demo logins section */
+.quick-login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0 1rem 0;
+  font-size: 0.75rem;
+  color: var(--jp-text-muted);
+}
+
+.quick-login-divider::before,
+.quick-login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--jp-border);
+}
+
+.quick-login-divider:not(:empty)::before {
+  margin-right: .5em;
+}
+
+.quick-login-divider:not(:empty)::after {
+  margin-left: .5em;
+}
+
+.quick-login-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.quick-login-btn {
+  padding: 0.5rem;
+  font-size: 0.78rem;
+  border: 1px solid var(--jp-border);
+  background: var(--jp-card-bg);
+  color: var(--jp-text);
+  border-radius: var(--jp-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  text-align: center;
+}
+
+.quick-login-btn:hover {
+  border-color: var(--jp-blue);
+  background: var(--jp-blue-light);
+  color: var(--jp-blue);
+  transform: translateY(-1px);
 }
 
 .auth-header {
@@ -1732,7 +2061,7 @@ body {
 
 @keyframes fadeInSlideUp {
   from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes fadeIn {
@@ -1745,8 +2074,16 @@ body {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
+.modal-overlay.closing {
+  animation: fadeOut 0.3s ease-in forwards;
+}
+
 .modal-content {
   animation: modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-content.closing {
+  animation: modalPopOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes modalPop {
@@ -1757,6 +2094,11 @@ body {
 @keyframes modalPopOut {
   from { opacity: 1; transform: scale(1) translateY(0); }
   to { opacity: 0; transform: scale(0.95) translateY(15px); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* Dropdown & Accordion Animations */
