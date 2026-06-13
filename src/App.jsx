@@ -52,16 +52,17 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (activeView !== 'dictionary' && activeView !== 'roleplay') return;
+    if (activeView !== 'dictionary' && activeView !== 'roleplay' && activeView !== 'cvbuilder' && activeView !== 'admin') return;
 
     let isMounted = true;
-    const key = activeView === 'dictionary' ? 'dictionary' : 'roleplay';
-    const setState = activeView === 'dictionary' ? setDictionary : setRoleplay;
-
+    
     const refreshSharedContent = async () => {
-      const data = await getSharedArray(key, []);
-      if (!isMounted || !Array.isArray(data) || data.length === 0) return;
-      setState(data);
+      const dictData = await getSharedArray('dictionary', []);
+      const roleData = await getSharedArray('roleplay', []);
+      
+      if (!isMounted) return;
+      if (Array.isArray(dictData) && dictData.length > 0) setDictionary(dictData);
+      if (Array.isArray(roleData) && roleData.length > 0) setRoleplay(roleData);
     };
 
     refreshSharedContent();
@@ -146,6 +147,12 @@ function App() {
     setSharedArray('dictionary', updated);
   };
 
+  const handleUpdateDictionary = (updatedItem) => {
+    const updated = dictionary.map(item => item.id === updatedItem.id ? updatedItem : item);
+    setDictionary(updated);
+    setSharedArray('dictionary', updated);
+  };
+
   const handleDeleteDictionary = (id) => {
     const updated = dictionary.filter(item => item.id !== id);
     setDictionary(updated);
@@ -212,6 +219,7 @@ function App() {
             dictionary={dictionary}
             roleplay={roleplay}
             onAddDictionary={handleAddDictionary}
+            onUpdateDictionary={handleUpdateDictionary}
             onDeleteDictionary={handleDeleteDictionary}
             onAddRoleplay={handleAddRoleplay}
             onUpdateRoleplay={handleUpdateRoleplay}

@@ -1,24 +1,42 @@
-import { useState } from 'react';
-import { Plus, BookOpen, Award, CheckCircle, FileText, Trash2, Edit3, X, Upload, Users, Key } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, BookOpen, Award, CheckCircle, FileText, Trash2, Edit3, X, Upload, Users, Key, BarChart2, MessageSquare, LayoutTemplate } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 
 export default function AdminPanel({ 
   dictionary, 
   roleplay, 
   onAddDictionary, 
+  onUpdateDictionary,
   onDeleteDictionary,
   onAddRoleplay, 
   onUpdateRoleplay,
-  onDeleteRoleplay 
+  onDeleteRoleplay
 }) {
-  const [activeTab, setActiveTab] = useState('dict'); // 'dict', 'role', or 'users'
+  const [activeTab, setActiveTab] = useState('dashboard'); // Default to dashboard
 
-  // User list state
-  const [usersList, setUsersList] = useState(() => {
-    return JSON.parse(localStorage.getItem('users') || '[]');
-  });
+  const [usersList, setUsersList] = useState([]);
+  const [threadsList, setThreadsList] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAdminData = async () => {
+      const users = await getSharedArray('users', []);
+      const threads = await getSharedArray('threads', []);
+      if (!isMounted) return;
+      setUsersList(users);
+      setThreadsList(threads);
+    };
+
+    fetchAdminData();
+    const interval = setInterval(fetchAdminData, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Dict Form State
+  const [editingDictId, setEditingDictId] = useState(null); // null means adding mode
   const [dictCategory, setDictCategory] = useState('ojigi');
   const [dictTitleJp, setDictTitleJp] = useState('');
   const [dictTitleVi, setDictTitleVi] = useState('');
@@ -54,13 +72,34 @@ export default function AdminPanel({
     }
   };
 
+  const resetDictForm = () => {
+    setEditingDictId(null);
+    setDictCategory('ojigi');
+    setDictTitleJp('');
+    setDictTitleVi('');
+    setDictFrontDesc('');
+    setDictDos('');
+    setDictDonts('');
+  };
+
   const loadDictTemplate = () => {
+    setEditingDictId(null);
     setDictCategory('meishi');
     setDictTitleJp('電話応対 (Denwa Outai)');
     setDictTitleVi('Nhận điện thoại công sở');
     setDictFrontDesc('Quy tắc trả lời điện thoại chuyên nghiệp khi đối tác/khách hàng gọi tới văn phòng.');
     setDictDos("Nhấc máy nhanh trước tiếng chuông thứ 3.\nNói lời chào tiêu chuẩn: 'Luôn cảm ơn quý khách đã ủng hộ'.\nGhi chép cẩn thận thông tin người gọi.");
     setDictDonts("Không để chuông reo quá 3 lần mà không xin lỗi vì sự chậm trễ.\nKhông cúp máy trước đối tác.");
+  };
+
+  const startEditDict = (item) => {
+    setEditingDictId(item.id);
+    setDictCategory(item.category);
+    setDictTitleJp(item.titleJp);
+    setDictTitleVi(item.titleVi);
+    setDictFrontDesc(item.frontDesc || '');
+    setDictDos((item.dos || []).join('\n'));
+    setDictDonts((item.donts || []).join('\n'));
   };
 
   const loadRoleplayTemplate = () => {
@@ -81,7 +120,7 @@ export default function AdminPanel({
     if (!dictTitleJp || !dictTitleVi || !dictFrontDesc) return;
 
     const newItem = {
-      id: `custom-dict-${Date.now()}`,
+      id: editingDictId !== null ? editingDictId : `custom-dict-${Date.now()}`,
       category: dictCategory,
       titleJp: dictTitleJp,
       titleVi: dictTitleVi,
@@ -90,15 +129,16 @@ export default function AdminPanel({
       donts: dictDonts.split('\n').filter(line => line.trim() !== '')
     };
 
-    onAddDictionary(newItem);
-    setNotification('Đã thêm thẻ quy tắc mới thành công!');
+    if (editingDictId !== null) {
+      onUpdateDictionary(newItem);
+      setNotification('Đã cập nhật thẻ quy tắc thành công!');
+    } else {
+      onAddDictionary(newItem);
+      setNotification('Đã thêm thẻ quy tắc mới thành công!');
+    }
+    
     setTimeout(() => setNotification(''), 3000);
-
-    setDictTitleJp('');
-    setDictTitleVi('');
-    setDictFrontDesc('');
-    setDictDos('');
-    setDictDonts('');
+    resetDictForm();
   };
 
   const handleRoleSubmit = (e) => {
@@ -213,6 +253,26 @@ export default function AdminPanel({
     }
   };
 
+  const handleUpdateUserRole = async (email, newRole) => {
+    if (window.confirm(`Bạn có chắc muốn thay đổi quyền của ${email} thành ${newRole}?`)) {
+      const currentUsers = await getSharedArray('users', []);
+      const updated = currentUsers.map(u => {
+        if (u.email === email) {
+          return {
+            ...u,
+            isAdmin: newRole === 'admin',
+            isSenpai: newRole === 'senpai' || newRole === 'admin'
+          };
+        }
+        return u;
+      });
+      await setSharedArray('users', updated);
+      setUsersList(updated);
+      setNotification(`Đã cập nhật quyền của ${email} thành ${newRole.toUpperCase()}.`);
+      setTimeout(() => setNotification(''), 3000);
+    }
+  };
+
   const handleResetUserPassword = async (email) => {
     if (window.confirm(`Bạn có muốn reset mật khẩu của tài khoản ${email} về mặc định "123456"?`)) {
       const currentUsers = await getSharedArray('users', []);
@@ -229,12 +289,11 @@ export default function AdminPanel({
     }
   };
 
-  // Refresh users list when switching to user tab
+  // Refresh data list when switching tab
   const switchTab = async (tab) => {
     setActiveTab(tab);
-    if (tab === 'users') {
-      setUsersList(await getSharedArray('users', []));
-    }
+    setUsersList(await getSharedArray('users', []));
+    setThreadsList(await getSharedArray('threads', []));
   };
 
   return (
@@ -251,19 +310,65 @@ export default function AdminPanel({
         </div>
       )}
 
-      <div className="filter-tabs" style={{ justifyContent: 'flex-start', marginBottom: '2rem' }}>
-        <button className={`tab-btn ${activeTab === 'dict' ? 'active' : ''}`} onClick={() => switchTab('dict')}>
-          <BookOpen size={14} style={{ display: 'inline', marginRight: '5px' }} /> Quản lý Sổ tay văn hóa
+      <div className="filter-tabs" style={{ justifyContent: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <button className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => switchTab('dashboard')}>
+          <BarChart2 size={14} style={{ display: 'inline', marginRight: '5px' }} /> Tổng quan
         </button>
-        <button className={`tab-btn ${activeTab === 'role' ? 'active' : ''}`} onClick={() => switchTab('role')}>
-          <Award size={14} style={{ display: 'inline', marginRight: '5px' }} /> Quản lý Tình huống
+        <button className={`tab-btn ${activeTab === 'community' ? 'active' : ''}`} onClick={() => switchTab('community')}>
+          <MessageSquare size={14} style={{ display: 'inline', marginRight: '5px' }} /> Quản lý Cộng đồng
         </button>
         <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => switchTab('users')}>
           <Users size={14} style={{ display: 'inline', marginRight: '5px' }} /> Quản lý Tài khoản ({usersList.length})
         </button>
+        <button className={`tab-btn ${activeTab === 'dict' ? 'active' : ''}`} onClick={() => switchTab('dict')}>
+          <BookOpen size={14} style={{ display: 'inline', marginRight: '5px' }} /> Sổ tay văn hóa
+        </button>
+        <button className={`tab-btn ${activeTab === 'role' ? 'active' : ''}`} onClick={() => switchTab('role')}>
+          <Award size={14} style={{ display: 'inline', marginRight: '5px' }} /> Tình huống
+        </button>
       </div>
 
-      {activeTab === 'users' ? (
+      {activeTab === 'dashboard' && (
+        <div className="admin-card" style={{ padding: '2rem' }}>
+          <h3 style={{ color: 'var(--jp-blue)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BarChart2 size={20} /> Tổng quan Hệ thống
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ background: 'var(--jp-blue-light)', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--jp-blue)' }}>{usersList.length}</div>
+              <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Người dùng</div>
+            </div>
+            <div style={{ background: 'var(--jp-soft-red)', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--jp-red)' }}>{threadsList.length}</div>
+              <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Chủ đề Góc Senpai</div>
+            </div>
+            <div style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: '#333' }}>
+                {threadsList.reduce((acc, t) => acc + (t.answers?.length || 0), 0)}
+              </div>
+              <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Bình luận Góc Senpai</div>
+            </div>
+            <div style={{ background: '#f0fdf4', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: '#166534' }}>{dictionary.length + roleplay.length}</div>
+              <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Nội dung bài học</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'community' && (
+        <div className="admin-card" style={{ padding: '2rem' }}>
+          <h3 style={{ color: 'var(--jp-blue)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <MessageSquare size={20} /> Quản lý các bài đăng cộng đồng
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--jp-text-muted)', marginBottom: '1rem' }}>Admin có thể trực tiếp xóa các bài đăng và bình luận trên Góc Senpai tại hệ thống trang chủ. Tính năng quản lý tập trung sẽ sớm được ra mắt.</p>
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <a href="#" onClick={(e) => { e.preventDefault(); /* Need a way to jump to community or just let user click Navbar */ alert("Vui lòng truy cập trang Góc Senpai để quản lý trực tiếp với vai trò Admin."); }} className="btn btn-primary" style={{ display: 'inline-block' }}>Đến trang Góc Senpai</a>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
         // Tab Quản lý tài khoản
         <div className="admin-card" style={{ padding: '2rem' }}>
           <h3 style={{ color: 'var(--jp-blue)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -281,6 +386,7 @@ export default function AdminPanel({
                     <th style={{ padding: '0.75rem' }}>Thông tin thành viên</th>
                     <th style={{ padding: '0.75rem' }}>Mục tiêu nghề nghiệp</th>
                     <th style={{ padding: '0.75rem' }}>Câu hỏi bảo mật</th>
+                    <th style={{ padding: '0.75rem' }}>Vai trò (Role)</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Thao tác</th>
                   </tr>
                 </thead>
@@ -311,6 +417,18 @@ export default function AdminPanel({
                           <span style={{ color: 'var(--jp-red)' }}>⚠️ Chưa thiết lập câu hỏi bảo mật</span>
                         )}
                       </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <select 
+                          className="form-input" 
+                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                          value={user.isAdmin ? 'admin' : user.isSenpai ? 'senpai' : 'student'}
+                          onChange={(e) => handleUpdateUserRole(user.email, e.target.value)}
+                        >
+                          <option value="student">Học viên</option>
+                          <option value="senpai">Senpai</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
                       <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                           <button
@@ -338,17 +456,27 @@ export default function AdminPanel({
             </div>
           )}
         </div>
-      ) : (
+      )}
+      
+      {(activeTab === 'dict' || activeTab === 'role') && (
         <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
           {/* Left Side: Creation/Update Forms */}
           <div className="admin-card">
             {activeTab === 'dict' ? (
               <form onSubmit={handleAddDictSubmit}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.1rem' }}>Thêm quy tắc văn hóa (Flashcard) mới</h3>
-                  <button type="button" className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={loadDictTemplate}>
-                    <FileText size={12} /> Tải mẫu nhanh
-                  </button>
+                  <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.1rem' }}>
+                    {editingDictId !== null ? 'Chỉnh sửa thẻ quy tắc' : 'Thêm quy tắc văn hóa (Flashcard) mới'}
+                  </h3>
+                  {editingDictId !== null ? (
+                    <button type="button" className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: 'var(--jp-red)' }} onClick={resetDictForm}>
+                      <X size={12} /> Hủy sửa
+                    </button>
+                  ) : (
+                    <button type="button" className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={loadDictTemplate}>
+                      <FileText size={12} /> Tải mẫu nhanh
+                    </button>
+                  )}
                 </div>
                 
                 <div className="form-group">
@@ -388,7 +516,7 @@ export default function AdminPanel({
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                  <Plus size={16} /> Thêm Thẻ Quy Tắc
+                  <Plus size={16} /> {editingDictId !== null ? 'Lưu thay đổi' : 'Thêm Thẻ Quy Tắc'}
                 </button>
               </form>
             ) : (
@@ -510,7 +638,15 @@ export default function AdminPanel({
                           <div style={{ fontSize: '0.75rem', color: 'var(--jp-text-muted)' }}>{item.titleJp}</div>
                         </td>
                         <td style={{ padding: '0.5rem' }}><code>{item.category}</code></td>
-                        <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                        <td style={{ padding: '0.5rem', textAlign: 'center', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => startEditDict(item)}
+                            style={{ background: 'none', border: 'none', color: 'var(--jp-blue)', cursor: 'pointer' }}
+                            title="Sửa thẻ quy tắc"
+                          >
+                            <Edit3 size={14} />
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteDictItem(item.id)}

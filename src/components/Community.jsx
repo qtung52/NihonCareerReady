@@ -45,14 +45,32 @@ const INITIAL_THREADS = [
   }
 ];
 
-// Format timestamp as a fixed calendar time so sample posts do not age differently per viewer.
-function formatDate(isoString) {
+// Calculate relative time (e.g. "2 giờ trước") from a fixed date
+function timeAgo(isoString) {
   if (!isoString) return '';
-  const d = new Date(isoString);
-  if (isNaN(d)) return isoString;
+  const date = new Date(isoString);
+  if (isNaN(date)) return isoString;
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+
+  if (diffInSeconds < 0) return 'Vừa xong';
+  if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
   
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} lúc ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} giờ trước`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays} ngày trước`;
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `${diffInMonths} tháng trước`;
+  
+  const diffInYears = Math.floor(diffInDays / 365);
+  return `${diffInYears} năm trước`;
 }
 
 // Mask email for privacy: nguyen.van.a@gmail.com → ngu****@***.com
@@ -159,7 +177,7 @@ export default function Community({ currentUser }) {
               id: Date.now() + Math.random(),
               author: currentUser ? currentUser.name : "Thành viên",
               authorEmail: currentUser ? currentUser.email : "anonymous@nihon.com",
-              role: currentUser && currentUser.isAdmin ? "Senpai (Quản trị viên)" : "Kouhai (Học viên)",
+              role: currentUser && currentUser.isAdmin ? "Quản trị viên" : currentUser && currentUser.isSenpai ? "Senpai" : "Học viên",
               date: new Date().toISOString(),
               content: text.trim()
             }
@@ -302,16 +320,15 @@ export default function Community({ currentUser }) {
                         >
                           {thread.author}
                         </strong>{' '}
-                        • {formatDate(thread.date) || thread.date}
+                        • {timeAgo(thread.date) || thread.date}
                       </span>
                     </div>
-                    {canDeleteThread && (
-                      <button
-                        onClick={() => handleDeleteThread(thread.id)}
-                        style={{ border: 'none', background: 'none', color: 'var(--jp-red)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.8rem' }}
-                        title="Xóa câu hỏi này"
+                    {currentUser && (currentUser.email === thread.authorEmail || currentUser.isAdmin) && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteThread(thread.id); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--jp-red)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
                       >
-                        <Trash2 size={14} /> Xóa
+                        <Trash2 size={14} /> Xóa bài
                       </button>
                     )}
                   </div>
@@ -339,7 +356,7 @@ export default function Community({ currentUser }) {
                               <span className="ans-badge" style={{ background: ans.role.includes('Senpai') || ans.role.includes('Lead') ? '#bc002d' : 'var(--jp-blue)' }}>{ans.role}</span>
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{formatDate(ans.date) || ans.date}</span>
+                              <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{timeAgo(ans.date) || ans.date}</span>
                               {canDeleteReply && (
                                 <button
                                   onClick={() => handleDeleteReply(thread.id, ans.id)}

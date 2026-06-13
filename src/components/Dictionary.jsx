@@ -296,7 +296,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
             className="flashcard-container"
             onClick={() => handleCardClick(item.id)}
             style={{
-              height: '320px',
+              height: '420px',
               perspective: '1000px',
               cursor: 'pointer'
             }}
@@ -317,7 +317,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
                 background: '#ffffff',
                 border: '1px solid var(--jp-border)',
                 borderRadius: '12px',
-                padding: '1.25rem',
+                padding: '1rem',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -387,7 +387,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
                 background: '#ffffff',
                 border: '1px solid var(--jp-border)',
                 borderRadius: '12px',
-                padding: '1.25rem',
+                padding: '1rem',
                 transform: 'rotateY(180deg)',
                 display: 'flex',
                 flexDirection: 'column',

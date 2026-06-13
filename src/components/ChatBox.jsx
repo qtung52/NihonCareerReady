@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Cpu, WifiOff } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
-// Gemini API key from Google AI Studio. If missing, chat falls back to local canned replies.
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+// Groq API key from https://console.groq.com/keys
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 
 const SYSTEM_PROMPT = `Bạn là AI hỗ trợ tích hợp trên nền tảng NihonLink - nền tảng hỗ trợ người Việt Nam làm việc tại Nhật Bản.
 Nhiệm vụ của bạn:
@@ -64,12 +65,12 @@ export default function ChatBox({ currentUser }) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [chatMode, setChatMode] = useState('ai');
   const [inputValue, setInputValue] = useState('');
-  const [aiMode, setAiMode] = useState(GEMINI_API_KEY ? 'gemini' : 'offline');
+  const [aiMode, setAiMode] = useState(GROQ_API_KEY ? 'groq' : 'offline');
   const [isStreaming, setIsStreaming] = useState(false);
 
-  const welcomeText = GEMINI_API_KEY
-    ? 'Chào bạn! Mình là AI Trợ Lý NihonLink, chạy bằng Gemini AI ✨ Hỏi mình bất cứ điều gì về văn hóa doanh nghiệp Nhật, phỏng vấn, viết CV hay cuộc sống tại Nhật nhé! 🤖'
-    : 'Chào bạn! Mình là AI Trợ Lý NihonLink. Chưa có Gemini API key nên mình đang dùng chế độ trả lời mẫu. Hỏi mình về văn hóa Nhật, phỏng vấn, viết CV nhé! 🌸';
+  const welcomeText = GROQ_API_KEY
+    ? 'Chào bạn! Mình là AI Trợ Lý NihonLink, bạn có thể hỏi mình bất cứ điều gì về văn hóa doanh nghiệp Nhật, phỏng vấn, viết CV hay cuộc sống tại Nhật nhé! 🤖'
+    : 'Chào bạn! Mình là AI Trợ Lý NihonLink. Chưa có Groq API key nên mình đang dùng chế độ trả lời mẫu. Hỏi mình về văn hóa Nhật, phỏng vấn, viết CV nhé! 🌸';
 
   const [aiMessages, setAiMessages] = useState([
     { id: 1, sender: 'bot', text: welcomeText, time: 'Vừa xong' }
@@ -88,24 +89,33 @@ export default function ChatBox({ currentUser }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [aiMessages, senpaiMinhMessages, senpaiTrangMessages, isTyping, chatMode, isOpen, isMinimized, streamingText]);
 
-  // --- Gemini API streaming (for Vercel deploy) ---
-  const callGeminiStreaming = async (userText, onChunk, onDone, onError) => {
+  // --- Groq API streaming (for Vercel deploy) ---
+  const callGroqStreaming = async (userText, onChunk, onDone, onError) => {
     abortControllerRef.current = new AbortController();
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: abortControllerRef.current.signal,
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: userText }] }],
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
-          })
-        }
-      );
-      if (!res.ok) throw new Error(`Gemini ${res.status}`);
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        signal: abortControllerRef.current.signal,
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile', // Updated model since llama3-8b-8192 is decommissioned
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userText }
+          ],
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 400
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Groq ${res.status}: ${errText}`);
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -116,12 +126,19 @@ export default function ChatBox({ currentUser }) {
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         // SSE format: each line starts with 'data: '
-        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+        const lines = chunk.split('\n').filter(l => l.trim() !== '' && l.startsWith('data: '));
         for (const line of lines) {
+          if (line === 'data: [DONE]') {
+            onDone(fullText);
+            return;
+          }
           try {
             const json = JSON.parse(line.slice(6));
-            const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            if (text) { fullText += text; onChunk(fullText); }
+            const text = json.choices?.[0]?.delta?.content || '';
+            if (text) {
+              fullText += text;
+              onChunk(fullText);
+            }
           } catch { /* skip */ }
         }
       }
@@ -145,7 +162,7 @@ export default function ChatBox({ currentUser }) {
     if (chatMode === 'ai') {
       setAiMessages(prev => [...prev, userMsg]);
 
-      const callFn = aiMode === 'gemini' ? callGeminiStreaming : null;
+      const callFn = aiMode === 'groq' ? callGroqStreaming : null;
 
       if (callFn) {
         setIsStreaming(true);
@@ -166,11 +183,24 @@ export default function ChatBox({ currentUser }) {
             setIsStreaming(false);
           },
           (error) => {
-            console.error('AI error:', error);
+            console.error('AI error details:', error);
+            let errorMsg = '⚠️ Lỗi không xác định.';
+            if (aiMode === 'groq') {
+              if (error.message.includes('429')) {
+                errorMsg = '⚠️ Lỗi 429: API Key của bạn đã bị giới hạn.';
+              } else if (error.message.includes('401')) {
+                errorMsg = '⚠️ Lỗi 401: Groq API Key không hợp lệ. Vui lòng kiểm tra lại.';
+              } else {
+                errorMsg = `⚠️ Lỗi Groq API: ${error.message}`;
+              }
+            } else {
+              errorMsg = '⚠️ Lỗi kết nối Ollama.';
+            }
+
             setAiMessages(prev => [...prev, {
               id: Date.now() + 2,
               sender: 'bot',
-              text: '⚠️ Lỗi kết nối Gemini API. Mình đã chuyển sang chế độ trả lời mẫu để app vẫn dùng được.',
+              text: errorMsg,
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }]);
             setStreamingText('');
@@ -253,22 +283,11 @@ export default function ChatBox({ currentUser }) {
   };
 
   const getPartnerName = () => {
-    switch (chatMode) {
-      case 'ai':
-        return aiMode === 'gemini' ? 'Gemini AI Hỗ trợ' : 'AI Hỗ trợ (Trả lời mẫu)';
-      case 'minh': return 'Senpai Minh (Bridge SE)';
-      case 'trang': return 'Senpai Trang (Logistics)';
-      default: return 'NihonLink Help';
-    }
+    return aiMode === 'groq' ? 'Trợ Lý AI NihonLink' : 'AI Hỗ trợ (Trả lời mẫu)';
   };
 
   const getPartnerAvatar = () => {
-    switch (chatMode) {
-      case 'ai': return '🤖';
-      case 'minh': return '👨‍💼';
-      case 'trang': return '👩‍💼';
-      default: return '🧑‍💻';
-    }
+    return '🤖';
   };
 
   if (!currentUser) return null;
@@ -385,13 +404,10 @@ export default function ChatBox({ currentUser }) {
               {getPartnerName()}
             </h4>
             <span style={{ fontSize: '0.68rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '3px' }}>
-              {chatMode === 'ai' ? (
-                <>
-                  {aiMode === 'gemini' ? <Cpu size={10} /> : <WifiOff size={10} />}
-                  {aiMode === 'gemini' ? 'Gemini API đang bật' : 'Chế độ trả lời mẫu'}
-                </>
+              {aiMode === 'groq' ? (
+                <><Cpu size={10} /> Llama 3.3 đang bật</>
               ) : (
-                <><span style={{ color: '#2ecc71' }}>●</span> online</>
+                <><WifiOff size={10} /> Chế độ trả lời mẫu</>
               )}
             </span>
           </div>
@@ -415,65 +431,6 @@ export default function ChatBox({ currentUser }) {
 
       {!isMinimized && (
         <>
-          {/* Mode Selector Tabs */}
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--jp-surface-raised)',
-              borderBottom: '1px solid var(--jp-border)',
-              fontSize: '0.75rem',
-              fontWeight: 600
-            }}
-          >
-            {[
-              { key: 'ai', label: 'AI Hỗ trợ', icon: <Bot size={13} /> },
-              { key: 'minh', label: 'Senpai Minh', icon: <span style={{ fontSize: '0.8rem' }}>👨‍💼</span> },
-              { key: 'trang', label: 'Senpai Trang', icon: <span style={{ fontSize: '0.8rem' }}>👩‍💼</span> }
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setChatMode(tab.key)}
-                style={{
-                  flex: 1,
-                  padding: '0.6rem 0.25rem',
-                  border: 'none',
-                  background: chatMode === tab.key ? 'var(--jp-card-bg)' : 'transparent',
-                  color: chatMode === tab.key
-                    ? (tab.key === 'ai' ? 'var(--jp-red)' : 'var(--jp-blue)')
-                    : 'var(--jp-text-muted)',
-                  borderBottom: chatMode === tab.key
-                    ? `2.5px solid ${tab.key === 'ai' ? 'var(--jp-red)' : 'var(--jp-blue)'}`
-                    : 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.25rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {tab.icon} {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Gemini Status Banner */}
-          {chatMode === 'ai' && aiMode !== 'gemini' && (
-            <div style={{
-              padding: '0.5rem 0.75rem',
-              background: 'var(--jp-soft-red)',
-              borderBottom: '1px solid rgba(243,156,18,0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              fontSize: '0.72rem',
-              color: '#d68910'
-            }}>
-              <WifiOff size={12} />
-              <span>Chưa cấu hình Gemini API key hoặc API vừa lỗi. Đang dùng chế độ trả lời mẫu.</span>
-            </div>
-          )}
-
           {/* Quick FAQ Chips (AI mode only) */}
           {chatMode === 'ai' && (
             <div
@@ -574,10 +531,11 @@ export default function ChatBox({ currentUser }) {
                         border: isUser ? 'none' : '1px solid rgba(15,44,89,0.07)',
                         borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                         wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap'
+                        whiteSpace: isUser ? 'pre-wrap' : 'normal'
                       }}
+                      className={!isUser ? 'markdown-body' : ''}
                     >
-                      {msg.text}
+                      {isUser ? msg.text : <ReactMarkdown>{msg.text}</ReactMarkdown>}
                     </div>
                     <span
                       style={{
@@ -617,18 +575,11 @@ export default function ChatBox({ currentUser }) {
                     border: '1px solid rgba(15,44,89,0.07)',
                     borderRadius: '14px 14px 14px 2px',
                     wordBreak: 'break-word',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {streamingText}
-                    <span style={{
-                      display: 'inline-block',
-                      width: '2px',
-                      height: '14px',
-                      background: 'var(--jp-blue)',
-                      marginLeft: '2px',
-                      verticalAlign: 'middle',
-                      animation: 'blink 0.8s step-end infinite'
-                    }} />
+                    whiteSpace: 'normal'
+                  }}
+                    className="markdown-body"
+                  >
+                    <ReactMarkdown>{streamingText + ' ▍'}</ReactMarkdown>
                   </div>
                 </div>
               </div>
