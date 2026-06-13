@@ -255,14 +255,15 @@ export default function Profile({ currentUser, onUpdateProfile }) {
                 alignItems: 'center',
                 gap: '0.5rem'
               }}>
-                <span style={{ 
-                  background: currentUser.isAdmin ? 'linear-gradient(135deg, #ff4b4b, #ff904b, #f9cb28, #4bcf6d, #4b90ff, #994bff)' : currentUser.isSenpai ? 'var(--jp-blue)' : '#eee', 
-                  color: currentUser.isAdmin || currentUser.isSenpai ? 'white' : '#666',
+                <span 
+                  className={currentUser.isAdmin ? 'admin-rgb-tag' : ''}
+                  style={{ 
+                  background: !currentUser.isAdmin && currentUser.isSenpai ? 'var(--jp-blue)' : !currentUser.isAdmin ? '#eee' : undefined, 
+                  color: !currentUser.isAdmin && currentUser.isSenpai ? 'white' : !currentUser.isAdmin ? '#666' : undefined,
                   fontSize: '0.85rem', 
                   padding: '4px 12px', 
                   borderRadius: '12px',
-                  fontWeight: currentUser.isAdmin ? 'bold' : 'normal',
-                  boxShadow: currentUser.isAdmin ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                  fontWeight: !currentUser.isAdmin ? 'normal' : undefined,
                   display: 'inline-block'
                 }}>
                   {currentUser.isAdmin ? 'Quản trị viên (Admin)' : currentUser.isSenpai ? 'Senpai' : 'Học viên'}

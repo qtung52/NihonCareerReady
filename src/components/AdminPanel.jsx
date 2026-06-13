@@ -391,7 +391,7 @@ export default function AdminPanel({
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+              <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--jp-border)', textAlign: 'left', background: 'var(--jp-blue-light)' }}>
                     <th style={{ padding: '0.75rem' }}>Thông tin thành viên</th>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase } from 'lucide-react';
+import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search } from 'lucide-react';
 import { getSharedArray, isSupabaseEnabled, setSharedArray } from '../lib/sharedStore';
 
 const INITIAL_THREADS = [
@@ -12,6 +12,7 @@ const INITIAL_THREADS = [
     authorEmail: "kouhai@nihon.com",
     date: "2026-06-11T07:40:00Z", // Fixed ISO string representing a past time
     content: "Mọi người ơi, em chuẩn bị đi thực tập ở một công ty Nhật. Em nghe bảo đi làm bên Nhật tối ngày phải đi nhậu với sếp đúng không ạ? Em không biết uống bia rượu thì có sao không và có quy tắc gì đặc biệt khi rót bia cho sếp không ạ?",
+    likes: ["minh@nihon.com", "trang@nihon.com"],
     answers: [
       {
         id: 101,
@@ -32,6 +33,7 @@ const INITIAL_THREADS = [
     authorEmail: "trang@nihon.com",
     date: "2026-06-10T17:40:00Z", // Fixed ISO string representing a past time
     content: "Em mới đi làm tuần đầu, lỡ tay nhập sai một số liệu nhỏ trong báo cáo. Em tự phát hiện ra và sửa lại ngay lập tức. Nhưng lúc sếp phát hiện em tự sửa mà không báo cáo, sếp đã mắng em rất nghiêm trọng trước văn phòng. Em thấy rất tủi thân, lỗi nhỏ thôi mà sếp làm quá vậy ạ?",
+    likes: ["hieu@nihon.com"],
     answers: [
       {
         id: 102,
@@ -87,6 +89,8 @@ function maskEmail(email) {
 export default function Community({ currentUser }) {
   const [threads, setThreads] = useState([]);
   const [activeTag, setActiveTag] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
   
   // Post question form state
   const [newTitle, setNewTitle] = useState('');
@@ -95,6 +99,14 @@ export default function Community({ currentUser }) {
 
   // Reply state
   const [replyTexts, setReplyTexts] = useState({});
+  const [expandedThreads, setExpandedThreads] = useState({});
+
+  const toggleExpand = (threadId) => {
+    setExpandedThreads(prev => ({
+      ...prev,
+      [threadId]: !prev[threadId]
+    }));
+  };
 
   // View User Profile Modal State
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
@@ -195,6 +207,10 @@ export default function Community({ currentUser }) {
       ...prev,
       [threadId]: ''
     }));
+    setExpandedThreads(prev => ({
+      ...prev,
+      [threadId]: true
+    }));
   };
 
   const handleDeleteThread = (threadId) => {
@@ -217,6 +233,29 @@ export default function Community({ currentUser }) {
       });
       saveThreads(updated);
     }
+  };
+
+  const handleLikeThread = (threadId) => {
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để thích câu hỏi!");
+      return;
+    }
+    const userEmail = currentUser.email;
+    const updated = threads.map(t => {
+      if (t.id === threadId) {
+        const likes = t.likes || [];
+        const isLiked = likes.includes(userEmail);
+        const updatedLikes = isLiked 
+          ? likes.filter(email => email !== userEmail) 
+          : [...likes, userEmail];
+        return {
+          ...t,
+          likes: updatedLikes
+        };
+      }
+      return t;
+    });
+    saveThreads(updated);
   };
 
   const getUserRole = (email, fallbackRole) => {
@@ -273,9 +312,28 @@ export default function Community({ currentUser }) {
     }));
   };
 
-  const filteredThreads = activeTag === 'all'
-    ? threads
-    : threads.filter(t => t.tag === activeTag);
+  const filteredThreads = threads
+    .filter(t => {
+      const matchesTag = activeTag === 'all' || t.tag === activeTag;
+      const matchesSearch = searchQuery.trim() === '' || 
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.author.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesTag && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'popular') {
+        const aLikes = a.likes?.length || 0;
+        const bLikes = b.likes?.length || 0;
+        return bLikes - aLikes;
+      }
+      if (sortBy === 'replies') {
+        const aReplies = a.answers?.length || 0;
+        const bReplies = b.answers?.length || 0;
+        return bReplies - aReplies;
+      }
+      return new Date(b.date) - new Date(a.date);
+    });
 
   return (
     <div>
@@ -301,17 +359,48 @@ export default function Community({ currentUser }) {
       <div className="community-layout">
         {/* Left Side: Threads List */}
         <div>
-          <div className="filter-tabs" style={{ justifyContent: 'flex-start' }}>
+          <div className="filter-tabs" style={{ justifyContent: 'flex-start', marginBottom: '1rem' }}>
             <button className={`tab-btn ${activeTag === 'all' ? 'active' : ''}`} onClick={() => setActiveTag('all')}>Tất cả</button>
             <button className={`tab-btn ${activeTag === 'culture-shock' ? 'active' : ''}`} onClick={() => setActiveTag('culture-shock')}>Sốc văn hóa</button>
             <button className={`tab-btn ${activeTag === 'interview' ? 'active' : ''}`} onClick={() => setActiveTag('interview')}>Phỏng vấn</button>
             <button className={`tab-btn ${activeTag === 'tips' ? 'active' : ''}`} onClick={() => setActiveTag('tips')}>Mẹo làm việc</button>
           </div>
 
+          {/* Search & Sort Bar */}
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: '260px', position: 'relative' }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Tìm kiếm câu hỏi, từ khóa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: '2.5rem', borderRadius: '30px' }}
+              />
+              <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)' }} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--jp-text-muted)', whiteSpace: 'nowrap' }}>Sắp xếp:</span>
+              <select
+                className="form-input"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ width: 'auto', padding: '0.3rem 2rem 0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', height: 'auto', border: '1px solid var(--jp-border)' }}
+              >
+                <option value="newest">Mới nhất</option>
+                <option value="popular">Yêu thích nhất</option>
+                <option value="replies">Thảo luận nhiều</option>
+              </select>
+            </div>
+          </div>
+
           <div className="question-list">
             {filteredThreads.map(thread => {
-              // Phân quyền chuẩn: Chỉ chủ sở hữu bài đăng đó hoặc Admin mới được xóa
               const canDeleteThread = currentUser && (currentUser.isAdmin || currentUser.email === thread.authorEmail);
+              const likesList = thread.likes || [];
+              const isLiked = currentUser ? likesList.includes(currentUser.email) : false;
+              const likesCount = likesList.length;
               
               return (
                 <div key={thread.id} className="q-card">
@@ -345,73 +434,123 @@ export default function Community({ currentUser }) {
                   <h3 className="q-title">{thread.title}</h3>
                   <p className="q-content">{thread.content}</p>
 
-                  <div className="q-answers">
-                    <h4 style={{ fontSize: '0.85rem', color: 'var(--jp-blue)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <MessageSquare size={14} /> Trả lời ({thread.answers.length})
-                    </h4>
-                    {thread.answers.map((ans) => {
+                  <div className="q-answers" style={{ borderTop: '1px solid var(--jp-border)', paddingTop: '1rem', marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem' }}>
+                      <button
+                        onClick={() => handleLikeThread(thread.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.85rem',
+                          color: isLiked ? 'var(--jp-red)' : 'var(--jp-text-muted)',
+                          padding: 0
+                        }}
+                        className="like-btn"
+                        title={isLiked ? "Bỏ thích" : "Thích câu hỏi này"}
+                      >
+                        <Heart size={16} fill={isLiked ? 'var(--jp-red)' : 'none'} style={{ transition: 'fill 0.2s' }} />
+                        <span style={{ fontWeight: 600 }}>Thích ({likesCount})</span>
+                      </button>
+
+                      <div 
+                        style={{ fontSize: '0.85rem', color: 'var(--jp-blue)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}
+                        onClick={() => toggleExpand(thread.id)}
+                      >
+                        <MessageSquare size={16} /> Trả lời ({thread.answers.length})
+                        <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '4px' }}>
+                          {expandedThreads[thread.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {expandedThreads[thread.id] && (
+                      <div className="answers-dropdown-container">
+                        {thread.answers.map((ans) => {
                       const canDeleteReply = currentUser && (currentUser.isAdmin || currentUser.email === ans.authorEmail);
                       const displayRole = getUserRole(ans.authorEmail, ans.role);
                       const isAdmin = displayRole === 'Quản trị viên';
                       const isSenpai = displayRole.includes('Senpai') || displayRole.includes('Tech Lead') || displayRole.includes('Leader');
                       
                       return (
-                        <div key={ans.id || `ans-${Math.random()}`} className="ans-card">
-                          <div className="ans-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                              onClick={() => openUserProfile(ans.authorEmail, ans.author, displayRole)}
-                              title="Xem thông tin người dùng"
-                            >
-                              <strong style={{ color: 'var(--jp-blue)', textDecoration: 'underline' }}>{ans.author}</strong>
-                              <span style={{ 
-                                  fontSize: '0.7rem', 
-                                  background: isAdmin ? 'linear-gradient(135deg, #ff4b4b, #ff904b, #f9cb28, #4bcf6d, #4b90ff, #994bff)' : isSenpai ? 'var(--jp-blue)' : 'var(--jp-border)', 
-                                  color: isAdmin || isSenpai ? 'white' : 'var(--jp-text-muted)', 
-                                  padding: '2px 8px', 
-                                  borderRadius: '12px',
-                                  fontWeight: isAdmin ? 'bold' : 'normal',
-                                  border: 'none'
-                              }}>
-                                {displayRole}
+                        <div key={ans.id || `ans-${Math.random()}`} className="fb-comment-wrapper" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+                          <div 
+                            style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
+                            onClick={() => openUserProfile(ans.authorEmail, ans.author, displayRole)}
+                          >
+                            <span style={{ fontSize: '16px' }}>🧑‍💻</span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100% - 40px)' }}>
+                            <div className="fb-comment-bubble" style={{ background: 'var(--jp-surface-raised)', padding: '8px 12px', borderRadius: '18px', display: 'inline-block' }}>
+                              <span 
+                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2px' }}
+                                onClick={() => openUserProfile(ans.authorEmail, ans.author, displayRole)}
+                                title="Xem thông tin người dùng"
+                              >
+                                <strong style={{ fontSize: '0.85rem' }}>{ans.author}</strong>
+                                <span 
+                                  className={isAdmin ? 'admin-rgb-tag' : ''}
+                                  style={{ 
+                                    fontSize: '0.65rem', 
+                                    background: !isAdmin && isSenpai ? 'var(--jp-blue)' : !isAdmin ? 'var(--jp-border)' : undefined, 
+                                    color: !isAdmin && isSenpai ? 'white' : !isAdmin ? 'var(--jp-text-muted)' : undefined, 
+                                    padding: '2px 6px', 
+                                    borderRadius: '12px',
+                                    fontWeight: !isAdmin ? 'normal' : undefined,
+                                    border: 'none'
+                                }}>
+                                  {displayRole}
+                                </span>
                               </span>
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <p className="ans-body" style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>{ans.content}</p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '12px', marginTop: '4px' }}>
                               <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{timeAgo(ans.date) || ans.date}</span>
                               {canDeleteReply && (
                                 <button
                                   onClick={() => handleDeleteReply(thread.id, ans.id)}
-                                  style={{ border: 'none', background: 'none', color: 'var(--jp-red)', cursor: 'pointer', padding: 0 }}
+                                  style={{ border: 'none', background: 'none', color: 'var(--jp-red)', cursor: 'pointer', padding: 0, fontSize: '0.75rem', fontWeight: 600 }}
                                   title="Xóa bình luận này"
                                 >
-                                  <Trash2 size={12} />
+                                  Xóa
                                 </button>
                               )}
                             </div>
                           </div>
-                          <p className="ans-body">{ans.content}</p>
                         </div>
                       );
                     })}
                     
                     {/* Reply Form */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem', borderTop: '1px dashed var(--jp-border)', paddingTop: '1rem' }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ fontSize: '0.85rem' }}
-                        placeholder="Nhập câu trả lời hoặc ý kiến của bạn..."
-                        value={replyTexts[thread.id] || ''}
-                        onChange={(e) => handleReplyTextChange(thread.id, e.target.value)}
-                      />
-                      <button
-                        className="btn btn-secondary"
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
-                        onClick={() => handleAddReply(thread.id)}
-                      >
-                        <MessageCircle size={14} /> Trả lời
-                      </button>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                         {currentUser?.avatar && currentUser.avatar.startsWith('data:') ? <img src={currentUser.avatar} style={{width:'100%',height:'100%',borderRadius:'50%',objectFit:'cover'}} alt="avatar"/> : <span style={{fontSize:'16px'}}>🧑‍💻</span>}
+                      </div>
+                      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+                        <input
+                          type="text"
+                          className="form-input"
+                          style={{ fontSize: '0.85rem', borderRadius: '20px', paddingRight: '40px', background: 'var(--jp-surface-raised)', border: 'none' }}
+                          placeholder="Viết bình luận..."
+                          value={replyTexts[thread.id] || ''}
+                          onChange={(e) => handleReplyTextChange(thread.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleAddReply(thread.id);
+                          }}
+                        />
+                        <button
+                          style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: 'var(--jp-blue)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                          onClick={() => handleAddReply(thread.id)}
+                          title="Gửi bình luận"
+                        >
+                          <Send size={16} />
+                        </button>
+                      </div>                    </div>
                     </div>
+                    )}
                   </div>
                 </div>
               );
@@ -494,15 +633,18 @@ export default function Community({ currentUser }) {
               <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>
                 {selectedUserProfile.name}
               </h3>
-              <span className="ans-badge" style={{ 
-                background: selectedUserProfile.role === 'Quản trị viên' ? 'linear-gradient(135deg, #ff4b4b, #ff904b, #f9cb28, #4bcf6d, #4b90ff, #994bff)' : (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'var(--jp-blue)' : 'var(--jp-border)', 
-                color: selectedUserProfile.role === 'Quản trị viên' || (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'white' : 'var(--jp-text-muted)',
-                fontSize: '0.75rem', 
-                padding: '4px 12px', 
-                borderRadius: '12px',
-                fontWeight: selectedUserProfile.role === 'Quản trị viên' ? 'bold' : 'normal',
-                boxShadow: selectedUserProfile.role === 'Quản trị viên' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-                border: 'none'
+              <span 
+                className={selectedUserProfile.role === 'Quản trị viên' ? 'admin-rgb-tag' : ''}
+                style={{
+                  display: 'inline-block',
+                  padding: '0.3rem 0.8rem',
+                  borderRadius: '20px',
+                  background: selectedUserProfile.role !== 'Quản trị viên' && (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'var(--jp-blue)' : selectedUserProfile.role !== 'Quản trị viên' ? 'var(--jp-border)' : undefined, 
+                  color: selectedUserProfile.role !== 'Quản trị viên' && (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'white' : selectedUserProfile.role !== 'Quản trị viên' ? 'var(--jp-text-muted)' : undefined,
+                  fontSize: '0.85rem',
+                  marginTop: '0.5rem',
+                  fontWeight: selectedUserProfile.role !== 'Quản trị viên' ? 'normal' : undefined,
+                  border: 'none'
               }}>
                 {selectedUserProfile.role}
               </span>

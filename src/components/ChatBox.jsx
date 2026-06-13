@@ -62,6 +62,7 @@ const MOCK_SENPAI_REPLIES = {
 
 export default function ChatBox({ currentUser }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [chatMode, setChatMode] = useState('ai');
   const [inputValue, setInputValue] = useState('');
@@ -167,6 +168,14 @@ export default function ChatBox({ currentUser }) {
       if (error.name === 'AbortError') return;
       onError(error);
     }
+  };
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 300);
   };
 
   const handleSendMessage = async (e) => {
@@ -392,7 +401,9 @@ export default function ChatBox({ currentUser }) {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
+        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+        animation: isClosing ? 'modalPopOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        transformOrigin: 'bottom right'
       }}
     >
       {/* Header */}
@@ -455,7 +466,7 @@ export default function ChatBox({ currentUser }) {
             {isMinimized ? <Maximize2 size={15} /> : <Minimize2 size={15} />}
           </button>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', padding: '0.2rem' }}
           >
             <X size={16} />

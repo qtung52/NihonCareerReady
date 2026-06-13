@@ -219,37 +219,47 @@ export default function CVBuilder() {
               </p>
               
               <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 1:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="eduYear1" value={formData.eduYear1} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="eduMonth1" value={formData.eduMonth1} onChange={handleChange} placeholder="Tháng" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="eduYear1" value={formData.eduYear1} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="eduMonth1" value={formData.eduMonth1} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="eduDetail1" value={formData.eduDetail1} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
               </div>
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 2:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="eduYear2" value={formData.eduYear2} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="eduMonth2" value={formData.eduMonth2} onChange={handleChange} placeholder="Tháng" />
+              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 2:</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="eduYear2" value={formData.eduYear2} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="eduMonth2" value={formData.eduMonth2} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="eduDetail2" value={formData.eduDetail2} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
               </div>
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 3:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="eduYear3" value={formData.eduYear3} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="eduMonth3" value={formData.eduMonth3} onChange={handleChange} placeholder="Tháng" />
+              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 3:</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="eduYear3" value={formData.eduYear3} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="eduMonth3" value={formData.eduMonth3} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="eduDetail3" value={formData.eduDetail3} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
               </div>
 
               <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem', fontWeight: 600, borderTop: '1px solid var(--jp-border)', paddingTop: '1rem' }}>Lịch sử làm việc (Kinh nghiệm) 1:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="workYear1" value={formData.workYear1} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="workMonth1" value={formData.workMonth1} onChange={handleChange} placeholder="Tháng" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="workYear1" value={formData.workYear1} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="workMonth1" value={formData.workMonth1} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="workDetail1" value={formData.workDetail1} onChange={handleChange} placeholder="Tên công ty & Vào/Thôi việc" />
               </div>
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>Lịch sử làm việc 2:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="workYear2" value={formData.workYear2} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="workMonth2" value={formData.workMonth2} onChange={handleChange} placeholder="Tháng" />
+              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Lịch sử làm việc 2:</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="workYear2" value={formData.workYear2} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="workMonth2" value={formData.workMonth2} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="workDetail2" value={formData.workDetail2} onChange={handleChange} placeholder="Tên công ty & Vào/Thôi việc" />
               </div>
             </div>
@@ -262,16 +272,20 @@ export default function CVBuilder() {
               </p>
 
               <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Bằng cấp 1:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="licYear1" value={formData.licYear1} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="licMonth1" value={formData.licMonth1} onChange={handleChange} placeholder="Tháng" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="licYear1" value={formData.licYear1} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="licMonth1" value={formData.licMonth1} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="licDetail1" value={formData.licDetail1} onChange={handleChange} placeholder="Tên bằng cấp/chứng chỉ" />
               </div>
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>Bằng cấp 2:</h4>
-              <div className="form-row">
-                <input type="text" className="form-input" style={{ width: '70px' }} name="licYear2" value={formData.licYear2} onChange={handleChange} placeholder="Năm" />
-                <input type="text" className="form-input" style={{ width: '50px' }} name="licMonth2" value={formData.licMonth2} onChange={handleChange} placeholder="Tháng" />
+              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Bằng cấp 2:</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" className="form-input" style={{ width: '80px' }} name="licYear2" value={formData.licYear2} onChange={handleChange} placeholder="Năm" />
+                  <input type="text" className="form-input" style={{ width: '70px' }} name="licMonth2" value={formData.licMonth2} onChange={handleChange} placeholder="Tháng" />
+                </div>
                 <input type="text" className="form-input" name="licDetail2" value={formData.licDetail2} onChange={handleChange} placeholder="Tên bằng cấp/chứng chỉ" />
               </div>
             </div>
@@ -342,7 +356,7 @@ export default function CVBuilder() {
             <table className="ri-table">
               <tbody>
                 <tr>
-                  <td className="furigana" colSpan="4">ふりがana: {formData.furiganaName}</td>
+                  <td className="furigana" colSpan="4">ふりがな: {formData.furiganaName}</td>
                   <td rowSpan="4" style={{ width: '90px', textAlign: 'center', background: '#fafafa' }}>
                     <div style={{ height: '110px', border: '1px dashed #999', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#999' }}>
                       Ảnh thẻ<br />(3cm x 4cm)
@@ -360,7 +374,7 @@ export default function CVBuilder() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="furigana" colSpan="4">ふりがana: {formData.addressFurigana}</td>
+                  <td className="furigana" colSpan="4">ふりがな: {formData.addressFurigana}</td>
                 </tr>
                 <tr>
                   <td className="label">現住所</td>
@@ -477,6 +491,8 @@ export default function CVBuilder() {
                 </tr>
               </tbody>
             </table>
+            
+            <div className="print-page-num">1 / 1</div>
           </div>
         </div>
       </div>

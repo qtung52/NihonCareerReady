@@ -273,7 +273,9 @@ function App() {
       />
       
       <main className={activeView === 'home' ? '' : 'container'} style={activeView === 'home' ? { padding: 0 } : { padding: '2rem 1rem 4rem 1rem' }}>
-        {renderView()}
+        <div key={activeView} className="page-transition">
+          {renderView()}
+        </div>
       </main>
       
       {activeView !== 'home' && (
