@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Cpu, WifiOff } from 'lucide-react';
+import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Cpu, WifiOff, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 // Groq API key from https://console.groq.com/keys
@@ -84,13 +84,33 @@ export default function ChatBox({ currentUser }) {
 
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  const handleScrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -150, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 150, behavior: 'smooth' });
+    }
+  };
+
+  const handleResetChat = () => {
+    setAiMessages([
+      { id: Date.now(), sender: 'bot', text: welcomeText, time: 'Vừa xong' }
+    ]);
+    setInputValue('');
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [aiMessages, senpaiMinhMessages, senpaiTrangMessages, isTyping, chatMode, isOpen, isMinimized, streamingText]);
 
   // --- Groq API streaming (for Vercel deploy) ---
-  const callGroqStreaming = async (userText, onChunk, onDone, onError) => {
+  const callGroqStreaming = async (apiHistory, onChunk, onDone, onError) => {
     abortControllerRef.current = new AbortController();
     try {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -104,7 +124,7 @@ export default function ChatBox({ currentUser }) {
           model: 'llama-3.3-70b-versatile', // Updated model since llama3-8b-8192 is decommissioned
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userText }
+            ...apiHistory
           ],
           stream: true,
           temperature: 0.7,
@@ -160,7 +180,8 @@ export default function ChatBox({ currentUser }) {
     setInputValue('');
 
     if (chatMode === 'ai') {
-      setAiMessages(prev => [...prev, userMsg]);
+      const newMessages = [...aiMessages, userMsg];
+      setAiMessages(newMessages);
 
       const callFn = aiMode === 'groq' ? callGroqStreaming : null;
 
@@ -169,8 +190,14 @@ export default function ChatBox({ currentUser }) {
         setStreamingText('');
         const streamId = Date.now() + 1;
 
+        // Xây dựng lịch sử trò chuyện để gửi cho AI hiểu context
+        const apiHistory = newMessages.map(m => ({
+          role: m.sender === 'bot' ? 'assistant' : 'user',
+          content: m.text
+        }));
+
         callFn(
-          userText,
+          apiHistory,
           (partialText) => setStreamingText(partialText),
           (finalText) => {
             setAiMessages(prev => [...prev, {
@@ -326,7 +353,7 @@ export default function ChatBox({ currentUser }) {
           width: '12px',
           height: '12px',
           borderRadius: '50%',
-          backgroundColor: aiMode === 'gemini' ? '#2ecc71' : '#f39c12',
+          backgroundColor: aiMode !== 'offline' ? '#2ecc71' : '#f39c12',
           border: '2px solid white',
           transition: 'background-color 0.3s'
         }} />
@@ -393,7 +420,7 @@ export default function ChatBox({ currentUser }) {
                 width: '9px',
                 height: '9px',
                 borderRadius: '50%',
-                backgroundColor: aiMode === 'gemini' ? '#2ecc71' : '#f39c12',
+                backgroundColor: aiMode !== 'offline' ? '#2ecc71' : '#f39c12',
                 border: '1.5px solid var(--jp-blue)',
                 transition: 'background-color 0.3s'
               }}
@@ -415,6 +442,13 @@ export default function ChatBox({ currentUser }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={e => e.stopPropagation()}>
           <button
+            onClick={handleResetChat}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', padding: '0.2rem' }}
+            title="Làm mới cuộc trò chuyện"
+          >
+            <RefreshCw size={15} />
+          </button>
+          <button
             onClick={() => setIsMinimized(!isMinimized)}
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', padding: '0.2rem' }}
           >
@@ -433,45 +467,78 @@ export default function ChatBox({ currentUser }) {
         <>
           {/* Quick FAQ Chips (AI mode only) */}
           {chatMode === 'ai' && (
-            <div
-              style={{
-                padding: '0.5rem 0.75rem',
-                background: 'var(--jp-soft-surface)',
-                borderBottom: '1px solid var(--jp-border)',
-                display: 'flex',
-                gap: '0.4rem',
-                overflowX: 'auto',
-                whiteSpace: 'nowrap'
-              }}
-              className="no-scrollbar"
-            >
-              {[
-                { emoji: '📝', label: 'Viết CV', text: 'Cách viết CV Rirekisho chuẩn Nhật?' },
-                { emoji: '🙇', label: 'Chào hỏi', text: 'Quy tắc cúi chào Ojigi trong văn phòng?' },
-                { emoji: '🍻', label: 'Nomikai', text: 'Văn hóa tiệc rượu Nomikai ở Nhật?' },
-                { emoji: '🏢', label: 'HouRenSo', text: 'Nguyên tắc Hou-Ren-So là gì?' },
-                { emoji: '💼', label: 'Phỏng vấn', text: 'Cách chuẩn bị phỏng vấn Shukatsu?' }
-              ].map((chip) => (
-                <span
-                  key={chip.label}
-                  onClick={() => setInputValue(chip.text)}
-                  style={{
-                    fontSize: '0.7rem',
-                    background: 'var(--jp-card-bg)',
-                    border: '1px solid var(--jp-border)',
-                    padding: '0.2rem 0.55rem',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    color: 'var(--jp-text)',
-                    transition: 'all 0.2s',
-                    flexShrink: 0
-                  }}
-                  onMouseEnter={e => { e.target.style.borderColor = 'var(--jp-blue)'; e.target.style.background = '#eff6ff'; }}
-                  onMouseLeave={e => { e.target.style.borderColor = 'var(--jp-border)'; e.target.style.background = 'var(--jp-card-bg)'; }}
-                >
-                  {chip.emoji} {chip.label}
-                </span>
-              ))}
+            <div style={{ position: 'relative', background: 'var(--jp-soft-surface)', borderBottom: '1px solid var(--jp-border)', padding: '0.4rem 0' }}>
+              <button 
+                onClick={handleScrollLeft}
+                style={{ position: 'absolute', left: '4px', top: '50%', transform: 'translateY(-50%)', background: 'var(--jp-surface-raised)', border: '1px solid var(--jp-border)', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+              >
+                <ChevronLeft size={16} color="var(--jp-blue)" />
+              </button>
+              
+              <div
+                ref={scrollContainerRef}
+                style={{
+                  padding: '0 1.5rem',
+                  display: 'flex',
+                  gap: '0.5rem',
+                  overflowX: 'auto',
+                  whiteSpace: 'nowrap',
+                  scrollBehavior: 'smooth'
+                }}
+                className="no-scrollbar"
+              >
+                {[
+                  { emoji: '📝', label: 'Viết CV', text: 'Cách viết CV Rirekisho chuẩn Nhật?' },
+                  { emoji: '🙇', label: 'Chào hỏi', text: 'Quy tắc cúi chào Ojigi trong văn phòng?' },
+                  { emoji: '🍻', label: 'Nomikai', text: 'Văn hóa tiệc rượu Nomikai ở Nhật?' },
+                  { emoji: '🏢', label: 'HouRenSo', text: 'Nguyên tắc Hou-Ren-So là gì?' },
+                  { emoji: '💼', label: 'Phỏng vấn', text: 'Cách chuẩn bị phỏng vấn Shukatsu?' },
+                  { emoji: '👔', label: 'Trang phục', text: 'Quy tắc trang phục công sở Nhật Bản?' },
+                  { emoji: '✉️', label: 'Email', text: 'Mẫu email tiếng Nhật xin nghỉ phép?' }
+                ].map((chip) => (
+                  <span
+                    key={chip.label}
+                    onClick={() => setInputValue(chip.text)}
+                    style={{
+                      fontSize: '0.75rem',
+                      background: 'var(--jp-card-bg)',
+                      border: '1px solid var(--jp-border)',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      color: 'var(--jp-text)',
+                      transition: 'all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                      flexShrink: 0,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                    }}
+                    onMouseEnter={e => { 
+                      e.currentTarget.style.borderColor = 'var(--jp-blue)'; 
+                      e.currentTarget.style.background = 'var(--jp-blue-light)'; 
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                    }}
+                    onMouseLeave={e => { 
+                      e.currentTarget.style.borderColor = 'var(--jp-border)'; 
+                      e.currentTarget.style.background = 'var(--jp-card-bg)'; 
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)';
+                    }}
+                  >
+                    <span>{chip.emoji}</span>
+                    <span style={{ fontWeight: 500 }}>{chip.label}</span>
+                  </span>
+                ))}
+              </div>
+
+              <button 
+                onClick={handleScrollRight}
+                style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'var(--jp-surface-raised)', border: '1px solid var(--jp-border)', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+              >
+                <ChevronRight size={16} color="var(--jp-blue)" />
+              </button>
             </div>
           )}
 
@@ -698,20 +765,22 @@ export default function ChatBox({ currentUser }) {
           </form>
 
           {/* Footer: Powered by */}
-          <div style={{
-            padding: '0.3rem 1rem',
-            background: 'var(--jp-surface-raised)',
-            borderTop: '1px solid var(--jp-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.3rem',
-            fontSize: '0.62rem',
-            color: 'var(--jp-text-muted)'
-          }}>
-            <Cpu size={10} />
-            {aiMode === 'gemini' ? 'Powered by Gemini API · gemini-1.5-flash' : 'Fallback mode · câu trả lời mẫu'}
-          </div>
+          {aiMode !== 'offline' && (
+            <div style={{
+              padding: '0.3rem 1rem',
+              background: 'var(--jp-surface-raised)',
+              borderTop: '1px solid var(--jp-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.3rem',
+              fontSize: '0.62rem',
+              color: 'var(--jp-text-muted)'
+            }}>
+              <Cpu size={10} />
+              {aiMode === 'groq' ? 'Powered by Llama 3.3' : 'Powered by Gemini API · gemini-1.5-flash'}
+            </div>
+          )}
         </>
       )}
 

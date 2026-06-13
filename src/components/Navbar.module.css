@@ -1,0 +1,149 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--jp-nav-bg);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--jp-border);
+  padding: 1rem 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--jp-text);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--jp-red);
+  border-radius: 50%;
+}
+
+.menu {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navLink {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--jp-text-muted);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.navLink:hover {
+  color: var(--jp-text);
+}
+
+.navLink.active {
+  background-color: var(--jp-red);
+  color: #fff;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.themeToggle {
+  background: none;
+  border: none;
+  color: var(--jp-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+  padding: 0.5rem;
+}
+
+.themeToggle:hover {
+  color: var(--jp-text);
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  background-color: var(--jp-card-bg);
+  border: 2px solid var(--jp-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--jp-text);
+  line-height: 1.2;
+}
+
+.userRole {
+  font-size: 0.7rem;
+  color: var(--jp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: var(--jp-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.logoutBtn:hover {
+  color: var(--jp-red);
+}
+
+@media (max-width: 1024px) {
+  .menu {
+    display: none;
+  }
+}

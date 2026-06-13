@@ -59,10 +59,20 @@ function App() {
     const refreshSharedContent = async () => {
       const dictData = await getSharedArray('dictionary', []);
       const roleData = await getSharedArray('roleplay', []);
+      const usersData = await getSharedArray('users', []);
       
       if (!isMounted) return;
       if (Array.isArray(dictData) && dictData.length > 0) setDictionary(dictData);
       if (Array.isArray(roleData) && roleData.length > 0) setRoleplay(roleData);
+      
+      if (currentUser && Array.isArray(usersData)) {
+        const freshUserData = usersData.find(u => u.email === currentUser.email);
+        if (freshUserData && (freshUserData.isAdmin !== currentUser.isAdmin || freshUserData.isSenpai !== currentUser.isSenpai)) {
+          const updatedUser = { ...currentUser, isAdmin: freshUserData.isAdmin, isSenpai: freshUserData.isSenpai };
+          setCurrentUser(updatedUser);
+          localStorage.setItem('session_user', JSON.stringify(updatedUser));
+        }
+      }
     };
 
     refreshSharedContent();
@@ -72,7 +82,7 @@ function App() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [activeView]);
+  }, [activeView, currentUser]);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -250,24 +260,26 @@ function App() {
         onToggleTheme={toggleTheme}
       />
       
-      <main className="container" style={{ padding: '2rem 1rem 4rem 1rem' }}>
+      <main className={activeView === 'home' ? '' : 'container'} style={activeView === 'home' ? { padding: 0 } : { padding: '2rem 1rem 4rem 1rem' }}>
         {renderView()}
       </main>
       
-      <footer style={{
-        textAlign: 'center',
-        padding: '2rem 1rem',
-        borderTop: '1px solid var(--jp-border)',
-        color: 'var(--jp-text-muted)',
-        fontSize: '0.85rem',
-        background: 'var(--jp-card-bg)',
-        marginTop: '3rem'
-      }}>
-        <div className="container">
-          <p>© {new Date().getFullYear()} Nihon Career Ready. Thiết kế theo phong cách Wa-Minimalism tối giản Nhật Bản.</p>
-          <p style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>Dành riêng cho sinh viên Việt Nam bước chân vào môi trường chuyên nghiệp.</p>
-        </div>
-      </footer>
+      {activeView !== 'home' && (
+        <footer style={{
+          textAlign: 'center',
+          padding: '2rem 1rem',
+          borderTop: '1px solid var(--jp-border)',
+          color: 'var(--jp-text-muted)',
+          fontSize: '0.85rem',
+          background: 'var(--jp-card-bg)',
+          marginTop: '3rem'
+        }}>
+          <div className="container">
+            <p>© {new Date().getFullYear()} Nihon Career Ready. Thiết kế theo phong cách Wa-Minimalism tối giản Nhật Bản.</p>
+            <p style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>Dành riêng cho sinh viên Việt Nam bước chân vào môi trường chuyên nghiệp.</p>
+          </div>
+        </footer>
+      )}
 
       {/* Floating Chat Assistant */}
       <ChatBox currentUser={currentUser} />

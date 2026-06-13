@@ -384,7 +384,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
                 width: '100%',
                 height: '100%',
                 backfaceVisibility: 'hidden',
-                background: '#ffffff',
+                background: 'var(--jp-card-bg)',
                 border: '1px solid var(--jp-border)',
                 borderRadius: '12px',
                 padding: '1rem',
@@ -427,7 +427,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
                       }}>
                         <Check size={12} strokeWidth={3} /> NÊN LÀM
                       </h5>
-                      <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.7rem', color: '#2c3e50', lineHeight: '1.4' }}>
+                      <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.7rem', color: 'var(--jp-text)', lineHeight: '1.4' }}>
                         {(item.dos || []).map((doItem, index) => (
                           <li key={index} style={{ marginBottom: '2px' }}>{doItem}</li>
                         ))}
@@ -452,7 +452,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
                       }}>
                         <X size={12} strokeWidth={3} /> TRÁNH LÀM
                       </h5>
-                      <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.7rem', color: '#2c3e50', lineHeight: '1.4' }}>
+                      <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.7rem', color: 'var(--jp-text)', lineHeight: '1.4' }}>
                         {(item.donts || []).map((dontItem, index) => (
                           <li key={index} style={{ marginBottom: '2px' }}>{dontItem}</li>
                         ))}

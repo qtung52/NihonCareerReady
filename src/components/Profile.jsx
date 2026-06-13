@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Key, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Key, Save, AlertCircle, CheckCircle2, Upload } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 
 const AVATARS = [
@@ -99,6 +99,48 @@ export default function Profile({ currentUser, onUpdateProfile }) {
     setTimeout(() => setPassMsg({ type: '', text: '' }), 4000);
   };
 
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setProfileMsg({ type: 'error', text: 'Vui lòng chọn file hình ảnh hợp lệ (jpg, png,...)' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 150;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setAvatar(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="profile-container">
       <div className="section-header">
@@ -134,31 +176,43 @@ export default function Profile({ currentUser, onUpdateProfile }) {
           <form onSubmit={handleUpdateInfo}>
             {/* Avatar Selector */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Ảnh đại diện (Avatar Emoji)</label>
+              <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Ảnh đại diện (Avatar)</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
-                <div style={{ fontSize: '3rem', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--jp-blue-light)', borderRadius: '50%', border: '2px solid var(--jp-blue)' }}>
-                  {avatar}
+                <div style={{ fontSize: '3rem', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--jp-blue-light)', borderRadius: '50%', border: '2px solid var(--jp-blue)', overflow: 'hidden' }}>
+                  {avatar.startsWith('data:image') ? (
+                    <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    avatar
+                  )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                  {AVATARS.map(av => (
-                    <button
-                      key={av.id}
-                      type="button"
-                      onClick={() => setAvatar(av.emoji)}
-                      style={{
-                        fontSize: '1.5rem',
-                        padding: '0.3rem',
-                        border: avatar === av.emoji ? '2px solid var(--jp-red)' : '1px solid var(--jp-border)',
-                        background: avatar === av.emoji ? 'var(--jp-soft-red)' : 'var(--jp-surface-raised)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        transition: '0.2s'
-                      }}
-                      title={av.name}
-                    >
-                      {av.emoji}
-                    </button>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {AVATARS.map(av => (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => setAvatar(av.emoji)}
+                        style={{
+                          fontSize: '1.5rem',
+                          padding: '0.3rem',
+                          border: avatar === av.emoji ? '2px solid var(--jp-red)' : '1px solid var(--jp-border)',
+                          background: avatar === av.emoji ? 'var(--jp-soft-red)' : 'var(--jp-surface-raised)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: '0.2s'
+                        }}
+                        title={av.name}
+                      >
+                        {av.emoji}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', background: 'var(--jp-surface-raised)', border: '1px dashed var(--jp-border)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--jp-text-muted)', transition: 'all 0.2s' }} className="hover-scale">
+                      <Upload size={14} /> Tải ảnh lên (Max 2MB)
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -187,6 +241,36 @@ export default function Profile({ currentUser, onUpdateProfile }) {
                 disabled
                 style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px', background: 'var(--jp-surface-raised)', cursor: 'not-allowed' }}
               />
+            </div>
+
+            {/* Role (Readonly) */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--jp-text-muted)' }}>Vai trò hiện tại (Role)</label>
+              <div style={{
+                padding: '0.75rem',
+                border: '1px solid var(--jp-border)',
+                borderRadius: '4px',
+                background: 'var(--jp-surface-raised)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span style={{ 
+                  background: currentUser.isAdmin ? 'linear-gradient(135deg, #ff4b4b, #ff904b, #f9cb28, #4bcf6d, #4b90ff, #994bff)' : currentUser.isSenpai ? 'var(--jp-blue)' : '#eee', 
+                  color: currentUser.isAdmin || currentUser.isSenpai ? 'white' : '#666',
+                  fontSize: '0.85rem', 
+                  padding: '4px 12px', 
+                  borderRadius: '12px',
+                  fontWeight: currentUser.isAdmin ? 'bold' : 'normal',
+                  boxShadow: currentUser.isAdmin ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                  display: 'inline-block'
+                }}>
+                  {currentUser.isAdmin ? 'Quản trị viên (Admin)' : currentUser.isSenpai ? 'Senpai' : 'Học viên'}
+                </span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)', fontStyle: 'italic' }}>
+                  {currentUser.isAdmin ? 'Bạn có toàn quyền truy cập Admin Panel.' : currentUser.isSenpai ? 'Bạn là thành viên có kinh nghiệm được chia sẻ kiến thức.' : 'Thành viên học tập bình thường.'}
+                </span>
+              </div>
             </div>
 
             {/* Career Path */}

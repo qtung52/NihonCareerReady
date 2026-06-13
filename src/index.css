@@ -29,20 +29,20 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --jp-red: #ff5c79;
-  --jp-red-hover: #ff3359;
-  --jp-blue: #9fc4ff;
-  --jp-blue-hover: #cfe0ff;
-  --jp-blue-light: #173152;
-  --jp-bg: #0d1117;
-  --jp-card-bg: #151b23;
-  --jp-surface-raised: #1b2430;
-  --jp-soft-surface: rgba(159, 196, 255, 0.08);
-  --jp-soft-red: rgba(255, 92, 121, 0.08);
-  --jp-nav-bg: rgba(13, 17, 23, 0.88);
-  --jp-text: #e6edf3;
-  --jp-text-muted: #9aa7b4;
-  --jp-border: #2f3b4a;
+  --jp-red: #e8365d;
+  --jp-red-hover: #c4294d;
+  --jp-blue: #4f8ef7;
+  --jp-blue-hover: #3d70c4;
+  --jp-blue-light: #1a1d2e;
+  --jp-bg: #0f1117;
+  --jp-card-bg: #1a1d2e;
+  --jp-surface-raised: #1a1d2e;
+  --jp-soft-surface: rgba(79, 142, 247, 0.1);
+  --jp-soft-red: rgba(232, 54, 93, 0.1);
+  --jp-nav-bg: rgba(15, 17, 23, 0.88);
+  --jp-text: #ffffff;
+  --jp-text-muted: #8b8fa8;
+  --jp-border: #2a2e47;
   --jp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --jp-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   --jp-shadow-lg: 0 18px 46px rgba(0, 0, 0, 0.45);
@@ -1459,16 +1459,33 @@ body {
     size: A4 portrait;
     margin: 0; /* Removes default headers (localhost, URL, page numbers) and footers */
   }
-  body {
-    background: #fff;
-    margin: 0;
-    padding: 0;
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    background: #fff !important;
   }
   body * {
     visibility: hidden;
   }
   .rirekisho-paper, .rirekisho-paper * {
     visibility: visible;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .cv-builder-layout {
+    display: block !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .rirekisho-container {
+    display: block !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .rirekisho-paper {
     position: absolute;

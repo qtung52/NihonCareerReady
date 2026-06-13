@@ -1,0 +1,89 @@
+.featuresSection {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--jp-blue);
+  box-shadow: 0 10px 30px rgba(79, 142, 247, 0.15);
+}
+
+.card.redAccent:hover {
+  border-color: var(--jp-red);
+  box-shadow: 0 10px 30px rgba(232, 54, 93, 0.15);
+}
+
+.iconWrapper {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--jp-soft-surface);
+  color: var(--jp-blue);
+  transition: all 0.3s ease;
+}
+
+.card.redAccent .iconWrapper {
+  background: var(--jp-soft-red);
+  color: var(--jp-red);
+}
+
+.card:hover .iconWrapper {
+  transform: scale(1.1);
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 0.9rem;
+  color: var(--jp-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

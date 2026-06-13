@@ -1,0 +1,237 @@
+.heroSection {
+  padding: 6rem 2rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.heroContentWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  justify-content: space-between;
+}
+
+.textContent {
+  flex: 1;
+  max-width: 600px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: rgba(232, 54, 93, 0.1);
+  color: var(--jp-red);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 3.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--jp-text);
+  margin-bottom: 1.5rem;
+  letter-spacing: -1px;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--jp-text-muted);
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.ctaGroup {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btnPrimary {
+  background-color: var(--jp-red);
+  color: #fff;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(232, 54, 93, 0.4);
+}
+
+.btnPrimary:hover {
+  background-color: var(--jp-red-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(232, 54, 93, 0.6);
+}
+
+.btnSecondary {
+  background-color: transparent;
+  color: var(--jp-text);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid var(--jp-border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btnSecondary:hover {
+  border-color: var(--jp-text-muted);
+  background: var(--jp-surface-raised);
+}
+
+/* Float Animation Illustration */
+.illustration {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.mockupCard {
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 2;
+  animation: float 6s ease-in-out infinite;
+}
+
+.mockupHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mockupAvatar {
+  width: 48px;
+  height: 48px;
+  background: var(--jp-soft-surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.mockupLine {
+  height: 8px;
+  background: var(--jp-border);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.mockupLine.short {
+  width: 60%;
+}
+
+.mockupLine.long {
+  width: 100%;
+}
+
+.mockupBadge {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  background: var(--jp-blue);
+  color: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  animation: floatDelay 5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes floatDelay {
+  0% { transform: translateY(0px) rotate(5deg); }
+  50% { transform: translateY(-10px) rotate(0deg); }
+  100% { transform: translateY(0px) rotate(5deg); }
+}
+
+/* Stats Bar */
+.statsBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--jp-border);
+  border-bottom: 1px solid var(--jp-border);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--jp-text);
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--jp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .heroContentWrapper {
+    flex-direction: column;
+    text-align: center;
+    gap: 3rem;
+  }
+  
+  .ctaGroup {
+    justify-content: center;
+  }
+  
+  .title {
+    font-size: 2.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroSection {
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  .title {
+    font-size: 2.2rem;
+  }
+
+  .statsBar {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+  }
+}

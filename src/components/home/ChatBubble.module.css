@@ -1,0 +1,32 @@
+.bubble {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background-color: var(--jp-blue);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bubble:hover {
+  transform: scale(1.1);
+  background-color: var(--jp-blue-hover);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+}
+
+@media (max-width: 768px) {
+  .bubble {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 50px;
+    height: 50px;
+  }
+}

@@ -99,6 +99,7 @@ export default function Community({ currentUser }) {
   // View User Profile Modal State
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
   const [syncStatus, setSyncStatus] = useState('loading'); // loading | online | offline
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -107,8 +108,10 @@ export default function Community({ currentUser }) {
       if (!silent) setSyncStatus('loading');
       try {
         const sharedThreads = await getSharedArray('threads', INITIAL_THREADS);
+        const sharedUsers = await getSharedArray('users', []);
         if (!isMounted) return;
         setThreads(sharedThreads);
+        setUsers(sharedUsers);
         setSyncStatus(isSupabaseEnabled ? 'online' : 'local');
       } catch {
         if (!isMounted) return;
@@ -216,8 +219,17 @@ export default function Community({ currentUser }) {
     }
   };
 
+  const getUserRole = (email, fallbackRole) => {
+    const userObj = users.find(u => u.email === email);
+    if (userObj) {
+      if (userObj.isAdmin) return 'Quản trị viên';
+      if (userObj.isSenpai) return 'Senpai';
+      return 'Học viên';
+    }
+    return fallbackRole || 'Học viên';
+  };
+
   const openUserProfile = async (email, name, role) => {
-    // Check if looking at admin
     if (email === 'admin@nihon.com') {
       setSelectedUserProfile({
         name: 'Admin Senpai',
@@ -225,13 +237,12 @@ export default function Community({ currentUser }) {
         avatar: '🦊',
         bio: 'Quản trị viên hệ thống Nihon Career Ready. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
         careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản',
-        isAdmin: true
+        role: 'Quản trị viên'
       });
       return;
     }
 
-    const usersList = await getSharedArray('users', []);
-    const matchedUser = usersList.find(u => u.email === email);
+    const matchedUser = users.find(u => u.email === email);
 
     if (matchedUser) {
       setSelectedUserProfile({
@@ -240,10 +251,9 @@ export default function Community({ currentUser }) {
         avatar: matchedUser.avatar || '🧑‍💻',
         bio: matchedUser.bio || 'Chưa cập nhật giới thiệu bản thân.',
         careerGoal: matchedUser.careerGoal || 'Học viên Nihon Career Ready',
-        isAdmin: false
+        role: getUserRole(email, role)
       });
     } else {
-      // Fallback if user doesn't exist in current db (e.g. initial static threads data)
       const safeEmail = email || '';
       setSelectedUserProfile({
         name: name,
@@ -251,7 +261,7 @@ export default function Community({ currentUser }) {
         avatar: safeEmail.includes('minh') ? '👨‍💼' : safeEmail.includes('hieu') ? '🦊' : '🧑‍💻',
         bio: 'Senpai giàu kinh nghiệm chia sẻ bài học về kỹ năng giao tiếp và ứng xử doanh nghiệp Nhật Bản.',
         careerGoal: role || 'Senpai / Cố vấn chuyên môn',
-        isAdmin: typeof role === 'string' && (role.includes('Senpai') || role.includes('Tech Lead'))
+        role: getUserRole(email, role)
       });
     }
   };
@@ -315,7 +325,7 @@ export default function Community({ currentUser }) {
                         Đăng bởi{' '}
                         <strong 
                           style={{ cursor: 'pointer', color: 'var(--jp-blue)', textDecoration: 'underline' }}
-                          onClick={() => openUserProfile(thread.authorEmail, thread.author, 'Học viên')}
+                          onClick={() => openUserProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
                           title="Xem thông tin người dùng"
                         >
                           {thread.author}
@@ -340,20 +350,31 @@ export default function Community({ currentUser }) {
                       <MessageSquare size={14} /> Trả lời ({thread.answers.length})
                     </h4>
                     {thread.answers.map((ans) => {
-                      // Phân quyền chuẩn: Chỉ chủ sở hữu bình luận hoặc Admin mới được xóa
                       const canDeleteReply = currentUser && (currentUser.isAdmin || currentUser.email === ans.authorEmail);
+                      const displayRole = getUserRole(ans.authorEmail, ans.role);
+                      const isAdmin = displayRole === 'Quản trị viên';
+                      const isSenpai = displayRole.includes('Senpai') || displayRole.includes('Tech Lead') || displayRole.includes('Leader');
                       
                       return (
                         <div key={ans.id || `ans-${Math.random()}`} className="ans-card">
                           <div className="ans-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span 
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => openUserProfile(ans.authorEmail, ans.author, ans.role)}
+                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                              onClick={() => openUserProfile(ans.authorEmail, ans.author, displayRole)}
                               title="Xem thông tin người dùng"
                             >
-                              <span style={{ fontSize: '1rem', marginRight: '4px' }}>🧑‍💻</span>
-                              <strong style={{ color: 'var(--jp-blue)', textDecoration: 'underline' }}>{ans.author}</strong>{' '}
-                              <span className="ans-badge" style={{ background: ans.role.includes('Senpai') || ans.role.includes('Lead') ? '#bc002d' : 'var(--jp-blue)' }}>{ans.role}</span>
+                              <strong style={{ color: 'var(--jp-blue)', textDecoration: 'underline' }}>{ans.author}</strong>
+                              <span style={{ 
+                                  fontSize: '0.7rem', 
+                                  background: isAdmin ? 'linear-gradient(135deg, #ff4b4b, #ff904b, #f9cb28, #4bcf6d, #4b90ff, #994bff)' : isSenpai ? 'var(--jp-blue)' : 'var(--jp-border)', 
+                                  color: isAdmin || isSenpai ? 'white' : 'var(--jp-text-muted)', 
+                                  padding: '2px 8px', 
+                                  borderRadius: '12px',
+                                  fontWeight: isAdmin ? 'bold' : 'normal',
+                                  border: 'none'
+                              }}>
+                                {displayRole}
+                              </span>
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{timeAgo(ans.date) || ans.date}</span>
@@ -463,14 +484,27 @@ export default function Community({ currentUser }) {
             </div>
             
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '3.5rem', width: '80px', height: '80px', margin: '0 auto 1rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--jp-blue-light)', borderRadius: '50%', border: '2px solid var(--jp-blue)' }}>
-                {selectedUserProfile.avatar}
+              <div style={{ fontSize: '3.5rem', width: '80px', height: '80px', margin: '0 auto 1rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--jp-blue-light)', borderRadius: '50%', border: '2px solid var(--jp-blue)', overflow: 'hidden' }}>
+                {selectedUserProfile.avatar?.startsWith('data:image') ? (
+                  <img src={selectedUserProfile.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  selectedUserProfile.avatar || '🧑‍💻'
+                )}
               </div>
               <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>
                 {selectedUserProfile.name}
               </h3>
-              <span className="ans-badge" style={{ background: selectedUserProfile.isAdmin ? '#bc002d' : 'var(--jp-blue)', fontSize: '0.7rem', padding: '2px 10px', borderRadius: '10px' }}>
-                {selectedUserProfile.isAdmin ? 'Senpai Cố Vấn' : 'Kouhai Thành Viên'}
+              <span className="ans-badge" style={{ 
+                background: selectedUserProfile.role === 'Quản trị viên' ? 'linear-gradient(135deg, #ff4b4b, #ff904b, #f9cb28, #4bcf6d, #4b90ff, #994bff)' : (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'var(--jp-blue)' : 'var(--jp-border)', 
+                color: selectedUserProfile.role === 'Quản trị viên' || (selectedUserProfile.role?.includes('Senpai') || selectedUserProfile.role?.includes('Tech Lead') || selectedUserProfile.role?.includes('Leader')) ? 'white' : 'var(--jp-text-muted)',
+                fontSize: '0.75rem', 
+                padding: '4px 12px', 
+                borderRadius: '12px',
+                fontWeight: selectedUserProfile.role === 'Quản trị viên' ? 'bold' : 'normal',
+                boxShadow: selectedUserProfile.role === 'Quản trị viên' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                border: 'none'
+              }}>
+                {selectedUserProfile.role}
               </span>
             </div>
 
@@ -484,7 +518,7 @@ export default function Community({ currentUser }) {
 
               <div>
                 <span style={{ fontSize: '0.7rem', color: 'var(--jp-text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>Mô tả (Bio)</span>
-                <p style={{ fontSize: '0.8rem', color: 'var(--jp-text)', margin: '0.2rem 0 0 0', background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', lineHeight: '1.4', fontStyle: 'italic' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--jp-text)', margin: '0.2rem 0 0 0', background: 'var(--jp-surface-raised)', padding: '0.75rem', borderRadius: '6px', lineHeight: '1.4', fontStyle: 'italic', border: '1px solid var(--jp-border)' }}>
                   {selectedUserProfile.bio}
                 </p>
               </div>

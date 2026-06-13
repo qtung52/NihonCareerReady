@@ -1,0 +1,67 @@
+.whyUsSection {
+  background-color: var(--jp-surface-raised);
+  padding: 5rem 2rem;
+  margin-top: 2rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin-bottom: 3.5rem;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+}
+
+.featureBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  background: var(--jp-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  color: var(--jp-blue);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.boxTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin: 0;
+}
+
+.boxDesc {
+  font-size: 0.95rem;
+  color: var(--jp-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 3rem;
+  }
+}

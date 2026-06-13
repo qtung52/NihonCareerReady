@@ -1,0 +1,101 @@
+.testimonialsSection {
+  padding: 6rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin-bottom: 3.5rem;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.card {
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.rating {
+  color: #f9cb28; /* Gold color for stars */
+  display: flex;
+  gap: 0.2rem;
+  font-size: 1.1rem;
+}
+
+.reviewText {
+  font-size: 0.95rem;
+  color: var(--jp-text);
+  line-height: 1.6;
+  flex: 1;
+  font-style: italic;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-top: 1px solid var(--jp-border);
+  padding-top: 1.5rem;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  background: var(--jp-soft-surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--jp-text);
+}
+
+.userSchool {
+  font-size: 0.8rem;
+  color: var(--jp-text-muted);
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .testimonialsSection {
+    padding: 3rem 1.5rem;
+  }
+}

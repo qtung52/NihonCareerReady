@@ -322,10 +322,10 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
               )}
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: '1rem' }}>
-                Lựa chọn của bạn: <strong>{selectedOption.letter}</strong>
+              <p style={{ marginBottom: '1rem', color: 'var(--jp-text)' }}>
+                Lựa chọn của bạn: <strong style={{ color: 'var(--jp-blue)' }}>{selectedOption.letter}</strong>
               </p>
-              <p style={{ color: 'var(--jp-text)', fontSize: '0.9rem', background: '#f8fafc', padding: '1rem', borderRadius: 'var(--jp-radius)', borderLeft: '3px solid var(--jp-border)' }}>
+              <p style={{ color: 'var(--jp-text)', fontSize: '0.9rem', background: 'var(--jp-soft-surface)', padding: '1rem', borderRadius: 'var(--jp-radius)', borderLeft: '3px solid var(--jp-border)' }}>
                 {selectedOption.explanation}
               </p>
             </div>

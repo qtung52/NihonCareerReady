@@ -342,14 +342,14 @@ export default function AdminPanel({
               <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--jp-red)' }}>{threadsList.length}</div>
               <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Chủ đề Góc Senpai</div>
             </div>
-            <div style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: '#333' }}>
+            <div style={{ background: 'var(--jp-surface-raised)', border: '1px solid var(--jp-border)', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--jp-text)' }}>
                 {threadsList.reduce((acc, t) => acc + (t.answers?.length || 0), 0)}
               </div>
               <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Bình luận Góc Senpai</div>
             </div>
-            <div style={{ background: '#f0fdf4', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: '#166534' }}>{dictionary.length + roleplay.length}</div>
+            <div style={{ background: 'var(--jp-soft-surface)', border: '1px solid var(--jp-border)', padding: '1.5rem', borderRadius: 'var(--jp-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: '#2ecc71' }}>{dictionary.length + roleplay.length}</div>
               <div style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Nội dung bài học</div>
             </div>
           </div>
@@ -395,7 +395,13 @@ export default function AdminPanel({
                     <tr key={user.email || idx} style={{ borderBottom: '1px solid var(--jp-border)' }}>
                       <td style={{ padding: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '1.5rem' }}>{user.avatar || '🧑‍💻'}</span>
+                          <span style={{ fontSize: '1.5rem', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {user.avatar?.startsWith('data:image') ? (
+                              <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            ) : (
+                              user.avatar || '🧑‍💻'
+                            )}
+                          </span>
                           <div>
                             <strong style={{ display: 'block' }}>{user.name}</strong>
                             <span style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)' }}>{user.email}</span>
