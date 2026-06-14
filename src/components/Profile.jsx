@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera, ChevronDown, X, RotateCw, RefreshCw, Minus, Plus } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 import styles from './Profile.module.css';
 
@@ -14,12 +15,134 @@ const AVATARS = [
   { id: 'avatar-8', emoji: '🐱', name: 'Maneki Neko' },
 ];
 
+const CAREER_GOALS = [
+  {
+    category: "💻 IT & Công nghệ",
+    options: [
+      { value: "IT Communicator (Comtor)", label: "IT Communicator (Comtor)" },
+      { value: "Software Engineer (Japan)", label: "Kỹ sư phần mềm (Bridge SE / Developer)" },
+      { value: "Business Analyst (BA)", label: "Phân tích nghiệp vụ (BA)" },
+      { value: "QA/QC Engineer", label: "Kỹ sư kiểm thử phần mềm (QA/QC)" },
+      { value: "IT Project Manager", label: "Quản lý dự án IT (IT PM)" },
+      { value: "Data Analyst / Data Scientist", label: "Phân tích dữ liệu / Data Scientist" },
+      { value: "UI/UX Designer", label: "Thiết kế giao diện (UI/UX Designer)" },
+      { value: "Network / Infrastructure Engineer", label: "Kỹ sư hạ tầng / Mạng máy tính" }
+    ]
+  },
+  {
+    category: "🌏 Kinh doanh & Thương mại",
+    options: [
+      { value: "International Business Specialist", label: "Kinh doanh Quốc tế (International Business)" },
+      { value: "Import-Export & Logistics Officer", label: "Xuất Nhập Khẩu & Logistics" },
+      { value: "Global Marketing Executive", label: "Marketing toàn cầu (Global Marketing)" },
+      { value: "Sales Manager / Business Development", label: "Kinh doanh & Phát triển thị trường (BDM)" },
+      { value: "E-Commerce & Digital Marketing Specialist", label: "E-Commerce & Tiếp thị số" },
+      { value: "Supply Chain Manager", label: "Quản lý chuỗi cung ứng (Supply Chain)" },
+      { value: "Purchasing & Procurement Officer", label: "Mua hàng & Đấu thầu (Procurement)" }
+    ]
+  },
+  {
+    category: "💴 Tài chính & Kế toán",
+    options: [
+      { value: "Accountant / Auditor (Japan)", label: "Kế toán / Kiểm toán viên Nhật Bản" },
+      { value: "Financial Analyst", label: "Phân tích tài chính (Financial Analyst)" },
+      { value: "Banking & Finance Officer", label: "Ngân hàng & Tài chính quốc tế" },
+      { value: "Tax Consultant / CPA", label: "Tư vấn thuế / Kế toán công chứng (CPA)" }
+    ]
+  },
+  {
+    category: "🏨 Du lịch & Khách sạn",
+    options: [
+      { value: "Hotel & Hospitality Manager", label: "Quản lý Khách sạn & Dịch vụ (Hospitality)" },
+      { value: "Tourism & Travel Consultant", label: "Hướng dẫn viên / Tư vấn Du lịch Nhật Bản" },
+      { value: "Restaurant & F&B Manager", label: "Quản lý Nhà hàng & F&B" },
+      { value: "Airline Ground Staff / Cabin Crew", label: "Nhân viên Hàng không / Tiếp viên" }
+    ]
+  },
+  {
+    category: "📚 Ngôn ngữ & Giáo dục",
+    options: [
+      { value: "Japanese Teacher / Interpreter", label: "Giảng viên / Phiên dịch viên tiếng Nhật" },
+      { value: "Professional Translator (JP-VI)", label: "Biên / Phiên dịch chuyên nghiệp (Nhật - Việt)" },
+      { value: "Education Consultant (Study Abroad Japan)", label: "Tư vấn du học Nhật Bản" },
+      { value: "Content Creator / Media (Japan)", label: "Sáng tạo nội dung / Truyền thông Nhật Bản" }
+    ]
+  },
+  {
+    category: "🏢 Nhân sự & Hành chính",
+    options: [
+      { value: "Human Resources (HR) Specialist", label: "Nhân sự (HR) / Tuyển dụng quốc tế" },
+      { value: "General Affairs / Admin Officer", label: "Hành chính tổng hợp" },
+      { value: "Legal / Compliance Officer", label: "Pháp lý & Tuân thủ (Legal/Compliance)" }
+    ]
+  },
+  {
+    category: "⚙️ Sản xuất & Kỹ thuật",
+    options: [
+      { value: "Manufacturing Engineer (Monozukuri)", label: "Kỹ sư sản xuất (Monozukuri)" },
+      { value: "Quality Control Manager", label: "Quản lý chất lượng (Quality Control)" },
+      { value: "Mechanical / Electrical Engineer", label: "Kỹ sư cơ điện / Tự động hóa" }
+    ]
+  },
+  {
+    category: "🌟 Khác",
+    options: [
+      { value: "Entrepreneur / Startup Japan", label: "Khởi nghiệp tại Nhật Bản (Startup)" },
+      { value: "Other", label: "Lĩnh vực khác" }
+    ]
+  }
+];
+
+const getCareerGoalLabel = (val) => {
+  for (const group of CAREER_GOALS) {
+    const found = group.options.find(opt => opt.value === val);
+    if (found) return found.label;
+  }
+  return val;
+};
+
 export default function Profile({ currentUser, onUpdateProfile }) {
   const [displayName, setDisplayName] = useState(currentUser.name || '');
   const [avatar, setAvatar] = useState(currentUser.avatar || '🧑‍💻');
   const [bio, setBio] = useState(currentUser.bio || '');
   const [careerGoal, setCareerGoal] = useState(currentUser.careerGoal || 'Software Engineer (Japan)');
   
+  // Cropper modal states
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [isCropperClosing, setIsCropperClosing] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState('');
+
+  const handleCroppedAvatar = (croppedDataUrl) => {
+    setIsCropperClosing(true);
+    setTimeout(() => {
+      setAvatar(croppedDataUrl);
+      setIsCropperOpen(false);
+      setIsCropperClosing(false);
+    }, 300);
+  };
+
+  const handleCloseCropper = () => {
+    setIsCropperClosing(true);
+    setTimeout(() => {
+      setIsCropperOpen(false);
+      setIsCropperClosing(false);
+    }, 300);
+  };
+  
+  // Custom dropdown state & ref
+  const [isCareerGoalOpen, setIsCareerGoalOpen] = useState(false);
+  const careerGoalDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (careerGoalDropdownRef.current && !careerGoalDropdownRef.current.contains(event.target)) {
+        setIsCareerGoalOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Password state
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -111,33 +234,9 @@ export default function Profile({ currentUser, onUpdateProfile }) {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 150;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height *= MAX_SIZE / width;
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width *= MAX_SIZE / height;
-            height = MAX_SIZE;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        setAvatar(dataUrl);
-      };
-      img.src = event.target.result;
+      setRawImageSrc(event.target.result);
+      setIsCropperOpen(true);
+      e.target.value = '';
     };
     reader.readAsDataURL(file);
   };
@@ -246,78 +345,38 @@ export default function Profile({ currentUser, onUpdateProfile }) {
 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Mục tiêu nghề nghiệp</label>
-              <select
-                className={styles.formInput}
-                value={careerGoal}
-                onChange={(e) => setCareerGoal(e.target.value)}
-              >
-                {/* Nhóm IT & Công nghệ */}
-                <optgroup label="💻 IT & Công nghệ">
-                  <option value="IT Communicator (Comtor)">IT Communicator (Comtor)</option>
-                  <option value="Software Engineer (Japan)">Kỹ sư phần mềm (Bridge SE / Developer)</option>
-                  <option value="Business Analyst (BA)">Phân tích nghiệp vụ (BA)</option>
-                  <option value="QA/QC Engineer">Kỹ sư kiểm thử phần mềm (QA/QC)</option>
-                  <option value="IT Project Manager">Quản lý dự án IT (IT PM)</option>
-                  <option value="Data Analyst / Data Scientist">Phân tích dữ liệu / Data Scientist</option>
-                  <option value="UI/UX Designer">Thiết kế giao diện (UI/UX Designer)</option>
-                  <option value="Network / Infrastructure Engineer">Kỹ sư hạ tầng / Mạng máy tính</option>
-                </optgroup>
-
-                {/* Nhóm Kinh doanh & Thương mại */}
-                <optgroup label="🌏 Kinh doanh & Thương mại">
-                  <option value="International Business Specialist">Kinh doanh Quốc tế (International Business)</option>
-                  <option value="Import-Export & Logistics Officer">Xuất Nhập Khẩu & Logistics</option>
-                  <option value="Global Marketing Executive">Marketing toàn cầu (Global Marketing)</option>
-                  <option value="Sales Manager / Business Development">Kinh doanh & Phát triển thị trường (BDM)</option>
-                  <option value="E-Commerce & Digital Marketing Specialist">E-Commerce & Tiếp thị số</option>
-                  <option value="Supply Chain Manager">Quản lý chuỗi cung ứng (Supply Chain)</option>
-                  <option value="Purchasing & Procurement Officer">Mua hàng & Đấu thầu (Procurement)</option>
-                </optgroup>
-
-                {/* Nhóm Tài chính & Kế toán */}
-                <optgroup label="💴 Tài chính & Kế toán">
-                  <option value="Accountant / Auditor (Japan)">Kế toán / Kiểm toán viên Nhật Bản</option>
-                  <option value="Financial Analyst">Phân tích tài chính (Financial Analyst)</option>
-                  <option value="Banking & Finance Officer">Ngân hàng & Tài chính quốc tế</option>
-                  <option value="Tax Consultant / CPA">Tư vấn thuế / Kế toán công chứng (CPA)</option>
-                </optgroup>
-
-                {/* Nhóm Du lịch & Khách sạn */}
-                <optgroup label="🏨 Du lịch & Khách sạn">
-                  <option value="Hotel & Hospitality Manager">Quản lý Khách sạn & Dịch vụ (Hospitality)</option>
-                  <option value="Tourism & Travel Consultant">Hướng dẫn viên / Tư vấn Du lịch Nhật Bản</option>
-                  <option value="Restaurant & F&B Manager">Quản lý Nhà hàng & F&B</option>
-                  <option value="Airline Ground Staff / Cabin Crew">Nhân viên Hàng không / Tiếp viên</option>
-                </optgroup>
-
-                {/* Nhóm Ngôn ngữ & Giáo dục */}
-                <optgroup label="📚 Ngôn ngữ & Giáo dục">
-                  <option value="Japanese Teacher / Interpreter">Giảng viên / Phiên dịch viên tiếng Nhật</option>
-                  <option value="Professional Translator (JP-VI)">Biên / Phiên dịch chuyên nghiệp (Nhật - Việt)</option>
-                  <option value="Education Consultant (Study Abroad Japan)">Tư vấn du học Nhật Bản</option>
-                  <option value="Content Creator / Media (Japan)">Sáng tạo nội dung / Truyền thông Nhật Bản</option>
-                </optgroup>
-
-                {/* Nhóm Nhân sự & Hành chính */}
-                <optgroup label="🏢 Nhân sự & Hành chính">
-                  <option value="Human Resources (HR) Specialist">Nhân sự (HR) / Tuyển dụng quốc tế</option>
-                  <option value="General Affairs / Admin Officer">Hành chính tổng hợp</option>
-                  <option value="Legal / Compliance Officer">Pháp lý & Tuân thủ (Legal/Compliance)</option>
-                </optgroup>
-
-                {/* Nhóm Sản xuất & Kỹ thuật */}
-                <optgroup label="⚙️ Sản xuất & Kỹ thuật">
-                  <option value="Manufacturing Engineer (Monozukuri)">Kỹ sư sản xuất (Monozukuri)</option>
-                  <option value="Quality Control Manager">Quản lý chất lượng (Quality Control)</option>
-                  <option value="Mechanical / Electrical Engineer">Kỹ sư cơ điện / Tự động hóa</option>
-                </optgroup>
-
-                {/* Khác */}
-                <optgroup label="🌟 Khác">
-                  <option value="Entrepreneur / Startup Japan">Khởi nghiệp tại Nhật Bản (Startup)</option>
-                  <option value="Other">Lĩnh vực khác</option>
-                </optgroup>
-              </select>
+              <div className={styles.customDropdown} ref={careerGoalDropdownRef}>
+                <button
+                  type="button"
+                  className={styles.dropdownToggle}
+                  onClick={() => setIsCareerGoalOpen(!isCareerGoalOpen)}
+                >
+                  <span>{getCareerGoalLabel(careerGoal)}</span>
+                  <ChevronDown size={16} className={`${styles.dropdownChevron} ${isCareerGoalOpen ? styles.chevronOpen : ''}`} />
+                </button>
+                {isCareerGoalOpen && (
+                  <div className={styles.dropdownMenu}>
+                    {CAREER_GOALS.map((group, gIdx) => (
+                      <div key={gIdx} className={styles.dropdownGroup}>
+                        <div className={styles.dropdownGroupHeader}>{group.category}</div>
+                        {group.options.map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className={`${styles.dropdownOption} ${careerGoal === opt.value ? styles.activeOption : ''}`}
+                            onClick={() => {
+                              setCareerGoal(opt.value);
+                              setIsCareerGoalOpen(false);
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={styles.formGroup}>
@@ -399,6 +458,16 @@ export default function Profile({ currentUser, onUpdateProfile }) {
         </div>
 
       </div>
+
+      {isCropperOpen && createPortal(
+        <AvatarCropperModal
+          src={rawImageSrc}
+          isClosing={isCropperClosing}
+          onClose={handleCloseCropper}
+          onSave={handleCroppedAvatar}
+        />,
+        document.body
+      )}
     </div>
   );
 }
@@ -419,6 +488,19 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
   const [question, setQuestion] = useState(dbUser.securityQuestion || SECURITY_QUESTIONS[0]);
   const [answer, setAnswer] = useState(dbUser.securityAnswer || '');
   const [msg, setMsg] = useState({ type: '', text: '' });
+
+  const [isSecurityQuestionOpen, setIsSecurityQuestionOpen] = useState(false);
+  const securityQuestionDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (securityQuestionDropdownRef.current && !securityQuestionDropdownRef.current.contains(event.target)) {
+        setIsSecurityQuestionOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSaveQuestion = async (e) => {
     e.preventDefault();
@@ -465,15 +547,33 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
       <form onSubmit={handleSaveQuestion}>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Chọn câu hỏi</label>
-          <select
-            className={styles.formInput}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          >
-            {SECURITY_QUESTIONS.map((q, idx) => (
-              <option key={idx} value={q}>{q}</option>
-            ))}
-          </select>
+          <div className={styles.customDropdown} ref={securityQuestionDropdownRef}>
+            <button
+              type="button"
+              className={styles.dropdownToggle}
+              onClick={() => setIsSecurityQuestionOpen(!isSecurityQuestionOpen)}
+            >
+              <span>{question}</span>
+              <ChevronDown size={16} className={`${styles.dropdownChevron} ${isSecurityQuestionOpen ? styles.chevronOpen : ''}`} />
+            </button>
+            {isSecurityQuestionOpen && (
+              <div className={styles.dropdownMenu}>
+                {SECURITY_QUESTIONS.map((q, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`${styles.dropdownOption} ${question === q ? styles.activeOption : ''}`}
+                    onClick={() => {
+                      setQuestion(q);
+                      setIsSecurityQuestionOpen(false);
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.formGroup}>
@@ -492,6 +592,185 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
           <Save size={18} /> Lưu câu hỏi bảo mật
         </button>
       </form>
+    </div>
+  );
+}
+
+/* Avatar Cropper Modal Component */
+function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [flipH, setFlipH] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const imgRef = useRef(null);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - dragStart.x;
+    const dy = e.touches[0].clientY - dragStart.y;
+    setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+    setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+  };
+
+  const handleReset = () => {
+    setZoom(1);
+    setRotation(0);
+    setFlipH(false);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const handleSave = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 150; // Output avatar size
+    canvas.height = 150;
+    const ctx = canvas.getContext('2d');
+
+    const imgElement = imgRef.current;
+    if (!imgElement) return;
+
+    // Center of canvas: (75, 75)
+    ctx.translate(75, 75);
+
+    // Apply flip
+    ctx.scale(flipH ? -1 : 1, 1);
+
+    // Apply rotation
+    ctx.rotate((rotation * Math.PI) / 180);
+
+    // Ratio of canvas size (150px) to UI crop area (250px) is 0.6
+    const ratio = 150 / 250;
+
+    // Apply offset (scaled to canvas size)
+    ctx.translate(offset.x * ratio, offset.y * ratio);
+
+    // Draw the image centered
+    const displayedWidth = imgElement.clientWidth;
+    const displayedHeight = imgElement.clientHeight;
+
+    // Apply zoom
+    ctx.scale(zoom, zoom);
+
+    ctx.drawImage(
+      imgElement,
+      (-displayedWidth / 2) * ratio,
+      (-displayedHeight / 2) * ratio,
+      displayedWidth * ratio,
+      displayedHeight * ratio
+    );
+
+    const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    onSave(croppedDataUrl);
+  };
+
+  return (
+    <div className={`modal-overlay ${isClosing ? 'closing' : ''}`}>
+      <div className={`modal-content ${styles.cropperModalContent} ${isClosing ? 'closing' : ''}`}>
+        <div className={styles.modalHeader}>
+          <h3>Chỉnh sửa Ảnh Đại Diện</h3>
+          <button type="button" className={styles.modalCloseBtn} onClick={onClose} title="Đóng">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className={styles.modalBody}>
+          <div
+            className={styles.cropWrapper}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleMouseUp}
+          >
+            <img
+              ref={imgRef}
+              src={src}
+              alt="To crop"
+              className={styles.cropImageElement}
+              style={{
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
+              }}
+            />
+            <div className={styles.cropCircleOverlay} />
+          </div>
+
+          <div className={styles.controlsContainer}>
+            <div className={styles.zoomControl}>
+              <Minus size={16} />
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.05"
+                value={zoom}
+                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                className={styles.zoomSlider}
+              />
+              <Plus size={16} />
+            </div>
+
+            <div className={styles.toolRow}>
+              <button
+                type="button"
+                className={styles.btnTool}
+                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+              >
+                <RotateCw size={12} /> Xoay 90°
+              </button>
+              <button
+                type="button"
+                className={styles.btnTool}
+                onClick={() => setFlipH((prev) => !prev)}
+              >
+                Lật ngang
+              </button>
+              <button
+                type="button"
+                className={styles.btnTool}
+                onClick={handleReset}
+              >
+                <RefreshCw size={12} /> Đặt lại
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <button type="button" className={styles.btnCancel} onClick={onClose}>
+            Hủy
+          </button>
+          <button type="button" className={styles.btnSave} onClick={handleSave}>
+            Cắt & Lưu
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

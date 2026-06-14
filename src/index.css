@@ -2265,20 +2265,33 @@ body {
    ========================================= */
 .rp-progress-container {
   width: 100%;
-  height: 12px;
-  background: var(--jp-border);
-  border-radius: 10px;
+  height: 6px;
+  background: rgba(27, 42, 74, 0.08);
+  border-radius: 999px;
   overflow: hidden;
   margin-bottom: 1rem;
   position: relative;
+  border: none;
+}
+
+:root[data-theme="dark"] .rp-progress-container {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .rp-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3498db, #2ecc71);
-  border-radius: 10px;
-  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  width: var(--progress, 0%);
+  background: linear-gradient(90deg, #6366F1, #e8365d);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .rp-progress-fill {
+  background: linear-gradient(90deg, #6366F1, #e8365d);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
 }
 
 .rp-progress-fill::after {
@@ -2286,10 +2299,10 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: shimmer 2s infinite;
+  width: 300px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: shimmer 4s infinite linear;
 }
 
 .rp-gamified-card {
@@ -2435,7 +2448,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .rp-feedback-header {
@@ -2470,6 +2483,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2481,6 +2495,7 @@ body {
     opacity: 0;
     transform: translateY(15px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2488,6 +2503,11 @@ body {
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-300px);
+  }
+
+  100% {
+    transform: translateX(75vw);
+  }
 }

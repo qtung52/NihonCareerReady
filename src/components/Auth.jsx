@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Mail, User, ArrowRight, HelpCircle, CheckCircle, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, HelpCircle, CheckCircle, Eye, EyeOff, Sun, Moon, Sparkles } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 import styles from './Auth.module.css';
 
@@ -17,7 +17,7 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Registration security question states
   const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0]);
   const [securityAnswer, setSecurityAnswer] = useState('');
@@ -39,7 +39,7 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     if (pwd.length >= 6) score++;
     if (/[0-9]/.test(pwd)) score++;
     if (/[A-Z]/.test(pwd) || /[^A-Za-z0-9]/.test(pwd)) score++;
-    
+
     let label = 'Yếu';
     let color = styles.barWeak;
     if (score === 2) {
@@ -148,10 +148,10 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
 
     if (authMode === 'login') {
       if (email === 'admin@nihon.com' && password === 'admin123') {
-        const adminUser = { 
-          name: 'Admin Senpai', 
-          email, 
-          isAdmin: true, 
+        const adminUser = {
+          name: 'Admin Senpai',
+          email,
+          isAdmin: true,
           avatar: '🦊',
           bio: 'Quản trị viên hệ thống Nihon Career Ready. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
           careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản'
@@ -170,12 +170,12 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
       const user = users.find(u => u.email === email && u.password === password);
 
       if (user) {
-        const loggedUser = { 
-          name: user.name, 
-          email: user.email, 
-          isAdmin: !!user.isAdmin, 
+        const loggedUser = {
+          name: user.name,
+          email: user.email,
+          isAdmin: !!user.isAdmin,
           isSenpai: !!user.isSenpai,
-          avatar: user.avatar || '🧑‍💻', 
+          avatar: user.avatar || '🧑‍💻',
           bio: user.bio || '',
           careerGoal: user.careerGoal || 'Software Engineer (Japan)'
         };
@@ -211,9 +211,9 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
         return;
       }
 
-      const newUser = { 
-        name, 
-        email, 
+      const newUser = {
+        name,
+        email,
         password,
         avatar: '🧑‍💻',
         bio: '',
@@ -235,68 +235,78 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
   return (
     <div className={styles.authWrapper}>
       <div className={styles.authContainer}>
-        
+
         {/* Left Side: Promo panel */}
         <div className={styles.authPromo}>
+          {/* Background Sakura/Particles */}
+          <div className={styles.particlesContainer}>
+            {[...Array(12)].map((_, i) => {
+              // Stable pseudo-random values to prevent rendering jitter when state updates
+              const leftPos = (i * 8.3) + ((i * 7) % 6);
+              const baseDuration = ((i * 3) % 5) + 6; // base duration: 6 to 10
+              const animDelay = ((i * 7) % 5) * 0.8; // delay: 0s to 3.2s
+              
+              return (
+                <svg
+                  key={i}
+                  viewBox="0 0 24 24"
+                  className={styles.particle}
+                  style={{
+                    left: `${leftPos}%`,
+                    '--base-duration': baseDuration,
+                    animationDelay: `${animDelay}s`
+                  }}
+                >
+                  <path d="M12,3 C12.5,3.5 13.5,4 14.5,3 C16.5,1 19.5,3.5 18.5,7 C17.5,11.5 13.5,18 12,20 C10.5,18 6.5,11.5 5.5,7 C4.5,3.5 7.5,1 9.5,3 C10.5,4 11.5,3.5 12,3 Z" />
+                </svg>
+              );
+            })}
+          </div>
+
           <div className={styles.authPromoLogo}>
-            <div className={styles.logoCircle}>
-              <span className={styles.logoDot}></span>
-            </div>
+            <img src="/logo.png" alt="Logo" className={styles.brandIcon} />
             <span>Nihon Career Ready</span>
           </div>
 
           <div className={styles.authPromoMain}>
-            <span className={styles.authPromoTag}>KỸ NĂNG & VĂN HÓA CÔNG SỞ NHẬT</span>
+            <div className={styles.tagWrapper}>
+              <span className={styles.authPromoTag}>
+                <Sparkles size={14} style={{ marginRight: '6px' }} /> ỨNG DỤNG CHO SINH VIÊN VIỆT NAM
+              </span>
+            </div>
             <h1 className={styles.authPromoQuote}>
-              Chìa khóa mở cánh cửa sự nghiệp chuyên nghiệp tại Nhật Bản
+              Chào mừng trở lại <br />
+              <span className={styles.textGradient}>Nihon Career Ready</span>
             </h1>
             <p className={styles.authPromoDesc}>
-              Học tập các quy tắc ứng xử, viết Rirekisho chuẩn JIS, và luyện tập thử thách thực tế cùng Senpai hỗ trợ bởi Trợ lý AI.
+              Trải nghiệm học tập văn hóa doanh nghiệp Nhật Bản theo phong cách hoàn toàn mới. Nắm bắt quy tắc, luyện tập tình huống và tạo CV Rirekisho chỉ trong vài phút.
             </p>
 
-            {/* Feature Showcase Mockups */}
+            {/* Redesigned Mock UI Preview: 2 floating cards similar to homepage */}
             <div className={styles.featureShowcase}>
-              {/* Card 1: Etiquette */}
-              <div className={`${styles.mockCard} ${styles.cardEtiquette}`}>
-                <div className={styles.cardHeader}>
-                  <span className={styles.cardBadge}>Thử thách ứng xử</span>
-                  <span className={styles.cardStatus}>Đang học</span>
+              <div className={styles.glassCardPrimary}>
+                <div className={styles.mockupHeader}>
+                  <div className={styles.mockupAvatar}>👩‍💻</div>
+                  <div style={{ flex: 1 }}>
+                    <div className={styles.mockupTitle}>Nihon Career Ready</div>
+                    <div className={styles.mockupSubtitle}>Hoàn thành lộ trình</div>
+                  </div>
                 </div>
-                <p className={styles.cardTitle}>Văn hóa rượu bia Nomikai</p>
-                <div className={styles.cardAction}>
-                  <span className={styles.actionIcon}>🍻</span>
-                  <span className={styles.actionText}>Quy tắc rót bia cho sếp chuẩn Nhật</span>
+                <div className={styles.progressBar}>
+                  <div className={styles.progressFill} style={{ width: '85%' }}></div>
                 </div>
-              </div>
 
-              {/* Card 2: AI Senpai Feedback */}
-              <div className={`${styles.mockCard} ${styles.cardAI}`}>
-                <div className={styles.cardHeader}>
-                  <span className={`${styles.cardBadge} ${styles.aiBadge}`}>Trợ lý AI Senpai</span>
-                  <span className={styles.cardPulse}></span>
-                </div>
-                <p className={styles.cardContent}>"Rirekisho của bạn đã chuẩn phong cách Keigo. Hãy điều chỉnh thêm phần PR bản thân..."</p>
-                <div className={styles.cardFooter}>
-                  <span className={styles.aiAvatar}>🤖</span>
-                  <span className={styles.aiName}>AI Mentor Feedback</span>
-                </div>
-              </div>
-
-              {/* Card 3: CV Progress */}
-              <div className={`${styles.mockCard} ${styles.cardCV}`}>
-                <div className={styles.cardHeader}>
-                  <span className={styles.cardBadge}>Trình tạo CV (JIS)</span>
-                  <span className={styles.cardPercent}>85%</span>
-                </div>
-                <div className={styles.cvProgress}>
-                  <div className={styles.cvProgressBar} style={{ width: '85%' }}></div>
-                </div>
-                <div className={styles.cvTarget}>
-                  <span>LINE Corp (Tokyo)</span>
-                  <span>Ứng tuyển Dev</span>
+                <div className={styles.glassCardSecondary}>
+                  <span style={{ fontSize: '1.8rem' }}>💮</span>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9, color: 'var(--jp-text-muted)' }}>Điểm văn hóa</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--jp-text)' }}>Hạng S (Xuất sắc)</div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Social Proof */}
           </div>
 
           <div className={styles.authPromoFooter}>
@@ -318,52 +328,24 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
 
           <div className={styles.formContainer}>
             <div className={styles.authHeader}>
+              <div className={styles.formBranding}>
+                <img src="/logo.png" alt="Logo" className={styles.formBrandIcon} />
+                <span className={styles.formBrandingText}>Nihon Career Ready</span>
+              </div>
               <h2 className={styles.authTitle}>
                 {authMode === 'login' ? 'Đăng Nhập' : authMode === 'register' ? 'Tạo Tài Khoản' : 'Khôi Phục'}
               </h2>
               <p className={styles.authSubtitle}>
-                {authMode === 'login' 
-                  ? 'Chào mừng bạn quay lại với Nihon Career Ready' 
-                  : authMode === 'register' 
-                  ? 'Đăng ký tài khoản thành viên mới'
-                  : 'Khôi phục mật khẩu thông qua câu hỏi bảo mật'
+                {authMode === 'login'
+                  ? 'Chào mừng bạn quay lại với Nihon Career Ready'
+                  : authMode === 'register'
+                    ? 'Đăng ký tài khoản thành viên mới'
+                    : 'Khôi phục mật khẩu thông qua câu hỏi bảo mật'
                 }
               </p>
             </div>
 
-            {/* Social Logins */}
-            {authMode === 'login' && (
-              <>
-                <div className={styles.socialButtons}>
-                  <button 
-                    type="button" 
-                    className={styles.socialBtn}
-                    onClick={() => alert('Đăng nhập bằng Google đang bảo trì, vui lòng dùng Email / Mật khẩu!')}
-                  >
-                    <svg className={styles.socialIcon} viewBox="0 0 24 24" width="18" height="18">
-                      <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.57 15 1 12 1 7.24 1 3.2 3.76 1.34 7.78l3.86 3c.9-2.7 3.42-4.74 6.8-4.74z"/>
-                      <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.73 2.89c2.18-2 3.7-4.97 3.7-8.62z"/>
-                      <path fill="#FBBC05" d="M5.2 14.78c-.23-.69-.36-1.42-.36-2.18s.13-1.49.36-2.18L1.34 7.42C.48 9.17 0 11.03 0 12.6c0 1.57.48 3.43 1.34 5.18l3.86-3z"/>
-                      <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.73-2.89c-1.1.74-2.52 1.18-4.23 1.18-3.38 0-5.9-2.04-6.8-4.74L1.34 16.64C3.2 20.66 7.24 23 12 23z"/>
-                    </svg>
-                    <span>Google</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    className={styles.socialBtn}
-                    onClick={() => alert('Đăng nhập bằng GitHub đang bảo trì, vui lòng dùng Email / Mật khẩu!')}
-                  >
-                    <svg className={styles.socialIcon} viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
-                    </svg>
-                    <span>GitHub</span>
-                  </button>
-                </div>
-                <div className={styles.divider}>
-                  <span>Hoặc đăng nhập bằng Email</span>
-                </div>
-              </>
-            )}
+
 
             {errorMsg && (
               <div className={`${styles.messageBox} ${styles.errorBox}`}>
@@ -466,7 +448,7 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
 
                     <div className={styles.formGroup}>
                       <label className={styles.selectLabel}>Chọn câu hỏi bảo mật</label>
-                      <select 
+                      <select
                         className={styles.selectInput}
                         value={securityQuestion}
                         onChange={(e) => setSecurityQuestion(e.target.value)}

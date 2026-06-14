@@ -97,7 +97,7 @@
   z-index: 2;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .stepNode.active {
@@ -118,7 +118,7 @@
   background: var(--jp-surface-raised);
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   animation: slideUpFade 0.5s ease-out;
   flex: 1;
   display: flex;
@@ -155,7 +155,9 @@
   color: var(--jp-text-muted);
 }
 
-.formInput, .formSelect, .formTextarea {
+.formInput,
+.formSelect,
+.formTextarea {
   width: 100%;
   box-sizing: border-box;
   padding: 0.75rem 1rem;
@@ -167,7 +169,9 @@
   font-family: inherit;
 }
 
-.formInput:focus, .formSelect:focus, .formTextarea:focus {
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
   outline: none;
   border-color: #1976d2;
   background: var(--jp-card-bg);
@@ -270,7 +274,7 @@
   padding: 3rem;
   width: 100%;
   max-width: 800px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
   animation: floating 8s ease-in-out infinite;
   transform-origin: top center;
   /* Make it scale a bit if screen is small */
@@ -285,7 +289,8 @@
   margin-bottom: 2rem;
   color: #000;
   font-family: "MS Mincho", "Hiragino Mincho Pro", serif;
-  margin-left: 1.5rem; /* offset for letter spacing */
+  margin-left: 1.5rem;
+  /* offset for letter spacing */
 }
 
 .riTable {
@@ -298,7 +303,8 @@
   background: #fff;
 }
 
-.riTable th, .riTable td {
+.riTable th,
+.riTable td {
   border: 1px solid #000;
   padding: 8px;
   line-height: 1.4;
@@ -325,40 +331,74 @@
 
 /* Animations */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-15px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpFade {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes floating {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0); }
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* Print Overrides */
 @media print {
-  .leftPanel, .previewHeader {
+
+  .leftPanel,
+  .previewHeader {
     display: none !important;
   }
+
   .container {
     background: none !important;
     height: auto !important;
     overflow: visible !important;
   }
+
   .rightPanel {
     padding: 0 !important;
     background: none !important;
   }
+
   .glassPaper {
     box-shadow: none !important;
     animation: none !important;
@@ -374,25 +414,31 @@
     height: auto;
     overflow-y: auto;
   }
+
   .leftPanel {
     max-width: 100%;
     padding: 1.5rem;
     border-right: none;
     border-bottom: 1px solid var(--jp-border);
   }
+
   .rightPanel {
     max-width: 100%;
     padding: 1.5rem 0.5rem;
     overflow-x: hidden;
   }
+
   .bentoGrid {
     grid-template-columns: 1fr;
   }
+
   .bentoItemFull {
     grid-column: span 1;
   }
+
   .glassPaper {
-    zoom: 0.5; /* Scale down significantly for mobile */
+    zoom: 0.5;
+    /* Scale down significantly for mobile */
     padding: 2rem;
     width: 100%;
     overflow-x: auto;

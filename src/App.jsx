@@ -28,7 +28,18 @@ const hashToView = (hash) => {
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeView, setActiveView] = useState('auth');
+  const [activeView, setActiveView] = useState(() => {
+    const session = localStorage.getItem('session_user');
+    if (session) {
+      const hash = window.location.hash.replace('#/', '').replace('#', '');
+      const validHashes = ['home', 'survey', 'dictionary', 'roleplay', 'cvbuilder', 'senpai', 'profile', 'admin'];
+      if (hash && validHashes.includes(hash)) {
+        return hashToView(hash);
+      }
+      return 'home';
+    }
+    return 'auth';
+  });
   const [theme, setTheme] = useState(() => localStorage.getItem('nihon_theme') || 'light');
 
   // Dynamic Content States — initialized with clean defaults

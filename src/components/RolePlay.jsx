@@ -294,7 +294,7 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
               </span>
             </div>
             <div className="rp-progress-container">
-              <div className="rp-progress-fill" style={{ width: `${progressPercentage}%` }}></div>
+              <div className="rp-progress-fill" style={{ '--progress': `${progressPercentage}%` }}></div>
             </div>
           </div>
 

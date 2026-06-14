@@ -4,24 +4,13 @@ import styles from './Hero.module.css';
 export default function Hero({ onViewChange }) {
   return (
     <div className={styles.heroSection}>
-      {/* Background Sakura/Particles */}
-      <div className={styles.particlesContainer}>
-        {[...Array(12)].map((_, i) => (
-          <div key={i} className={styles.particle} style={{
-            left: `${Math.random() * 100}%`,
-            animationDuration: `${Math.random() * 5 + 5}s`,
-            animationDelay: `${Math.random() * 5}s`
-          }}></div>
-        ))}
-      </div>
-
       <div className={styles.heroContentWrapper}>
         <div className={styles.textContent}>
           <div className={styles.tagWrapper}>
             <span className={styles.tag}><Sparkles size={14} style={{ marginRight: '6px' }} /> ỨNG DỤNG CHO SINH VIÊN VIỆT NAM</span>
           </div>
           <h1 className={styles.title}>
-            Bệ phóng vững chắc tới <br/>
+            Bệ phóng vững chắc tới <br />
             <span className={styles.textGradient}>Công sở Nhật Bản</span>
           </h1>
           <p className={styles.subtitle}>
@@ -50,7 +39,7 @@ export default function Hero({ onViewChange }) {
             <div className={styles.progressBar}>
               <div className={styles.progressFill} style={{ width: '85%' }}></div>
             </div>
-            
+
             <div className={styles.glassCardSecondary}>
               <span style={{ fontSize: '1.8rem' }}>💮</span>
               <div>
@@ -61,6 +50,6 @@ export default function Hero({ onViewChange }) {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

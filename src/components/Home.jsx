@@ -3,12 +3,29 @@ import FeatureCards from './home/FeatureCards';
 import WhyUs from './home/WhyUs';
 import CTABanner from './home/CTABanner';
 import Footer from './home/Footer';
+import heroStyles from './home/Hero.module.css';
 
 export default function Home({ score, roadmap, onViewChange }) {
   return (
     <div className="home-page">
+      {/* Background Sakura/Particles for the entire Home view */}
+      <div className={heroStyles.particlesContainer}>
+        {[...Array(100)].map((_, i) => {
+          const leftPos = (i * 4.1) + ((i * 13) % 5);
+          const duration = ((i * 7) % 6) + 20; // 10s to 15s
+          const delay = ((i * 11) % 8);  // 0s to 10.5s
+          return (
+            <div key={i} className={heroStyles.particle} style={{
+              left: `${leftPos}%`,
+              animationDuration: `${duration}s`,
+              animationDelay: `${delay}s`
+            }}></div>
+          );
+        })}
+      </div>
+
       <Hero onViewChange={onViewChange} />
-      
+
       {/* Recommended Roadmap Section if survey completed */}
       {roadmap && roadmap.length > 0 && (
         <div style={{ maxWidth: '1200px', margin: '0 auto 4rem', padding: '0 2rem' }}>
