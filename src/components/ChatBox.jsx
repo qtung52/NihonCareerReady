@@ -489,7 +489,7 @@ export default function ChatBox({ currentUser }) {
               <div
                 ref={scrollContainerRef}
                 style={{
-                  padding: '1 2.5rem', //menu
+                  padding: '0 2.5rem', //menu
                   display: 'flex',
                   gap: '0.5rem',
                   overflowX: 'auto',
