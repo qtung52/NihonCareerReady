@@ -339,6 +339,11 @@ export default function ChatBox({ currentUser }) {
           right: '24px',
           width: '60px',
           height: '60px',
+          minHeight: 'unset',
+          minWidth: 'unset',
+          padding: 0,
+          aspectRatio: '1 / 1',
+          flexShrink: 0,
           borderRadius: '50%',
           background: 'linear-gradient(135deg, var(--jp-blue) 0%, #1e457e 100%)',
           color: 'white',
@@ -481,7 +486,7 @@ export default function ChatBox({ currentUser }) {
             <div style={{ position: 'relative', background: 'var(--jp-soft-surface)', borderBottom: '1px solid var(--jp-border)', padding: '0.4rem 0' }}>
               <button
                 onClick={handleScrollLeft}
-                style={{ position: 'absolute', left: '4px', top: '50%', transform: 'translateY(-50%)', background: 'var(--jp-surface-raised)', border: '1.5px solid #0f2c59', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                style={{ position: 'absolute', left: '4px', top: '50%', transform: 'translateY(-50%)', background: 'var(--jp-surface-raised)', border: '1.5px solid #0f2c59', borderRadius: '50%', width: '28px', height: '28px', minHeight: 'unset', minWidth: 'unset', padding: 0, aspectRatio: '1 / 1', flexShrink: 0, cursor: 'pointer', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
               >
                 <ChevronLeft size={16} color="var(--jp-blue)" />
               </button>
@@ -546,7 +551,7 @@ export default function ChatBox({ currentUser }) {
 
               <button
                 onClick={handleScrollRight}
-                style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'var(--jp-surface-raised)', border: '1.5px solid #0f2c59', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'var(--jp-surface-raised)', border: '1.5px solid #0f2c59', borderRadius: '50%', width: '28px', height: '28px', minHeight: 'unset', minWidth: 'unset', padding: 0, aspectRatio: '1 / 1', flexShrink: 0, cursor: 'pointer', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
               >
                 <ChevronRight size={16} color="var(--jp-blue)" />
               </button>
@@ -582,6 +587,7 @@ export default function ChatBox({ currentUser }) {
                       fontSize: '1.1rem',
                       width: '28px',
                       height: '28px',
+                      aspectRatio: '1 / 1',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -637,6 +643,7 @@ export default function ChatBox({ currentUser }) {
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.45rem' }}>
                 <div style={{
                   fontSize: '1.1rem', width: '28px', height: '28px',
+                  aspectRatio: '1 / 1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: 'var(--jp-card-bg)', borderRadius: '50%', border: '1px solid var(--jp-border)', flexShrink: 0
                 }}>
@@ -668,6 +675,7 @@ export default function ChatBox({ currentUser }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <div style={{
                   fontSize: '1.1rem', width: '28px', height: '28px',
+                  aspectRatio: '1 / 1', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: 'var(--jp-card-bg)', borderRadius: '50%', border: '1px solid var(--jp-border)'
                 }}>
@@ -737,7 +745,12 @@ export default function ChatBox({ currentUser }) {
                 type="button"
                 onClick={handleStopStreaming}
                 style={{
-                  width: '36px', height: '36px',
+                  width: '36px',
+                  height: '36px',
+                  minHeight: 'unset',
+                  minWidth: 'unset',
+                  padding: 0,
+                  aspectRatio: '1 / 1',
                   borderRadius: '50%',
                   background: '#e74c3c',
                   color: 'white',
@@ -756,7 +769,12 @@ export default function ChatBox({ currentUser }) {
               <button
                 type="submit"
                 style={{
-                  width: '36px', height: '36px',
+                  width: '36px',
+                  height: '36px',
+                  minHeight: 'unset',
+                  minWidth: 'unset',
+                  padding: 0,
+                  aspectRatio: '1 / 1',
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, var(--jp-red) 0%, #c0392b 100%)',
                   color: 'white',

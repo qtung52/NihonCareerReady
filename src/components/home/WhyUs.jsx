@@ -1,36 +1,54 @@
 import styles from './WhyUs.module.css';
 
 export default function WhyUs() {
-  const reasons = [
-    {
-      title: 'Nội dung chuẩn Nhật',
-      desc: 'Mọi kiến thức về Ojigi, Business Manner hay Rirekisho đều được biên soạn và kiểm chứng bởi các chuyên gia nhân sự Nhật Bản.',
-      icon: '✅'
-    },
-    {
-      title: 'Học nhanh, thực tế',
-      desc: 'Thay vì lý thuyết dài dòng, ứng dụng cung cấp flashcard trực quan và các tình huống giả lập để bạn có thể áp dụng ngay ngày mai.',
-      icon: '⚡'
-    },
-    {
-      title: 'Thiết kế cho SV Việt Nam',
-      desc: 'Giải quyết triệt để những bỡ ngỡ, sốc văn hóa đặc thù của người Việt khi lần đầu bước vào môi trường doanh nghiệp Nhật Bản.',
-      icon: '🎓'
-    }
+  const terms = [
+    { jp: 'おもてなし', r: 'Omotenashi', desc: 'Tinh thần phục vụ tận tâm' },
+    { jp: '改善', r: 'Kaizen', desc: 'Không ngừng cải tiến' },
+    { jp: '報連相', r: 'Hou-Ren-So', desc: 'Báo cáo - Liên lạc - Bàn bạc' },
+    { jp: '和', r: 'Wa', desc: 'Sự hòa hợp tập thể' },
+    { jp: '根回し', r: 'Nemawashi', desc: 'Tạo sự đồng thuận ngầm' },
+    { jp: '本音と建前', r: 'Honne & Tatemae', desc: 'Cảm xúc thật & Thể diện' },
   ];
 
   return (
-    <div className={styles.whyUsSection}>
-      <div className={styles.container}>
-        <h2 className={styles.title}>Tại sao chọn Nihon Career Ready?</h2>
-        <div className={styles.grid}>
-          {reasons.map((item, index) => (
-            <div key={index} className={styles.featureBox}>
-              <div className={styles.icon}>{item.icon}</div>
-              <h3 className={styles.boxTitle}>{item.title}</h3>
-              <p className={styles.boxDesc}>{item.desc}</p>
+    <div className={styles.cultureSection}>
+      <h2 className={styles.sectionTitle}>Giải mã Văn hóa Doanh nghiệp</h2>
+      
+      {/* Marquee Scrolling Text */}
+      <div className={styles.marqueeContainer}>
+        <div className={styles.marqueeContent}>
+          {/* Render 3 sets to ensure seamless infinite loop */}
+          {[...terms, ...terms, ...terms].map((term, idx) => (
+            <div key={idx} className={styles.termCard}>
+              <div className={styles.jpText}>{term.jp}</div>
+              <div className={styles.rText}>{term.r}</div>
+              <div className={styles.descText}>{term.desc}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Career Journey */}
+      <div className={styles.journeyContainer}>
+        <h2 className={styles.journeyTitle}>Chuẩn bị sẵn sàng cho mọi cột mốc</h2>
+        <div className={styles.steps}>
+          <div className={styles.step}>
+            <div className={styles.stepIcon}>🎓</div>
+            <div className={styles.stepTitle}>Sinh viên</div>
+            <div className={styles.stepDesc}>Học hỏi & Định hướng</div>
+          </div>
+          <div className={styles.stepLine}></div>
+          <div className={styles.step}>
+            <div className={styles.stepIcon}>🌱</div>
+            <div className={styles.stepTitle}>Thực tập sinh (Intern)</div>
+            <div className={styles.stepDesc}>Trải nghiệm thực tế</div>
+          </div>
+          <div className={styles.stepLine}></div>
+          <div className={styles.step}>
+            <div className={styles.stepIcon}>💼</div>
+            <div className={styles.stepTitle}>Nhân viên (Shain)</div>
+            <div className={styles.stepDesc}>Làm việc chuyên nghiệp</div>
+          </div>
         </div>
       </div>
     </div>

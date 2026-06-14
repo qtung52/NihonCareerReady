@@ -229,6 +229,7 @@ export const MANNERS_DATA = [
 
 export default function Dictionary({ dictionary = MANNERS_DATA }) {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [flippedCards, setFlippedCards] = useState({});
 
   const handleCardClick = (id) => {
@@ -246,42 +247,90 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
     { id: 'dresscode', label: 'Trang phục' }
   ];
 
-  const filteredData = activeCategory === 'all'
-    ? dictionary
-    : dictionary.filter(item => item.category === activeCategory);
+  const filteredData = dictionary.filter(item => {
+    const matchesCat = activeCategory === 'all' || item.category === activeCategory;
+    const matchesSearch = item.titleVi.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.titleJp.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.frontDesc.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
   return (
     <div>
-      <div className="section-header" style={{ marginBottom: '2.5rem' }}>
-        <h2 className="section-title" style={{ fontSize: '1.8rem', color: 'var(--jp-blue)', position: 'relative', paddingBottom: '0.5rem' }}>
-          Từ điển Quy tắc Công sở - Business Manner
+      <div className="section-header" style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+        <h2 className="section-title" style={{ fontSize: '2.2rem', color: 'var(--jp-text)', fontWeight: 800 }}>
+          Sổ tay Văn hóa <span style={{ color: 'var(--jp-red)' }}>Nhật Bản</span>
         </h2>
-        <p className="section-subtitle" style={{ fontSize: '0.95rem' }}>
-          Học văn hóa chuẩn Nhật qua thẻ ghi nhớ thông minh. Nhấp vào thẻ để lật xem chi tiết Nên (Do) và Tránh (Don't).
+        <p className="section-subtitle" style={{ fontSize: '1.05rem', maxWidth: '600px', margin: '0 auto' }}>
+          Học văn hóa chuẩn Nhật qua Flashcard 3D thông minh. Lật thẻ để khám phá các quy tắc "bất thành văn" chốn công sở.
         </p>
       </div>
 
-      <div className="filter-tabs" style={{ gap: '0.5rem', marginBottom: '2.5rem' }}>
-        {categories.map(cat => (
-          <button
-            key={cat.id}
-            className={`tab-btn ${activeCategory === cat.id ? 'active' : ''}`}
-            onClick={() => setActiveCategory(cat.id)}
+      {/* Modern Search & Filter Bar */}
+      <div style={{
+        background: 'var(--jp-card-bg)',
+        padding: '1.5rem',
+        borderRadius: '16px',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.04)',
+        marginBottom: '3rem',
+        border: '1px solid var(--jp-border)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem'
+      }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)' }}>
+            🔍
+          </div>
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm tình huống, quy tắc (VD: cúi chào, danh thiếp...)" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              padding: '0.5rem 1.25rem',
-              borderRadius: '20px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              border: activeCategory === cat.id ? 'none' : '1px solid var(--jp-border)',
-              background: activeCategory === cat.id ? 'var(--jp-red)' : '#fff',
-              color: activeCategory === cat.id ? '#fff' : 'var(--jp-blue)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              width: '100%',
+              padding: '1rem 1rem 1rem 3rem',
+              borderRadius: '12px',
+              border: '2px solid var(--jp-border)',
+              fontSize: '1.05rem',
+              background: 'var(--jp-bg)',
+              color: 'var(--jp-text)',
+              transition: 'all 0.3s ease',
+              outline: 'none'
             }}
-          >
-            {cat.label}
-          </button>
-        ))}
+            onFocus={(e) => e.target.style.borderColor = 'var(--jp-blue)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--jp-border)'}
+          />
+        </div>
+
+        <div className="filter-tabs" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              style={{
+                padding: '0.6rem 1.25rem',
+                borderRadius: '30px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                border: activeCategory === cat.id ? 'none' : '1px solid var(--jp-border)',
+                background: activeCategory === cat.id ? 'linear-gradient(135deg, var(--jp-red), #c0392b)' : 'var(--jp-surface-raised)',
+                color: activeCategory === cat.id ? '#fff' : 'var(--jp-text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: activeCategory === cat.id ? '0 4px 15px rgba(232, 54, 93, 0.3)' : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (activeCategory !== cat.id) e.target.style.borderColor = 'var(--jp-blue)';
+              }}
+              onMouseLeave={(e) => {
+                if (activeCategory !== cat.id) e.target.style.borderColor = 'var(--jp-border)';
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tối ưu hóa UI lưới Flashcard gọn gàng hơn */}

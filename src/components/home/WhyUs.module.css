@@ -1,67 +1,199 @@
-.whyUsSection {
+.cultureSection {
   background-color: var(--jp-surface-raised);
-  padding: 5rem 2rem;
+  padding: 6rem 0;
   margin-top: 2rem;
+  overflow: hidden;
+  border-top: 1px solid var(--jp-border);
+  border-bottom: 1px solid var(--jp-border);
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.title {
-  font-size: 2rem;
-  font-weight: 700;
+.sectionTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
   color: var(--jp-text);
-  margin-bottom: 3.5rem;
+  margin-bottom: 4rem;
   text-align: center;
+  letter-spacing: -0.5px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2.5rem;
+/* Marquee Scrolling Text */
+.marqueeContainer {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  margin-bottom: 6rem;
 }
 
-.featureBox {
+.marqueeContainer::before,
+.marqueeContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  z-index: 2;
+}
+
+.marqueeContainer::before {
+  left: 0;
+  background: linear-gradient(to right, var(--jp-surface-raised), transparent);
+}
+
+.marqueeContainer::after {
+  right: 0;
+  background: linear-gradient(to left, var(--jp-surface-raised), transparent);
+}
+
+.marqueeContent {
+  display: flex;
+  animation: scroll 40s linear infinite;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.termCard {
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.25rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
 }
 
-.icon {
-  width: 64px;
-  height: 64px;
+.termCard:hover {
+  transform: translateY(-5px);
+  border-color: var(--jp-blue);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.05);
+}
+
+.jpText {
+  font-family: var(--font-japanese);
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--jp-red);
+  margin-bottom: 0.5rem;
+}
+
+.rText {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin-bottom: 0.75rem;
+}
+
+.descText {
+  font-size: 0.95rem;
+  color: var(--jp-text-muted);
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-300px * 6 - 2rem * 6));
+  }
+
+  /* Adjust based on term count */
+}
+
+/* Career Journey */
+.journeyContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.journeyTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.stepIcon {
+  width: 80px;
+  height: 80px;
   background: var(--jp-bg);
-  border: 1px solid var(--jp-border);
+  border: 4px solid var(--jp-border);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
-  color: var(--jp-blue);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
 }
 
-.boxTitle {
-  font-size: 1.2rem;
-  font-weight: 700;
+.step:hover .stepIcon {
+  border-color: var(--jp-blue);
+  transform: scale(1.1);
+  box-shadow: 0 10px 20px rgba(79, 142, 247, 0.2);
+}
+
+.stepTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--jp-text);
-  margin: 0;
+  margin-bottom: 0.5rem;
 }
 
-.boxDesc {
+.stepDesc {
   font-size: 0.95rem;
   color: var(--jp-text-muted);
-  line-height: 1.6;
-  margin: 0;
 }
 
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: repeat(1, 1fr);
-    gap: 3rem;
+.stepLine {
+  flex: 1;
+  height: 4px;
+  background: var(--jp-border);
+  margin: 0 1rem;
+  margin-top: -3.5rem;
+  /* align with center of icons */
+  position: relative;
+  z-index: 1;
+  border-radius: 2px;
+}
+
+@media (max-width: 768px) {
+  .steps {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .stepLine {
+    width: 4px;
+    height: 40px;
+    margin: 0.5rem 0;
+  }
+
+  .marqueeContainer::before,
+  .marqueeContainer::after {
+    width: 50px;
   }
 }

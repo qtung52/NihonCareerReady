@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, X } from 'lucide-react';
 
 // SVG illustrations rendered by scenario id — không lưu vào localStorage
 function ScenarioIllustration({ id }) {
@@ -196,13 +196,14 @@ export const SCENARIOS = [
 export default function RolePlay({ roleplay = SCENARIOS }) {
   const [currentScenarioIdx, setCurrentScenarioIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [score, setScore] = useState(0);
   const [attempted, setAttempted] = useState({});
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const handleOptionClick = (opt) => {
+    if (selectedOption) return; // Prevent changing answer after selection
+
     setSelectedOption(opt);
-    setShowModal(true);
 
     const key = currentScenarioIdx;
     if (!attempted[key]) {
@@ -213,154 +214,166 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
     }
   };
 
+  const handleNext = () => {
+    if (currentScenarioIdx < roleplay.length - 1) {
+      setCurrentScenarioIdx(prev => prev + 1);
+      setSelectedOption(null);
+    } else {
+      setIsCompleted(true);
+    }
+  };
+
+  const handleRetry = () => {
+    setCurrentScenarioIdx(0);
+    setSelectedOption(null);
+    setScore(0);
+    setAttempted({});
+    setIsCompleted(false);
+  };
+
   const currentScenario = roleplay[currentScenarioIdx];
   if (!currentScenario) return null;
 
+  // Calculate progress based on current index AND whether an option is selected
+  const progressPercentage = ((currentScenarioIdx + (selectedOption ? 1 : 0)) / roleplay.length) * 100;
+
   return (
-    <div>
-      <div className="section-header">
+    <div className="rp-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div className="section-header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <h2 className="section-title">Thử thách Tình huống - Role-play</h2>
         <p className="section-subtitle">Thực hành giải quyết các bài toán giao tiếp ứng xử chuẩn Nhật Bản.</p>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <span style={{ fontWeight: 600, color: 'var(--jp-blue)' }}>
-          Điểm thử thách: <span style={{ color: 'var(--jp-red)', fontSize: '1.2rem' }}>{score}/{roleplay.length}</span>
-        </span>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {roleplay.map((_, idx) => (
-            <button
-              key={idx}
-              className={`tab-btn ${currentScenarioIdx === idx ? 'active' : ''}`}
-              style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
-              onClick={() => {
-                setCurrentScenarioIdx(idx);
-                setSelectedOption(null);
-              }}
-            >
-              {idx + 1}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="roleplay-layout">
-        {/* Left Side: Illustration & Situation */}
-        <div className="roleplay-left">
-          <h3 style={{ color: 'var(--jp-blue)', marginBottom: '1rem', fontFamily: 'var(--font-japanese)' }}>
-            {currentScenario.title}
-          </h3>
-          
-          {/* Tải ảnh từ máy tính sẽ được hiển thị thẻ img tại đây */}
-          <div className="roleplay-illustration-box" style={{ 
-            background: '#fff', 
-            border: '1px solid var(--jp-border)',
-            borderRadius: '8px', 
-            overflow: 'hidden', 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            minHeight: '160px',
-            marginBottom: '1rem',
-            padding: currentScenario.imageUrl ? '0' : '1rem'
-          }}>
-            {currentScenario.imageUrl ? (
-              <img 
-                src={currentScenario.imageUrl} 
-                alt="Minh họa tình huống" 
-                style={{ 
-                  width: '100%', 
-                  height: 'auto', 
-                  maxHeight: '260px', 
-                  objectFit: 'contain',
-                  display: 'block' 
-                }} 
-              />
+      {isCompleted ? (
+        <div className="rp-gamified-card rp-results-screen" style={{ textAlign: 'center', padding: '3rem 2rem', animation: 'fadeInUp 0.5s ease-out forwards' }}>
+          <div style={{ marginBottom: '2rem' }}>
+            {score === roleplay.length ? (
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(46, 204, 113, 0.1)', color: '#2ecc71', marginBottom: '1rem' }}>
+                <CheckCircle2 size={70} />
+              </div>
+            ) : score >= roleplay.length / 2 ? (
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(52, 152, 219, 0.1)', color: 'var(--jp-blue)', marginBottom: '1rem' }}>
+                <CheckCircle2 size={70} />
+              </div>
             ) : (
-              <ScenarioIllustration id={currentScenario.id} />
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(188, 0, 45, 0.1)', color: 'var(--jp-red)', marginBottom: '1rem' }}>
+                <RefreshCw size={70} />
+              </div>
             )}
-          </div>
-          
-          <p style={{ fontSize: '0.95rem', color: 'var(--jp-text)' }}>
-            {currentScenario.description}
-          </p>
-        </div>
+            
+            <h2 style={{ fontSize: '2rem', color: 'var(--jp-blue)', fontFamily: 'var(--font-japanese)', marginBottom: '0.5rem' }}>
+              Hoàn thành Thử thách!
+            </h2>
+            <p style={{ fontSize: '1.2rem', color: 'var(--jp-text-muted)', marginBottom: '2rem' }}>
+              Điểm số của bạn: <strong style={{ color: 'var(--jp-red)', fontSize: '1.5rem' }}>{score} / {roleplay.length}</strong>
+            </p>
 
-        {/* Right Side: Options list */}
-        <div className="roleplay-right">
-          <h4 style={{ color: 'var(--jp-blue)', marginBottom: '0.5rem', fontSize: '1rem', fontWeight: 700 }}>
-            Bạn sẽ xử lý như thế nào?
-          </h4>
-          {(currentScenario.options || []).map((opt, idx) => (
-            <button
-              key={idx}
-              className="rp-option"
-              onClick={() => handleOptionClick(opt)}
-            >
-              <div className="rp-letter">{opt.letter || String.fromCharCode(65 + idx)}</div>
-              <div style={{ color: 'var(--jp-text)' }}>{opt.text}</div>
+            <p style={{ fontSize: '1.05rem', color: 'var(--jp-text)', maxWidth: '500px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
+              {score === roleplay.length 
+                ? "Tuyệt vời! Bạn đã nắm bắt hoàn hảo các quy tắc ứng xử nơi công sở Nhật Bản. Giữ vững phong độ này nhé!"
+                : score >= roleplay.length / 2 
+                ? "Khá lắm! Bạn đã có những hiểu biết cơ bản tốt, nhưng hãy tiếp tục ôn luyện để xử lý mượt mà hơn nhé."
+                : "Đừng nản chí! Văn hóa Nhật có nhiều quy tắc ẩn, hãy thử lại và đọc kỹ phần giải thích để tiến bộ hơn."}
+            </p>
+
+            <button className="btn btn-primary" onClick={handleRetry} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <RefreshCw size={20} /> Chơi lại từ đầu
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Explanation Popup Modal */}
-      {showModal && selectedOption && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className={`modal-header ${selectedOption.isCorrect ? 'correct' : 'incorrect'}`}>
-              {selectedOption.isCorrect ? (
-                <>
-                  <CheckCircle2 size={28} />
-                  <span>ĐÁP ÁN ĐÚNG! (正解)</span>
-                </>
-              ) : (
-                <>
-                  <XCircle size={28} />
-                  <span>CHƯA CHÍNH XÁC!</span>
-                </>
-              )}
-            </div>
-            <div className="modal-body">
-              <p style={{ marginBottom: '1rem', color: 'var(--jp-text)' }}>
-                Lựa chọn của bạn: <strong style={{ color: 'var(--jp-blue)' }}>{selectedOption.letter}</strong>
-              </p>
-              <p style={{ color: 'var(--jp-text)', fontSize: '0.9rem', background: 'var(--jp-soft-surface)', padding: '1rem', borderRadius: 'var(--jp-radius)', borderLeft: '3px solid var(--jp-border)' }}>
-                {selectedOption.explanation}
-              </p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              {currentScenarioIdx < roleplay.length - 1 ? (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setShowModal(false);
-                    setCurrentScenarioIdx(prev => prev + 1);
-                    setSelectedOption(null);
-                  }}
-                >
-                  Tình huống tiếp theo
-                </button>
-              ) : (
-                <button
-                  className="btn btn-outline"
-                  onClick={() => {
-                    setShowModal(false);
-                    setCurrentScenarioIdx(0);
-                    setSelectedOption(null);
-                    setScore(0);
-                    setAttempted({});
-                  }}
-                >
-                  <RefreshCw size={14} /> Làm lại từ đầu
-                </button>
-              )}
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                Đóng
-              </button>
-            </div>
           </div>
         </div>
+      ) : (
+        <>
+          {/* Progress Bar & Score */}
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+              <span style={{ fontWeight: 600, color: 'var(--jp-text-muted)', fontSize: '0.9rem', letterSpacing: '0.02em' }}>
+                Câu hỏi {currentScenarioIdx + 1} / {roleplay.length}
+              </span>
+              <span style={{ fontWeight: 700, color: 'var(--jp-blue)' }}>
+                Điểm: <span style={{ color: 'var(--jp-red)', fontSize: '1.2rem', marginLeft: '4px' }}>{score}</span>
+              </span>
+            </div>
+            <div className="rp-progress-container">
+              <div className="rp-progress-fill" style={{ width: `${progressPercentage}%` }}></div>
+            </div>
+          </div>
+
+          <div className="rp-gamified-card" style={{ animation: 'fadeInUp 0.4s ease-out forwards' }}>
+            {/* Illustration */}
+            <div className="rp-gamified-illustration">
+              {currentScenario.imageUrl ? (
+                <img 
+                  src={currentScenario.imageUrl} 
+                  alt="Minh họa tình huống" 
+                  style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain' }} 
+                />
+              ) : (
+                <ScenarioIllustration id={currentScenario.id} />
+              )}
+            </div>
+
+            {/* Content: Title, Desc, Options */}
+            <div className="rp-gamified-content">
+              <h3 className="rp-gamified-title">{currentScenario.title}</h3>
+              <p className="rp-gamified-desc">{currentScenario.description}</p>
+
+              <div className="rp-options-grid">
+                {(currentScenario.options || []).map((opt, idx) => {
+                  let optionClass = "rp-gamified-option";
+                  if (selectedOption) {
+                    if (opt.letter === selectedOption.letter) {
+                      optionClass += opt.isCorrect ? " selected-correct" : " selected-incorrect";
+                    } else if (opt.isCorrect) {
+                      // Reveal the correct option in green even if they didn't pick it
+                      optionClass += " selected-correct";
+                    } else {
+                      optionClass += " disabled";
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      className={optionClass}
+                      onClick={() => handleOptionClick(opt)}
+                      disabled={!!selectedOption}
+                      style={{ animationDelay: `${idx * 0.1}s` }}
+                    >
+                      <div className="rp-gamified-option-letter">{opt.letter || String.fromCharCode(65 + idx)}</div>
+                      <div className="rp-gamified-option-text">{opt.text}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Inline Slide-up Feedback */}
+              {selectedOption && (
+                <div className="rp-inline-feedback">
+                  <div className={`rp-feedback-header ${selectedOption.isCorrect ? 'correct' : 'incorrect'}`}>
+                    {selectedOption.isCorrect ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
+                    <span>{selectedOption.isCorrect ? 'ĐÁP ÁN ĐÚNG! (正解)' : 'CHƯA CHÍNH XÁC!'}</span>
+                  </div>
+                  <div className="rp-feedback-body">
+                    <p style={{ color: 'var(--jp-text)', fontSize: '0.98rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                      {selectedOption.explanation}
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      {currentScenarioIdx < roleplay.length - 1 ? (
+                        <button className="btn btn-primary" onClick={handleNext} style={{ padding: '0.6rem 1.5rem' }}>
+                          Câu tiếp theo
+                        </button>
+                      ) : (
+                        <button className="btn btn-primary" onClick={handleNext} style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center' }}>
+                          Hoàn tất
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

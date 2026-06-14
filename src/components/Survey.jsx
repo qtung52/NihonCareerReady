@@ -169,6 +169,8 @@ export default function Survey({ onComplete }) {
               display: 'inline-flex',
               width: '24px',
               height: '24px',
+              aspectRatio: '1 / 1',
+              flexShrink: 0,
               borderRadius: '50%',
               background: selectedOpt === oIdx ? 'rgba(255,255,255,0.2)' : 'var(--jp-blue-light)',
               color: selectedOpt === oIdx ? '#fff' : 'var(--jp-blue)',

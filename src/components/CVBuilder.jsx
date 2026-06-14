@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Download, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Check, Eye } from 'lucide-react';
+import styles from './CVBuilder.module.css';
 
 /* eslint-disable no-irregular-whitespace */
 
@@ -25,7 +26,7 @@ export default function CVBuilder() {
     addressFurigana: 'ハノイシ　カウザイック',
     addressKanji: 'Thành phố Hà Nội, Quận Cầu Giấy',
     
-    // Step 2 (Simplified arrays for simplicity, serialised as inputs)
+    // Step 2
     eduYear1: '2019', eduMonth1: '09', eduDetail1: 'Trường THPT Chuyên Hà Nội - Amsterdam (Nhập học)',
     eduYear2: '2022', eduMonth2: '06', eduDetail2: 'Trường THPT Chuyên Hà Nội - Amsterdam (Tốt nghiệp)',
     eduYear3: '2022', eduMonth3: '09', eduDetail3: 'Đại học Quốc gia Hà Nội - Khoa Tiếng Nhật (Nhập học)',
@@ -66,434 +67,282 @@ export default function CVBuilder() {
   };
 
   return (
-    <div>
-      <div className="section-header">
-        <h2 className="section-title">Công cụ Tạo Rirekisho chuẩn Nhật</h2>
-        <p className="section-subtitle">Điền thông tin theo mẫu từng bước bên dưới. Form tự động căn chỉnh ra chuẩn form Rirekisho truyền thống của Nhật.</p>
-      </div>
+    <div className={styles.container}>
+      {/* Left Form Panel */}
+      <div className={styles.leftPanel}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Công cụ Tạo Rirekisho</h2>
+          <p className={styles.subtitle}>Điền thông tin theo mẫu từng bước bên dưới. Form tự động căn chỉnh ra chuẩn form Rirekisho truyền thống của Nhật.</p>
+        </div>
 
-      <div className="cv-builder-layout">
-        {/* Left Form Panel */}
-        <div className="cv-form-panel app-surface">
-          <div className="step-indicator">
+        <div className={styles.formContainer}>
+          <div className={styles.stepper}>
             {STEPS.map((step) => (
               <div
                 key={step.id}
-                className={`step-node ${currentStep === step.id ? 'active' : currentStep > step.id ? 'completed' : ''}`}
+                className={`${styles.stepNode} ${currentStep === step.id ? styles.active : currentStep > step.id ? styles.completed : ''}`}
                 onClick={() => setCurrentStep(step.id)}
-                style={{ cursor: 'pointer' }}
                 title={step.label}
               >
-                {currentStep > step.id ? <Check size={14} /> : step.id}
+                {currentStep > step.id ? <Check size={18} /> : step.id}
               </div>
             ))}
           </div>
 
-          <h3 className="panel-title" style={{ color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+          <h3 className={styles.stepTitle}>
             Bước {currentStep}: {STEPS[currentStep - 1].label}
           </h3>
 
           {/* Form Content */}
-          {currentStep === 1 && (
-            <div>
-              <div className="form-group">
-                <label className="form-label">Tên đọc phiên âm (Furigana - Katakana)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  name="furiganaName"
-                  value={formData.furiganaName}
-                  onChange={handleChange}
-                  placeholder="グエン　ヴァン　ア"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Họ và tên (Chữ in hoa không dấu hoặc Kanji)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  name="kanjiName"
-                  value={formData.kanjiName}
-                  onChange={handleChange}
-                  placeholder="NGUYEN VAN A"
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Năm sinh</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="birthYear"
-                    value={formData.birthYear}
-                    onChange={handleChange}
-                    placeholder="2004"
-                  />
+          <div className={styles.bentoGrid}>
+            {currentStep === 1 && (
+              <>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Tên đọc phiên âm (Furigana)</label>
+                  <input type="text" className={styles.formInput} name="furiganaName" value={formData.furiganaName} onChange={handleChange} placeholder="グエン　ヴァン　ア" />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Tháng / Ngày sinh</label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                      type="text"
-                      className="form-input"
-                      name="birthMonth"
-                      value={formData.birthMonth}
-                      onChange={handleChange}
-                      placeholder="08"
-                    />
-                    <input
-                      type="text"
-                      className="form-input"
-                      name="birthDay"
-                      value={formData.birthDay}
-                      onChange={handleChange}
-                      placeholder="15"
-                    />
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Họ và tên (In hoa/Kanji)</label>
+                  <input type="text" className={styles.formInput} name="kanjiName" value={formData.kanjiName} onChange={handleChange} placeholder="NGUYEN VAN A" />
+                </div>
+                
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Năm sinh</label>
+                  <input type="text" className={styles.formInput} name="birthYear" value={formData.birthYear} onChange={handleChange} placeholder="2004" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Tháng / Ngày sinh</label>
+                  <div className={styles.flexRow}>
+                    <input type="text" className={styles.formInput} style={{flex: 1}} name="birthMonth" value={formData.birthMonth} onChange={handleChange} placeholder="08" />
+                    <input type="text" className={styles.formInput} style={{flex: 1}} name="birthDay" value={formData.birthDay} onChange={handleChange} placeholder="15" />
                   </div>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Giới tính</label>
-                <select className="form-input" name="gender" value={formData.gender} onChange={handleChange}>
-                  <option value="Nam">Nam (男)</option>
-                  <option value="Nữ">Nữ (女)</option>
-                </select>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Điện thoại</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="090-1234-5678"
-                  />
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Giới tính</label>
+                  <select className={styles.formSelect} name="gender" value={formData.gender} onChange={handleChange}>
+                    <option value="Nam">Nam (男)</option>
+                    <option value="Nữ">Nữ (女)</option>
+                  </select>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="student@example.com"
-                  />
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Điện thoại</label>
+                  <input type="text" className={styles.formInput} name="phone" value={formData.phone} onChange={handleChange} placeholder="090-1234-5678" />
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Địa chỉ phiên âm (Furigana)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  name="addressFurigana"
-                  value={formData.addressFurigana}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Địa chỉ hiện tại</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  name="addressKanji"
-                  value={formData.addressKanji}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)', marginBottom: '1rem' }}>
-                Học vấn (学歴) và Lịch sử làm việc (職歴). Để trống các dòng không dùng.
-              </p>
-              
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 1:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="eduYear1" value={formData.eduYear1} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="eduMonth1" value={formData.eduMonth1} onChange={handleChange} placeholder="Tháng" />
+                <div className={`${styles.formGroup} ${styles.bentoItemFull}`}>
+                  <label className={styles.formLabel}>Email</label>
+                  <input type="email" className={styles.formInput} name="email" value={formData.email} onChange={handleChange} placeholder="student@example.com" />
                 </div>
-                <input type="text" className="form-input" name="eduDetail1" value={formData.eduDetail1} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
-              </div>
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 2:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="eduYear2" value={formData.eduYear2} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="eduMonth2" value={formData.eduMonth2} onChange={handleChange} placeholder="Tháng" />
+                <div className={`${styles.formGroup} ${styles.bentoItemFull}`}>
+                  <label className={styles.formLabel}>Địa chỉ phiên âm (Furigana)</label>
+                  <input type="text" className={styles.formInput} name="addressFurigana" value={formData.addressFurigana} onChange={handleChange} />
                 </div>
-                <input type="text" className="form-input" name="eduDetail2" value={formData.eduDetail2} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
-              </div>
-
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Dòng học vấn 3:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="eduYear3" value={formData.eduYear3} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="eduMonth3" value={formData.eduMonth3} onChange={handleChange} placeholder="Tháng" />
+                <div className={`${styles.formGroup} ${styles.bentoItemFull}`}>
+                  <label className={styles.formLabel}>Địa chỉ hiện tại</label>
+                  <input type="text" className={styles.formInput} name="addressKanji" value={formData.addressKanji} onChange={handleChange} />
                 </div>
-                <input type="text" className="form-input" name="eduDetail3" value={formData.eduDetail3} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
-              </div>
+              </>
+            )}
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem', fontWeight: 600, borderTop: '1px solid var(--jp-border)', paddingTop: '1rem' }}>Lịch sử làm việc (Kinh nghiệm) 1:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="workYear1" value={formData.workYear1} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="workMonth1" value={formData.workMonth1} onChange={handleChange} placeholder="Tháng" />
+            {currentStep === 2 && (
+              <>
+                <div className={styles.bentoItemFull}>
+                  <p className={styles.subText}>Học vấn (学歴) và Lịch sử làm việc (職歴). Để trống các dòng không dùng.</p>
+                  
+                  <div className={styles.sectionDivider}>Học vấn</div>
+                  
+                  {[1,2,3].map(i => (
+                    <div key={`edu${i}`} className={`${styles.formGroup} ${styles.bentoItemFull}`} style={{marginBottom: '0.75rem'}}>
+                      <div className={styles.flexRow}>
+                        <input type="text" className={styles.formInput} style={{width: '80px'}} name={`eduYear${i}`} value={formData[`eduYear${i}`]} onChange={handleChange} placeholder="Năm" />
+                        <input type="text" className={styles.formInput} style={{width: '70px'}} name={`eduMonth${i}`} value={formData[`eduMonth${i}`]} onChange={handleChange} placeholder="Tháng" />
+                        <input type="text" className={styles.formInput} style={{flex: 1}} name={`eduDetail${i}`} value={formData[`eduDetail${i}`]} onChange={handleChange} placeholder="Tên trường học & Nhập học/Tốt nghiệp" />
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className={styles.sectionDivider}>Lịch sử làm việc</div>
+                  
+                  {[1,2].map(i => (
+                    <div key={`work${i}`} className={`${styles.formGroup} ${styles.bentoItemFull}`} style={{marginBottom: '0.75rem'}}>
+                      <div className={styles.flexRow}>
+                        <input type="text" className={styles.formInput} style={{width: '80px'}} name={`workYear${i}`} value={formData[`workYear${i}`]} onChange={handleChange} placeholder="Năm" />
+                        <input type="text" className={styles.formInput} style={{width: '70px'}} name={`workMonth${i}`} value={formData[`workMonth${i}`]} onChange={handleChange} placeholder="Tháng" />
+                        <input type="text" className={styles.formInput} style={{flex: 1}} name={`workDetail${i}`} value={formData[`workDetail${i}`]} onChange={handleChange} placeholder="Tên công ty & Vào/Thôi việc" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <input type="text" className="form-input" name="workDetail1" value={formData.workDetail1} onChange={handleChange} placeholder="Tên công ty & Vào/Thôi việc" />
-              </div>
+              </>
+            )}
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Lịch sử làm việc 2:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="workYear2" value={formData.workYear2} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="workMonth2" value={formData.workMonth2} onChange={handleChange} placeholder="Tháng" />
+            {currentStep === 3 && (
+              <div className={styles.bentoItemFull}>
+                <p className={styles.subText}>Bằng cấp (免許) và Chứng chỉ (資格) liên quan.</p>
+                <div className={styles.sectionDivider}>Danh sách bằng cấp/chứng chỉ</div>
+                {[1,2,3].map(i => (
+                  <div key={`lic${i}`} className={`${styles.formGroup} ${styles.bentoItemFull}`} style={{marginBottom: '0.75rem'}}>
+                    <div className={styles.flexRow}>
+                      <input type="text" className={styles.formInput} style={{width: '80px'}} name={`licYear${i}`} value={formData[`licYear${i}`]} onChange={handleChange} placeholder="Năm" />
+                      <input type="text" className={styles.formInput} style={{width: '70px'}} name={`licMonth${i}`} value={formData[`licMonth${i}`]} onChange={handleChange} placeholder="Tháng" />
+                      <input type="text" className={styles.formInput} style={{flex: 1}} name={`licDetail${i}`} value={formData[`licDetail${i}`]} onChange={handleChange} placeholder="Tên bằng cấp/chứng chỉ" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <>
+                <div className={`${styles.formGroup} ${styles.bentoItemFull}`}>
+                  <label className={styles.formLabel}>Động lực ứng tuyển (志望動機)</label>
+                  <textarea className={styles.formTextarea} name="motivation" value={formData.motivation} onChange={handleChange} placeholder="Ghi rõ lý do tại sao bạn muốn ứng tuyển..."></textarea>
                 </div>
-                <input type="text" className="form-input" name="workDetail2" value={formData.workDetail2} onChange={handleChange} placeholder="Tên công ty & Vào/Thôi việc" />
-              </div>
-            </div>
-          )}
 
-          {currentStep === 3 && (
-            <div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)', marginBottom: '1rem' }}>
-                Bằng cấp (免許) và Chứng chỉ (資格) liên quan. Nên ghi rõ ngày tháng năm nhận bằng.
-              </p>
-
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Bằng cấp 1:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="licYear1" value={formData.licYear1} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="licMonth1" value={formData.licMonth1} onChange={handleChange} placeholder="Tháng" />
+                <div className={`${styles.formGroup} ${styles.bentoItemFull}`}>
+                  <label className={styles.formLabel}>PR bản thân (自己PR)</label>
+                  <textarea className={styles.formTextarea} name="selfPR" value={formData.selfPR} onChange={handleChange} placeholder="Điểm mạnh, kỹ năng mềm và kinh nghiệm nổi trội của bạn..."></textarea>
                 </div>
-                <input type="text" className="form-input" name="licDetail1" value={formData.licDetail1} onChange={handleChange} placeholder="Tên bằng cấp/chứng chỉ" />
-              </div>
+              </>
+            )}
+          </div>
 
-              <h4 style={{ color: 'var(--jp-blue)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Bằng cấp 2:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" className="form-input" style={{ width: '80px' }} name="licYear2" value={formData.licYear2} onChange={handleChange} placeholder="Năm" />
-                  <input type="text" className="form-input" style={{ width: '70px' }} name="licMonth2" value={formData.licMonth2} onChange={handleChange} placeholder="Tháng" />
-                </div>
-                <input type="text" className="form-input" name="licDetail2" value={formData.licDetail2} onChange={handleChange} placeholder="Tên bằng cấp/chứng chỉ" />
-              </div>
-            </div>
-          )}
-
-          {currentStep === 4 && (
-            <div>
-              <div className="form-group">
-                <label className="form-label">Động lực ứng tuyển (志望動機 - Jibou Douki)</label>
-                <textarea
-                  className="form-textarea"
-                  name="motivation"
-                  value={formData.motivation}
-                  onChange={handleChange}
-                  placeholder="Ghi rõ lý do tại sao bạn muốn ứng tuyển..."
-                ></textarea>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">PR bản thân (自己PR - Jiko PR)</label>
-                <textarea
-                  className="form-textarea"
-                  name="selfPR"
-                  value={formData.selfPR}
-                  onChange={handleChange}
-                  placeholder="Điểm mạnh, kỹ năng mềm và kinh nghiệm nổi trội của bạn..."
-                ></textarea>
-              </div>
-            </div>
-          )}
-
-          {/* Navigation buttons */}
-          <div className="form-navigation">
-            <button
-              className="btn btn-outline"
-              onClick={handlePrev}
-              disabled={currentStep === 1}
-              style={{ opacity: currentStep === 1 ? 0.5 : 1 }}
-            >
-              <ChevronLeft size={16} /> Quay lại
+          <div className={styles.navButtons}>
+            <button className={`${styles.btn} ${styles.btnOutline}`} onClick={handlePrev} disabled={currentStep === 1} style={{ opacity: currentStep === 1 ? 0.5 : 1 }}>
+              <ChevronLeft size={18} /> Quay lại
             </button>
             
             {currentStep < 4 ? (
-              <button className="btn btn-secondary" onClick={handleNext}>
-                Tiếp theo <ChevronRight size={16} />
+              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleNext}>
+                Tiếp theo <ChevronRight size={18} />
               </button>
             ) : (
-              <button className="btn btn-primary" onClick={handlePrint}>
-                <Download size={16} /> In / Xuất PDF (A4)
+              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handlePrint}>
+                <Download size={18} /> Tải PDF
               </button>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Right Preview Sheet */}
-        <div className="rirekisho-container app-surface">
-          <div className="rirekisho-header-actions">
-            <h4 style={{ color: 'var(--jp-blue)', fontWeight: 700 }}>Bản xem trước Rirekisho (A4)</h4>
-            <button className="btn btn-primary btn-sm" onClick={handlePrint}>
-              <Download size={14} /> Tải PDF
-            </button>
-          </div>
+      {/* Right Preview Sheet */}
+      <div className={styles.rightPanel}>
+        <div className={styles.previewHeader}>
+          <div className={styles.previewTitle}><Eye size={20} color="#1976d2" /> Xem trước (Real-time)</div>
+          <button className={`${styles.btn} ${styles.btnPrimary}`} style={{padding: '0.5rem 1rem'}} onClick={handlePrint}>
+            <Download size={16} /> Xuất PDF
+          </button>
+        </div>
 
-          <div className="rirekisho-paper">
-            <h3 className="rirekisho-title-jp">履　歴　書</h3>
-            
-            {/* Personal Info Table */}
-            <table className="ri-table">
-              <tbody>
-                <tr>
-                  <td className="furigana" colSpan="4">ふりがな: {formData.furiganaName}</td>
-                  <td rowSpan="4" style={{ width: '90px', textAlign: 'center', background: '#fafafa' }}>
-                    <div style={{ height: '110px', border: '1px dashed #999', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#999' }}>
-                      Ảnh thẻ<br />(3cm x 4cm)
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="label">氏　名</td>
-                  <td colSpan="3" style={{ fontSize: '14px', fontWeight: 'bold' }}>{formData.kanjiName}</td>
-                </tr>
-                <tr>
-                  <td className="label">生年月日</td>
-                  <td colSpan="3">
-                    {formData.birthYear} 年 {formData.birthMonth} 月 {formData.birthDay} 日生 (満 {new Date().getFullYear() - parseInt(formData.birthYear || 2000)} 歳) 性別: {formData.gender}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="furigana" colSpan="4">ふりがな: {formData.addressFurigana}</td>
-                </tr>
-                <tr>
-                  <td className="label">現住所</td>
-                  <td colSpan="4">{formData.addressKanji}</td>
-                </tr>
-                <tr>
-                  <td className="label">電話番号</td>
-                  <td colSpan="2">{formData.phone}</td>
-                  <td className="label">E-mail</td>
-                  <td>{formData.email}</td>
-                </tr>
-              </tbody>
-            </table>
+        <div className={styles.glassPaper}>
+          <h3 className={styles.rirekishoTitle}>履　歴　書</h3>
+          
+          <table className={styles.riTable}>
+            <tbody>
+              <tr>
+                <td className={styles.furigana} colSpan="4">ふりがな: {formData.furiganaName}</td>
+                <td rowSpan="4" style={{ width: '100px', textAlign: 'center', background: '#f8fafc', padding: 0 }}>
+                  <div style={{ height: '130px', border: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#94a3b8', margin: '4px' }}>
+                    Ảnh thẻ<br />(3x4)
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td className={styles.label}>氏　名</td>
+                <td colSpan="3" style={{ fontSize: '18px', fontWeight: 'bold' }}>{formData.kanjiName}</td>
+              </tr>
+              <tr>
+                <td className={styles.label}>生年月日</td>
+                <td colSpan="3">
+                  {formData.birthYear} 年 {formData.birthMonth} 月 {formData.birthDay} 日生 (満 {new Date().getFullYear() - parseInt(formData.birthYear || 2000)} 歳) 性別: {formData.gender}
+                </td>
+              </tr>
+              <tr>
+                <td className={styles.furigana} colSpan="4">ふりがな: {formData.addressFurigana}</td>
+              </tr>
+              <tr>
+                <td className={styles.label}>現住所</td>
+                <td colSpan="4">{formData.addressKanji}</td>
+              </tr>
+              <tr>
+                <td className={styles.label}>電話番号</td>
+                <td colSpan="2">{formData.phone}</td>
+                <td className={styles.label}>E-mail</td>
+                <td>{formData.email}</td>
+              </tr>
+            </tbody>
+          </table>
 
-            {/* Academic & Work History Table */}
-            <table className="ri-table" style={{ marginTop: '5px' }}>
-              <thead>
-                <tr style={{ background: '#f5f5f5' }}>
-                  <th style={{ width: '45px' }}>年 (Năm)</th>
-                  <th style={{ width: '25px' }}>月 (T)</th>
-                  <th>学歴・職歴 (Lịch sử Học vấn & Làm việc)</th>
+          <table className={styles.riTable}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ width: '50px' }}>年</th>
+                <th style={{ width: '30px' }}>月</th>
+                <th>学歴・職歴</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colSpan="3" style={{ textAlign: 'center', fontWeight: 'bold', borderTop: '2px solid #000' }}>学　　歴</td></tr>
+              {[1,2,3].map(i => formData[`eduDetail${i}`] ? (
+                <tr key={`edut${i}`}>
+                  <td style={{ textAlign: 'center' }}>{formData[`eduYear${i}`]}</td>
+                  <td style={{ textAlign: 'center' }}>{formData[`eduMonth${i}`]}</td>
+                  <td>{formData[`eduDetail${i}`]}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {/* Header Academic */}
-                <tr>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>学　　歴 (Học vấn)</td>
-                </tr>
-                
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.eduYear1}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.eduMonth1}</td>
-                  <td>{formData.eduDetail1}</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.eduYear2}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.eduMonth2}</td>
-                  <td>{formData.eduDetail2}</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.eduYear3}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.eduMonth3}</td>
-                  <td>{formData.eduDetail3}</td>
-                </tr>
+              ) : null)}
 
-                {/* Header Work */}
-                <tr>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>職　　歴 (Lịch sử làm việc)</td>
+              <tr><td colSpan="3" style={{ textAlign: 'center', fontWeight: 'bold', borderTop: '2px solid #000' }}>職　　歴</td></tr>
+              {[1,2].map(i => formData[`workDetail${i}`] ? (
+                <tr key={`workt${i}`}>
+                  <td style={{ textAlign: 'center' }}>{formData[`workYear${i}`]}</td>
+                  <td style={{ textAlign: 'center' }}>{formData[`workMonth${i}`]}</td>
+                  <td>{formData[`workDetail${i}`]}</td>
                 </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.workYear1}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.workMonth1}</td>
-                  <td>{formData.workDetail1}</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.workYear2}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.workMonth2}</td>
-                  <td>{formData.workDetail2}</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'right' }}>以　上 (Hết)</td>
-                </tr>
-              </tbody>
-            </table>
+              ) : null)}
+              <tr>
+                <td></td><td></td><td style={{ textAlign: 'right' }}>以　上</td>
+              </tr>
+            </tbody>
+          </table>
 
-            {/* Licenses & Qualifications */}
-            <table className="ri-table" style={{ marginTop: '5px' }}>
-              <thead>
-                <tr style={{ background: '#f5f5f5' }}>
-                  <th style={{ width: '45px' }}>年 (Năm)</th>
-                  <th style={{ width: '25px' }}>月 (T)</th>
-                  <th>免許・資格 (Bằng cấp & Chứng chỉ)</th>
+          <table className={styles.riTable}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ width: '50px' }}>年</th>
+                <th style={{ width: '30px' }}>月</th>
+                <th>免許・資格</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1,2,3].map(i => (
+                <tr key={`lict${i}`}>
+                  <td style={{ textAlign: 'center' }}>{formData[`licYear${i}`]}</td>
+                  <td style={{ textAlign: 'center' }}>{formData[`licMonth${i}`]}</td>
+                  <td>{formData[`licDetail${i}`] || '\u00A0'}</td>
                 </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.licYear1}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.licMonth1}</td>
-                  <td>{formData.licDetail1}</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}>{formData.licYear2}</td>
-                  <td style={{ textAlign: 'center' }}>{formData.licMonth2}</td>
-                  <td>{formData.licDetail2}</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td style={{ textAlign: 'center' }}></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
 
-            {/* Motivation & PR Box */}
-            <table className="ri-table" style={{ marginTop: '5px' }}>
-              <tbody>
-                <tr style={{ background: '#f5f5f5' }}>
-                  <th>志望動機 (Động lực ứng tuyển) & 自己PR (PR Bản thân)</th>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.5rem', height: '100px', verticalAlign: 'top' }}>
-                    <strong>【志望動機】</strong><br />
-                    {formData.motivation}
-                    <br /><br />
-                    <strong>【自己PR】</strong><br />
-                    {formData.selfPR}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            
-            <div className="print-page-num">1 / 1</div>
-          </div>
+          <table className={styles.riTable}>
+            <tbody>
+              <tr style={{ background: '#f8fafc' }}>
+                <th>志望動機・特技・好きな学科・アピールポイントなど</th>
+              </tr>
+              <tr>
+                <td style={{ padding: '1rem', height: '140px', verticalAlign: 'top', lineHeight: '1.6' }}>
+                  <div style={{marginBottom: '0.5rem'}}><strong>【志望動機】</strong></div>
+                  <div style={{marginBottom: '1rem'}}>{formData.motivation}</div>
+                  <div style={{marginBottom: '0.5rem'}}><strong>【自己PR】</strong></div>
+                  <div>{formData.selfPR}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div className={styles.pageNum}>1 / 1</div>
         </div>
       </div>
     </div>

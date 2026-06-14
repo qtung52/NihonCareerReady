@@ -1,0 +1,400 @@
+.container {
+  display: flex;
+  height: 100vh;
+  background: var(--jp-bg);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+.leftPanel {
+  flex: 1;
+  max-width: 50%;
+  padding: 2rem 3rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--jp-surface-raised);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--jp-border);
+}
+
+.rightPanel {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  position: relative;
+  background: radial-gradient(circle at top right, rgba(25, 118, 210, 0.05), transparent 50%);
+}
+
+.header {
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--jp-text);
+  margin-bottom: 0.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 40px;
+  height: 4px;
+  background: linear-gradient(90deg, #d32f2f, #1976d2);
+  border-radius: 2px;
+}
+
+.subtitle {
+  color: var(--jp-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Stepper */
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  position: relative;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.stepper::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--jp-border);
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.stepNode {
+  width: 36px;
+  height: 36px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--jp-card-bg);
+  border: 2px solid var(--jp-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--jp-text-muted);
+  z-index: 2;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stepNode.active {
+  border-color: #1976d2;
+  color: #1976d2;
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.15);
+  transform: scale(1.1);
+}
+
+.stepNode.completed {
+  background: #1976d2;
+  border-color: #1976d2;
+  color: #fff;
+}
+
+/* Bento Box Form */
+.formContainer {
+  background: var(--jp-surface-raised);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: slideUpFade 0.5s ease-out;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(20px);
+}
+
+.stepTitle {
+  color: #1976d2;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.bentoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.bentoItemFull {
+  grid-column: span 2;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.formLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--jp-text-muted);
+}
+
+.formInput, .formSelect, .formTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: var(--jp-surface);
+  font-family: inherit;
+}
+
+.formInput:focus, .formSelect:focus, .formTextarea:focus {
+  outline: none;
+  border-color: #1976d2;
+  background: var(--jp-card-bg);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.formTextarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.flexRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sectionDivider {
+  margin: 1.5rem 0 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  color: var(--jp-text);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.subText {
+  font-size: 0.8rem;
+  color: var(--jp-text-muted);
+  margin-bottom: 1rem;
+}
+
+/* Nav Buttons */
+.navButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  font-size: 0.95rem;
+}
+
+.btnOutline {
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  color: var(--jp-text-muted);
+}
+
+.btnOutline:hover:not(:disabled) {
+  background: var(--jp-surface);
+  border-color: var(--jp-text-muted);
+  color: var(--jp-text);
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Preview Section */
+.previewHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  animation: fadeInDown 0.5s ease-out;
+  padding: 0 1rem;
+  max-width: 800px;
+}
+
+.previewTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--jp-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.glassPaper {
+  background: #fff;
+  border-radius: 4px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  animation: floating 8s ease-in-out infinite;
+  transform-origin: top center;
+  /* Make it scale a bit if screen is small */
+  zoom: 0.85;
+}
+
+/* Rirekisho Table Styles Specific to the new layout */
+.rirekishoTitle {
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 1.5rem;
+  margin-bottom: 2rem;
+  color: #000;
+  font-family: "MS Mincho", "Hiragino Mincho Pro", serif;
+  margin-left: 1.5rem; /* offset for letter spacing */
+}
+
+.riTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-family: "MS Mincho", "Hiragino Mincho Pro", serif;
+  color: #000;
+  font-size: 13px;
+  background: #fff;
+}
+
+.riTable th, .riTable td {
+  border: 1px solid #000;
+  padding: 8px;
+  line-height: 1.4;
+}
+
+.riTable .furigana {
+  font-size: 10px;
+  border-bottom: 1px dotted #000;
+  padding: 2px 8px;
+}
+
+.riTable .label {
+  width: 80px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.pageNum {
+  text-align: right;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 1rem;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes floating {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+/* Print Overrides */
+@media print {
+  .leftPanel, .previewHeader {
+    display: none !important;
+  }
+  .container {
+    background: none !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .rightPanel {
+    padding: 0 !important;
+    background: none !important;
+  }
+  .glassPaper {
+    box-shadow: none !important;
+    animation: none !important;
+    zoom: 1 !important;
+    padding: 0 !important;
+  }
+}
+
+/* Responsive / Mobile Layout */
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+  .leftPanel {
+    max-width: 100%;
+    padding: 1.5rem;
+    border-right: none;
+    border-bottom: 1px solid var(--jp-border);
+  }
+  .rightPanel {
+    max-width: 100%;
+    padding: 1.5rem 0.5rem;
+    overflow-x: hidden;
+  }
+  .bentoGrid {
+    grid-template-columns: 1fr;
+  }
+  .bentoItemFull {
+    grid-column: span 1;
+  }
+  .glassPaper {
+    zoom: 0.5; /* Scale down significantly for mobile */
+    padding: 2rem;
+    width: 100%;
+    overflow-x: auto;
+  }
+}

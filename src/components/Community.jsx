@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search, MoreVertical, Edit3 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search, MoreVertical, Edit3, Image as ImageIcon } from 'lucide-react';
 import { getSharedArray, isSupabaseEnabled, setSharedArray } from '../lib/sharedStore';
+import styles from './Community.module.css';
 
 export const FORUM_TOPICS = [
   { id: 'culture-shock', name: 'Sốc văn hóa', colorClass: 'culture-shock' },
@@ -106,6 +108,20 @@ export default function Community({ currentUser, onViewProfile }) {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newTag, setNewTag] = useState('culture-shock');
+  const [newImage, setNewImage] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalClosing, setIsCreateModalClosing] = useState(false);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Reply state
   const [replyTexts, setReplyTexts] = useState({});
@@ -172,6 +188,14 @@ export default function Community({ currentUser, onViewProfile }) {
     }
   };
 
+  const handleCloseCreateModal = () => {
+    setIsCreateModalClosing(true);
+    setTimeout(() => {
+      setIsCreateModalOpen(false);
+      setIsCreateModalClosing(false);
+    }, 300);
+  };
+
   const handlePost = (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) return;
@@ -186,6 +210,7 @@ export default function Community({ currentUser, onViewProfile }) {
       authorEmail: currentUser ? currentUser.email : "anonymous@nihon.com",
       date: new Date().toISOString(),
       content: newContent,
+      image: newImage,
       answers: []
     };
 
@@ -194,6 +219,8 @@ export default function Community({ currentUser, onViewProfile }) {
     
     setNewTitle('');
     setNewContent('');
+    setNewImage(null);
+    handleCloseCreateModal();
   };
 
   const handleStartEditThread = (thread) => {
@@ -334,11 +361,9 @@ export default function Community({ currentUser, onViewProfile }) {
   };
 
   const renderAvatar = (email, size = '16px') => {
-    if (email === 'admin@nihon.com') {
-      return <span style={{ fontSize: size }}>🦊</span>;
-    }
     const u = users.find(user => user.email === email);
-    const avatar = u?.avatar || '🧑‍💻';
+    const avatar = u?.avatar || (email === 'admin@nihon.com' ? '🦊' : '🧑‍💻');
+
     if (avatar.startsWith('data:')) {
       return <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />;
     }
@@ -390,13 +415,13 @@ export default function Community({ currentUser, onViewProfile }) {
     });
 
   return (
-    <div>
-      <div className="section-header">
-        <h2 className="section-title">Góc Senpai - Kouhai</h2>
-        <p className="section-subtitle">Diễn đàn thảo luận thời gian thực. Nơi hỏi đáp và chia sẻ kinh nghiệm văn hóa doanh nghiệp Nhật.</p>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Góc Senpai - Kouhai</h2>
+        <p className={styles.subtitle}>Diễn đàn thảo luận thời gian thực. Nơi hỏi đáp và chia sẻ kinh nghiệm văn hóa doanh nghiệp Nhật.</p>
         <p style={{
           marginTop: '0.5rem',
-          fontSize: '0.78rem',
+          fontSize: '0.85rem',
           color: syncStatus === 'online' || syncStatus === 'local' ? '#27ae60' : syncStatus === 'loading' ? 'var(--jp-text-muted)' : 'var(--jp-red)',
           fontWeight: 600
         }}>
@@ -410,15 +435,29 @@ export default function Community({ currentUser, onViewProfile }) {
         </p>
       </div>
 
-      <div className="community-layout">
+      <div className={styles.layout}>
         {/* Left Side: Threads List */}
-        <div>
-          <div className="filter-tabs" style={{ justifyContent: 'flex-start', marginBottom: '1rem' }}>
-            <button className={`tab-btn ${activeTag === 'all' ? 'active' : ''}`} onClick={() => setActiveTag('all')}>Tất cả</button>
+        <div className={styles.mainFeed}>
+          {/* Create Post Box */}
+          <div className={styles.createPostBox}>
+            <div className={styles.createPostTop}>
+              <div className={styles.avatar}>{renderAvatar(currentUser?.email, '1.2rem')}</div>
+              <button
+                type="button"
+                className={styles.createPostInputBtn}
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                Bạn đang thắc mắc điều gì{currentUser ? `, ${currentUser.name}` : ''}?
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.filters}>
+            <button className={`${styles.filterBtn} ${activeTag === 'all' ? styles.active : ''}`} onClick={() => setActiveTag('all')}>Tất cả</button>
             {FORUM_TOPICS.map(topic => (
               <button 
                 key={topic.id} 
-                className={`tab-btn ${activeTag === topic.id ? 'active' : ''}`} 
+                className={`${styles.filterBtn} ${activeTag === topic.id ? styles.active : ''}`} 
                 onClick={() => setActiveTag(topic.id)}
               >
                 {topic.name}
@@ -427,26 +466,24 @@ export default function Community({ currentUser, onViewProfile }) {
           </div>
 
           {/* Search & Sort Bar */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: '260px', position: 'relative' }}>
+          <div className={styles.searchSortBar}>
+            <div className={styles.searchBox}>
+              <Search size={16} className={styles.searchIcon} />
               <input
                 type="text"
-                className="form-input"
+                className={styles.searchInput}
                 placeholder="Tìm kiếm câu hỏi, từ khóa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '2.5rem', borderRadius: '30px' }}
               />
-              <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)' }} />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--jp-text-muted)', whiteSpace: 'nowrap' }}>Sắp xếp:</span>
+            <div className={styles.sortBox}>
+              <span className={styles.sortLabel}>Sắp xếp:</span>
               <select
-                className="form-input"
+                className={styles.sortSelect}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                style={{ width: 'auto', padding: '0.3rem 2rem 0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', height: 'auto', border: '1px solid var(--jp-border)' }}
               >
                 <option value="newest">Mới nhất</option>
                 <option value="oldest">Cũ nhất</option>
@@ -456,7 +493,7 @@ export default function Community({ currentUser, onViewProfile }) {
             </div>
           </div>
 
-          <div className="question-list">
+          <div className={styles.threadsList}>
             {filteredThreads.map(thread => {
               const canDeleteThread = currentUser && (currentUser.isAdmin || currentUser.email === thread.authorEmail);
               const likesList = thread.likes || [];
@@ -465,80 +502,80 @@ export default function Community({ currentUser, onViewProfile }) {
               
               if (editingThreadId === thread.id) {
                 return (
-                  <div key={thread.id} className="q-card">
+                  <div key={thread.id} className={styles.editBox}>
                     <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.1rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--jp-border)', paddingBottom: '0.5rem' }}>
                       Chỉnh sửa câu hỏi
                     </h3>
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label className="form-label">Chủ đề</label>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Chủ đề</label>
                       <select 
-                        className="form-input" 
+                        className={styles.formSelect} 
                         value={editingThreadTag} 
                         onChange={(e) => setEditingThreadTag(e.target.value)}
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
                       >
                         {FORUM_TOPICS.map(topic => (
                           <option key={topic.id} value={topic.id}>{topic.name}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label className="form-label">Tiêu đề câu hỏi</label>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Tiêu đề câu hỏi</label>
                       <input 
                         type="text" 
-                        className="form-input" 
+                        className={styles.formInput} 
                         value={editingThreadTitle} 
                         onChange={(e) => setEditingThreadTitle(e.target.value)}
                       />
                     </div>
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label className="form-label">Nội dung chi tiết</label>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Nội dung chi tiết</label>
                       <textarea 
-                        className="form-textarea" 
+                        className={styles.formTextarea} 
                         value={editingThreadContent} 
                         onChange={(e) => setEditingThreadContent(e.target.value)}
-                        style={{ minHeight: '120px' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => setEditingThreadId(null)}>Hủy</button>
-                      <button className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => handleSaveEditThread(thread.id)}>Lưu</button>
+                    <div className={styles.editActions}>
+                      <button className={styles.btnOutline} onClick={() => setEditingThreadId(null)}>Hủy</button>
+                      <button className={styles.btnPrimary} onClick={() => handleSaveEditThread(thread.id)}>Lưu</button>
                     </div>
                   </div>
                 );
               }
 
               return (
-                <div key={thread.id} className="q-card">
-                  <div className="q-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span className={`q-tag ${thread.tag}`}>
-                        <Tag size={10} style={{ marginRight: '3px', display: 'inline' }} />
-                        {thread.tagName}
-                      </span>
-                      <span className="q-meta" style={{ marginLeft: '10px', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', verticalAlign: 'middle' }}>
-                        Đăng bởi{' '}
+                <div key={thread.id} className={styles.postCard}>
+                  <div className={styles.postHeader}>
+                    <div className={styles.authorInfo}>
+                      <div 
+                        className={styles.avatar}
+                        onClick={() => onViewProfile && onViewProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
+                        title="Xem thông tin người dùng"
+                      >
+                        {renderAvatar(thread.authorEmail, '1rem')}
+                      </div>
+                      <div className={styles.authorDetails}>
                         <div 
-                          style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--jp-border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}
-                          onClick={() => onViewProfile && onViewProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
-                          title="Xem thông tin người dùng"
-                        >
-                          {renderAvatar(thread.authorEmail, '10px')}
-                        </div>
-                        <strong 
-                          style={{ cursor: 'pointer', color: 'var(--jp-blue)', textDecoration: 'underline' }}
+                          className={styles.authorName}
                           onClick={() => onViewProfile && onViewProfile(thread.authorEmail, thread.author, getUserRole(thread.authorEmail))}
                           title="Xem thông tin người dùng"
                         >
                           {thread.author}
-                        </strong>{' '}
-                        • {timeAgo(thread.date) || thread.date}
-                      </span>
+                        </div>
+                        <div className={styles.postMeta}>
+                          <span>{timeAgo(thread.date) || thread.date}</span>
+                          <span>•</span>
+                          <span className={styles.postTag}>
+                            <Tag size={12} />
+                            {thread.tagName}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     {currentUser && (currentUser.email === thread.authorEmail || currentUser.isAdmin) && (
-                      <div className="action-menu-container">
+                      <div className={styles.moreMenu}>
                         <button 
-                          className="action-dropdown-btn"
+                          className={styles.menuBtn}
                           onClick={(e) => { 
                             e.stopPropagation(); 
                             setActiveMenu(activeMenu?.type === 'thread' && activeMenu.id === thread.id ? null : { type: 'thread', id: thread.id });
@@ -554,15 +591,15 @@ export default function Community({ currentUser, onViewProfile }) {
                               style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent' }} 
                               onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} 
                             />
-                            <div className="action-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.dropdown} onClick={(e) => e.stopPropagation()}>
                               <button 
-                                className="action-dropdown-item"
+                                className={styles.dropdownItem}
                                 onClick={() => handleStartEditThread(thread)}
                               >
                                 <Edit3 size={14} /> Sửa bài
                               </button>
                               <button 
-                                className="action-dropdown-item delete"
+                                className={`${styles.dropdownItem} ${styles.delete}`}
                                 onClick={() => { setActiveMenu(null); handleDeleteThread(thread.id); }}
                               >
                                 <Trash2 size={14} /> Xóa bài
@@ -573,246 +610,271 @@ export default function Community({ currentUser, onViewProfile }) {
                       </div>
                     )}
                   </div>
-                  <h3 className="q-title">{thread.title}</h3>
-                  <p className="q-content">{thread.content}</p>
+                  <h3 className={styles.postTitle}>{thread.title}</h3>
+                  <p className={styles.postContent}>{thread.content}</p>
+                  
+                  {thread.image && (
+                    <img src={thread.image} alt="Attached" className={styles.postImage} />
+                  )}
 
-                  <div className="q-answers" style={{ borderTop: '1px solid var(--jp-border)', paddingTop: '1rem', marginTop: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem' }}>
-                      <button
-                        onClick={() => handleLikeThread(thread.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '0.85rem',
-                          color: isLiked ? 'var(--jp-red)' : 'var(--jp-text-muted)',
-                          padding: 0
-                        }}
-                        className="like-btn"
-                        title={isLiked ? "Bỏ thích" : "Thích câu hỏi này"}
-                      >
-                        <Heart size={16} fill={isLiked ? 'var(--jp-red)' : 'none'} style={{ transition: 'fill 0.2s' }} />
-                        <span style={{ fontWeight: 600 }}>Thích ({likesCount})</span>
-                      </button>
+                  <div className={styles.postActions}>
+                    <button
+                      onClick={() => handleLikeThread(thread.id)}
+                      className={`${styles.actionBtn} ${isLiked ? styles.liked : ''}`}
+                      title={isLiked ? "Bỏ thích" : "Thích câu hỏi này"}
+                    >
+                      <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+                      <span>Thích {likesCount > 0 && `(${likesCount})`}</span>
+                    </button>
 
-                      <div 
-                        style={{ fontSize: '0.85rem', color: 'var(--jp-blue)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}
-                        onClick={() => toggleExpand(thread.id)}
-                      >
-                        <MessageSquare size={16} /> Trả lời ({thread.answers.length})
-                        <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '4px' }}>
-                          {expandedThreads[thread.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {expandedThreads[thread.id] && (
-                      <div className="answers-dropdown-container">
-                        {thread.answers.map((ans) => {
-                          const canDeleteReply = currentUser && (currentUser.isAdmin || currentUser.email === ans.authorEmail);
-                          const displayRole = getUserRole(ans.authorEmail, ans.role);
-                          const isAdmin = displayRole === 'Quản trị viên';
-                          const isSenpai = displayRole.includes('Senpai') || displayRole.includes('Tech Lead') || displayRole.includes('Leader');
-                          
-                          if (editingReplyId === ans.id) {
-                            return (
-                              <div key={ans.id || `ans-${Math.random()}`} className="fb-comment-wrapper" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
-                                <div 
-                                  style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
-                                  onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
-                                  title="Xem thông tin người dùng"
-                                >
-                                  {renderAvatar(ans.authorEmail, '16px')}
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1 }}>
-                                  <div style={{ width: '100%' }}>
-                                    <textarea
-                                      className="form-textarea"
-                                      value={editingReplyContent}
-                                      onChange={(e) => setEditingReplyContent(e.target.value)}
-                                      style={{ minHeight: '60px', fontSize: '0.85rem', width: '100%', marginBottom: '0.5rem', background: 'var(--jp-surface-raised)' }}
-                                    />
-                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                      <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setEditingReplyId(null)}>Hủy</button>
-                                      <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => handleSaveEditReply(thread.id, ans.id)}>Lưu</button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-
+                    <button 
+                      className={`${styles.actionBtn} ${expandedThreads[thread.id] ? styles.repliesOpen : ''}`}
+                      onClick={() => toggleExpand(thread.id)}
+                    >
+                      <MessageSquare size={18} className={expandedThreads[thread.id] ? styles.iconOpen : ''} /> 
+                      <span>Trả lời {thread.answers.length > 0 && `(${thread.answers.length})`}</span>
+                    </button>
+                  </div>
+                  
+                  <div className={`${styles.repliesWrapper} ${expandedThreads[thread.id] ? styles.expanded : ''}`}>
+                    <div className={styles.repliesSection}>
+                      {thread.answers.map((ans) => {
+                        const canDeleteReply = currentUser && (currentUser.isAdmin || currentUser.email === ans.authorEmail);
+                        const displayRole = getUserRole(ans.authorEmail, ans.role);
+                        const isAdmin = displayRole === 'Quản trị viên';
+                        const isSenpai = displayRole.includes('Senpai') || displayRole.includes('Tech Lead') || displayRole.includes('Leader');
+                        
+                        if (editingReplyId === ans.id) {
                           return (
-                            <div key={ans.id || `ans-${Math.random()}`} className="fb-comment-wrapper" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+                            <div key={ans.id || `ans-${Math.random()}`} className={styles.replyCard}>
                               <div 
-                                style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
+                                className={styles.replyAvatar}
                                 onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
                                 title="Xem thông tin người dùng"
                               >
-                                {renderAvatar(ans.authorEmail, '16px')}
+                                {renderAvatar(ans.authorEmail, '0.9rem')}
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100% - 40px)', position: 'relative', width: '100%' }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%' }}>
-                                  <div className="fb-comment-bubble" style={{ background: 'var(--jp-surface-raised)', padding: '8px 12px', borderRadius: '18px', display: 'inline-block', flex: 1 }}>
-                                    <span 
-                                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2px' }}
-                                      onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
-                                      title="Xem thông tin người dùng"
-                                    >
-                                      <strong style={{ fontSize: '0.85rem' }}>{ans.author}</strong>
-                                      <span 
-                                        className={isAdmin ? 'admin-rgb-tag' : ''}
-                                        style={{ 
-                                          fontSize: '0.65rem', 
-                                          background: !isAdmin && isSenpai ? 'var(--jp-blue)' : !isAdmin ? 'var(--jp-border)' : undefined, 
-                                          color: !isAdmin && isSenpai ? 'white' : !isAdmin ? 'var(--jp-text-muted)' : undefined, 
-                                          padding: '2px 6px', 
-                                          borderRadius: '12px',
-                                          fontWeight: !isAdmin ? 'normal' : undefined,
-                                          border: 'none'
-                                      }}>
-                                        {displayRole}
-                                      </span>
-                                    </span>
-                                    <p className="ans-body" style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>{ans.content}</p>
+                              <div className={styles.replyContentWrapper}>
+                                <div className={styles.replyContent} style={{width: '100%'}}>
+                                  <textarea
+                                    className={styles.formTextarea}
+                                    value={editingReplyContent}
+                                    onChange={(e) => setEditingReplyContent(e.target.value)}
+                                    style={{ minHeight: '60px', marginBottom: '0.5rem' }}
+                                  />
+                                  <div className={styles.editActions}>
+                                    <button className={styles.btnOutline} onClick={() => setEditingReplyId(null)}>Hủy</button>
+                                    <button className={styles.btnPrimary} onClick={() => handleSaveEditReply(thread.id, ans.id)}>Lưu</button>
                                   </div>
-                                  
-                                  {/* Reply Action menu dropdown */}
-                                  {currentUser && (currentUser.email === ans.authorEmail || currentUser.isAdmin) && (
-                                    <div className="action-menu-container" style={{ alignSelf: 'center' }}>
-                                      <button 
-                                        className="action-dropdown-btn"
-                                        onClick={(e) => { 
-                                          e.stopPropagation(); 
-                                          setActiveMenu(activeMenu?.type === 'reply' && activeMenu.id === ans.id ? null : { type: 'reply', id: ans.id });
-                                        }}
-                                        title="Hành động"
-                                      >
-                                        <MoreVertical size={14} />
-                                      </button>
-                                      
-                                      {activeMenu?.type === 'reply' && activeMenu.id === ans.id && (
-                                        <>
-                                          <div 
-                                            style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent' }} 
-                                            onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} 
-                                          />
-                                          <div className="action-dropdown-menu" onClick={(e) => e.stopPropagation()}>
-                                            <button 
-                                              className="action-dropdown-item"
-                                              onClick={() => handleStartEditReply(ans)}
-                                            >
-                                              <Edit3 size={12} /> Sửa trả lời
-                                            </button>
-                                            <button 
-                                              className="action-dropdown-item delete"
-                                              onClick={() => { setActiveMenu(null); handleDeleteReply(thread.id, ans.id); }}
-                                            >
-                                              <Trash2 size={12} /> Xóa trả lời
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '12px', marginTop: '4px' }}>
-                                  <span style={{ color: 'var(--jp-text-muted)', fontSize: '0.75rem' }}>{timeAgo(ans.date) || ans.date}</span>
                                 </div>
                               </div>
                             </div>
                           );
-                        })}
-                    
-                    {/* Reply Form */}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--jp-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                        {renderAvatar(currentUser?.email, '16px')}
+                        }
+
+                        return (
+                          <div key={ans.id || `ans-${Math.random()}`} className={styles.replyCard}>
+                            <div 
+                              className={styles.replyAvatar}
+                              onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
+                              title="Xem thông tin người dùng"
+                            >
+                              {renderAvatar(ans.authorEmail, '0.9rem')}
+                            </div>
+                            <div className={styles.replyContentWrapper}>
+                              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                                <div className={styles.replyContent}>
+                                  <div className={styles.replyHeader}>
+                                    <span 
+                                      className={styles.replyAuthor}
+                                      onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
+                                      title="Xem thông tin người dùng"
+                                    >
+                                      {ans.author}
+                                    </span>
+                                    <span className={`${styles.replyRole} ${isAdmin ? styles.admin : isSenpai ? styles.senpai : ''}`}>
+                                      {displayRole}
+                                    </span>
+                                  </div>
+                                  <p className={styles.replyText}>{ans.content}</p>
+                                </div>
+                                
+                                {/* Reply Action menu dropdown */}
+                                {currentUser && (currentUser.email === ans.authorEmail || currentUser.isAdmin) && (
+                                  <div className={styles.moreMenu}>
+                                    <button 
+                                      className={styles.menuBtn}
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        setActiveMenu(activeMenu?.type === 'reply' && activeMenu.id === ans.id ? null : { type: 'reply', id: ans.id });
+                                      }}
+                                      title="Hành động"
+                                    >
+                                      <MoreVertical size={14} />
+                                    </button>
+                                    
+                                    {activeMenu?.type === 'reply' && activeMenu.id === ans.id && (
+                                      <>
+                                        <div 
+                                          style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent' }} 
+                                          onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} 
+                                        />
+                                        <div className={styles.dropdown} onClick={(e) => e.stopPropagation()}>
+                                          <button 
+                                            className={styles.dropdownItem}
+                                            onClick={() => handleStartEditReply(ans)}
+                                          >
+                                            <Edit3 size={12} /> Sửa
+                                          </button>
+                                          <button 
+                                            className={`${styles.dropdownItem} ${styles.delete}`}
+                                            onClick={() => { setActiveMenu(null); handleDeleteReply(thread.id, ans.id); }}
+                                          >
+                                            <Trash2 size={12} /> Xóa
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div className={styles.replyMeta}>
+                                <span>{timeAgo(ans.date) || ans.date}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  
+                      {/* Reply Form */}
+                      <div className={styles.replyInput}>
+                        <div className={styles.replyAvatar}>
+                          {renderAvatar(currentUser?.email, '0.9rem')}
+                        </div>
+                        <div className={styles.inputField}>
+                          <input
+                            type="text"
+                            placeholder="Viết bình luận..."
+                            value={replyTexts[thread.id] || ''}
+                            onChange={(e) => handleReplyTextChange(thread.id, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleAddReply(thread.id);
+                            }}
+                          />
+                          <button
+                            className={styles.sendBtn}
+                            onClick={() => handleAddReply(thread.id)}
+                            title="Gửi bình luận"
+                          >
+                            <Send size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
-                        <input
-                          type="text"
-                          className="form-input"
-                          style={{ fontSize: '0.85rem', borderRadius: '20px', paddingRight: '40px', background: 'var(--jp-surface-raised)', border: 'none' }}
-                          placeholder="Viết bình luận..."
-                          value={replyTexts[thread.id] || ''}
-                          onChange={(e) => handleReplyTextChange(thread.id, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddReply(thread.id);
-                          }}
-                        />
-                        <button
-                          style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: 'var(--jp-blue)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                          onClick={() => handleAddReply(thread.id)}
-                          title="Gửi bình luận"
-                        >
-                          <Send size={16} />
-                        </button>
-                      </div>                    </div>
                     </div>
-                    )}
                   </div>
                 </div>
               );
             })}
             
             {filteredThreads.length === 0 && (
-              <p style={{ color: 'var(--jp-text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '2rem' }}>
+              <div className={styles.emptyState}>
                 Chưa có chủ đề nào thuộc danh mục này. Hãy là người đầu tiên đặt câu hỏi!
-              </p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right Side: Post Question Form */}
-        <div className="add-q-card">
-          <h3 style={{ color: 'var(--jp-blue)', fontSize: '1.1rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--jp-border)', paddingBottom: '0.5rem' }}>
-            Đặt câu hỏi cho Senpai
-          </h3>
-          <form onSubmit={handlePost}>
-            <div className="form-group">
-              <label className="form-label">Chủ đề</label>
-              <select className="form-input" value={newTag} onChange={(e) => setNewTag(e.target.value)}>
-                {FORUM_TOPICS.map(topic => (
-                  <option key={topic.id} value={topic.id}>{topic.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">Tiêu đề câu hỏi</label>
-              <input
-                type="text"
-                className="form-input"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Ví dụ: Cách rót bia cho khách trong Nomikai..."
-                required
-              />
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Nội dung chi tiết</label>
-              <textarea
-                className="form-textarea"
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                placeholder="Mô tả chi tiết tình huống thắc mắc..."
-                required
-              ></textarea>
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-              <Send size={14} /> Đăng câu hỏi
-            </button>
-          </form>
-        </div>
       </div>
 
+      {/* Pop-up Modal to Post Question */}
+      {isCreateModalOpen && createPortal(
+        <div 
+          className={`modal-overlay ${isCreateModalClosing ? 'closing' : ''}`} 
+          onClick={handleCloseCreateModal}
+          style={{ zIndex: 1100 }}
+        >
+          <div 
+            className={`modal-content ${isCreateModalClosing ? 'closing' : ''}`} 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ 
+              maxWidth: '600px', 
+              padding: 0, 
+              borderRadius: '16px', 
+              border: '1px solid var(--jp-border)',
+              overflow: 'hidden',
+              boxShadow: 'var(--jp-shadow-lg)',
+              background: 'var(--jp-card-bg)',
+              position: 'relative'
+            }}
+          >
+            <div className={styles.modalHeader}>
+              <h3>Đăng câu hỏi mới</h3>
+              <button className={styles.modalCloseBtn} onClick={handleCloseCreateModal} title="Đóng">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handlePost} className={styles.modalBody}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Chủ đề thảo luận</label>
+                <select
+                  className={styles.formSelect}
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                >
+                  {FORUM_TOPICS.map(topic => (
+                    <option key={topic.id} value={topic.id}>{topic.name}</option>
+                  ))}
+                </select>
+              </div>
 
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Tiêu đề câu hỏi / Thắc mắc</label>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Tóm tắt ngắn gọn thắc mắc của bạn..."
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Nội dung chi tiết</label>
+                <textarea
+                  className={styles.formTextarea}
+                  value={newContent}
+                  onChange={(e) => setNewContent(e.target.value)}
+                  placeholder="Mô tả chi tiết câu hỏi, bối cảnh tình huống để Senpai dễ trả lời nhé..."
+                  required
+                  style={{ minHeight: '150px' }}
+                />
+              </div>
+
+              {newImage && (
+                <div className={styles.imagePreviewWrapper}>
+                  <img src={newImage} alt="Preview" className={styles.imagePreview} />
+                  <button type="button" className={styles.removeImageBtn} onClick={() => setNewImage(null)}>
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
+              <div className={styles.modalFooter}>
+                <label className={styles.imageUploadLabel}>
+                  <input type="file" accept="image/*" className={styles.hiddenInput} onChange={handleImageUpload} />
+                  <ImageIcon size={20} className={styles.uploadIcon} /> Thêm ảnh minh họa
+                </label>
+                <button type="submit" className={styles.submitBtnInline}>
+                  <Send size={16} /> Đăng câu hỏi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

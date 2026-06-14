@@ -13,9 +13,18 @@ import Profile from './components/Profile';
 import ChatBox from './components/ChatBox';
 import { getSharedArray, seedSharedArray, setSharedArray } from './lib/sharedStore';
 
-// Defaults imported from component files (SVG-free, 100% JSON-safe for localStorage)
 const DEFAULT_DICT = MANNERS_DATA;
 const DEFAULT_ROLEPLAY = SCENARIOS;
+
+const viewToHash = (view) => {
+  if (view === 'community') return 'senpai';
+  return view;
+};
+
+const hashToView = (hash) => {
+  if (hash === 'senpai') return 'community';
+  return hash;
+};
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -39,6 +48,38 @@ function App() {
     localStorage.setItem('nihon_theme', theme);
   }, [theme]);
 
+  // Scroll to top on tab/view switch
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeView]);
+
+  // Sync URL hash to activeView state
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#/', '').replace('#', '');
+      const validHashes = ['auth', 'home', 'survey', 'dictionary', 'roleplay', 'cvbuilder', 'senpai', 'profile', 'admin'];
+      if (hash && validHashes.includes(hash)) {
+        setActiveView(hashToView(hash));
+      }
+    };
+
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Sync activeView state to URL hash
+  useEffect(() => {
+    if (activeView) {
+      const targetHash = viewToHash(activeView);
+      const currentHash = window.location.hash.replace('#/', '').replace('#', '');
+      if (currentHash !== targetHash) {
+        window.location.hash = `#/${targetHash}`;
+      }
+    }
+  }, [activeView]);
+
   // Load user session and shared content on mount
   useEffect(() => {
     const session = localStorage.getItem('session_user');
@@ -60,7 +101,15 @@ function App() {
         }
 
         setCurrentUser(parsedUser);
-        setActiveView('home');
+        
+        // Load active view from hash on initial load
+        const hash = window.location.hash.replace('#/', '').replace('#', '');
+        const validHashes = ['home', 'survey', 'dictionary', 'roleplay', 'cvbuilder', 'senpai', 'profile', 'admin'];
+        if (hash && validHashes.includes(hash)) {
+          setActiveView(hashToView(hash));
+        } else {
+          setActiveView('home');
+        }
       } catch (e) {
         localStorage.removeItem('session_user');
       }
@@ -261,17 +310,6 @@ function App() {
 
   const handleOpenProfileModal = async (email, fallbackName = '', fallbackRole = '') => {
     setProfileModalClosing(false);
-    if (email === 'admin@nihon.com') {
-      setProfileModalUser({
-        name: 'Admin Senpai',
-        email: 'admin@nihon.com',
-        avatar: '🦊',
-        bio: 'Quản trị viên hệ thống Nihon Career Ready. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
-        careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản',
-        role: 'Quản trị viên'
-      });
-      return;
-    }
 
     const users = await getSharedArray('users', []);
     const matchedUser = users.find(u => u.email === email);
@@ -283,6 +321,15 @@ function App() {
         bio: matchedUser.bio || 'Chưa cập nhật giới thiệu bản thân.',
         careerGoal: matchedUser.careerGoal || 'Học viên Nihon Career Ready',
         role: matchedUser.isAdmin ? 'Quản trị viên' : matchedUser.isSenpai ? 'Senpai' : 'Học viên'
+      });
+    } else if (email === 'admin@nihon.com') {
+      setProfileModalUser({
+        name: 'Admin Senpai',
+        email: 'admin@nihon.com',
+        avatar: '🦊',
+        bio: 'Quản trị viên hệ thống Nihon Career Ready. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
+        careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản',
+        role: 'Quản trị viên'
       });
     } else {
       // User not found in store — use fallback info from the post/comment metadata
@@ -305,7 +352,7 @@ function App() {
 
   const renderView = () => {
     if (!currentUser) {
-      return <Auth onLogin={handleLogin} />;
+      return <Auth onLogin={handleLogin} theme={theme} onToggleTheme={toggleTheme} />;
     }
 
     switch (activeView) {
@@ -360,22 +407,24 @@ function App() {
 
   return (
     <div>
-      <Navbar
-        activeView={activeView}
-        onViewChange={setActiveView}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+      {currentUser && (
+        <Navbar
+          activeView={activeView}
+          onViewChange={setActiveView}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      )}
       
-      <main className={activeView === 'home' ? '' : 'container'} style={activeView === 'home' ? { padding: 0 } : { padding: '2rem 1rem 4rem 1rem' }}>
+      <main className={(activeView === 'home' || activeView === 'cvbuilder' || !currentUser) ? '' : 'container'} style={(activeView === 'home' || activeView === 'cvbuilder' || !currentUser) ? { padding: 0 } : { paddingTop: '2rem', paddingBottom: '4rem' }}>
         <div key={activeView} className="page-transition">
           {renderView()}
         </div>
       </main>
       
-      {activeView !== 'home' && (
+      {currentUser && activeView !== 'home' && (
         <footer style={{
           textAlign: 'center',
           padding: '2rem 1rem',
@@ -452,6 +501,11 @@ function App() {
                   right: '16px',
                   width: '32px',
                   height: '32px',
+                  minHeight: 'unset',
+                  minWidth: 'unset',
+                  padding: 0,
+                  aspectRatio: '1 / 1',
+                  flexShrink: 0,
                   borderRadius: '50%',
                   background: 'rgba(255, 255, 255, 0.15)', 
                   border: 'none', 
@@ -479,6 +533,7 @@ function App() {
                 transform: 'translateX(-50%)',
                 width: '90px',
                 height: '90px',
+                aspectRatio: '1 / 1',
                 borderRadius: '50%',
                 border: '4px solid var(--jp-card-bg)',
                 background: 'var(--jp-card-bg)',
@@ -488,11 +543,13 @@ function App() {
                 justifyContent: 'center',
                 overflow: 'hidden',
                 fontSize: '3.8rem',
-                zIndex: 2
+                zIndex: 2,
+                boxSizing: 'border-box',
+                flexShrink: 0
               }}
             >
               {profileModalUser.avatar?.startsWith('data:image') ? (
-                <img src={profileModalUser.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={profileModalUser.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 profileModalUser.avatar || '🧑‍💻'
               )}

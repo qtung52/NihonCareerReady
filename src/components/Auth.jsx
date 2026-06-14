@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Lock, Mail, User, ArrowRight, HelpCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { getSharedArray, isSupabaseEnabled, setSharedArray } from '../lib/sharedStore';
+import { Lock, Mail, User, ArrowRight, HelpCircle, CheckCircle, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { getSharedArray, setSharedArray } from '../lib/sharedStore';
+import styles from './Auth.module.css';
 
 const SECURITY_QUESTIONS = [
   "Tên thú cưng đầu tiên của bạn là gì?",
@@ -10,7 +11,7 @@ const SECURITY_QUESTIONS = [
   "Tên thần tượng thời thơ ấu của bạn là gì?"
 ];
 
-export default function Auth({ onLogin }) {
+export default function Auth({ onLogin, theme, onToggleTheme }) {
   const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'forgot'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,13 +41,13 @@ export default function Auth({ onLogin }) {
     if (/[A-Z]/.test(pwd) || /[^A-Za-z0-9]/.test(pwd)) score++;
     
     let label = 'Yếu';
-    let color = 'weak';
+    let color = styles.barWeak;
     if (score === 2) {
       label = 'Trung bình';
-      color = 'medium';
+      color = styles.barMedium;
     } else if (score === 3) {
       label = 'Mạnh';
-      color = 'strong';
+      color = styles.barStrong;
     }
     return { score, label, color };
   };
@@ -232,284 +233,364 @@ export default function Auth({ onLogin }) {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-container">
+    <div className={styles.authWrapper}>
+      <div className={styles.authContainer}>
         
-        {/* Left Side: Promo panel (Desktop only, styled with linear-gradients & Wa-Minimalism aesthetics) */}
-        <div className="auth-promo">
-          <div className="auth-promo-logo">
-            <div className="logo-circle" style={{ width: '22px', height: '22px', border: '2px solid white', boxShadow: 'none' }}></div>
+        {/* Left Side: Promo panel */}
+        <div className={styles.authPromo}>
+          <div className={styles.authPromoLogo}>
+            <div className={styles.logoCircle}>
+              <span className={styles.logoDot}></span>
+            </div>
             <span>Nihon Career Ready</span>
           </div>
 
-          <div style={{ zIndex: 1 }}>
-            <span className="auth-promo-tag">KỸ NĂNG & VĂN HÓA CÔNG SỞ NHẬT</span>
-            <h1 className="auth-promo-quote">
+          <div className={styles.authPromoMain}>
+            <span className={styles.authPromoTag}>KỸ NĂNG & VĂN HÓA CÔNG SỞ NHẬT</span>
+            <h1 className={styles.authPromoQuote}>
               Chìa khóa mở cánh cửa sự nghiệp chuyên nghiệp tại Nhật Bản
             </h1>
-            <p style={{ opacity: 0.8, fontSize: '0.9rem', lineHeight: '1.6', maxWidth: '380px' }}>
+            <p className={styles.authPromoDesc}>
               Học tập các quy tắc ứng xử, viết Rirekisho chuẩn JIS, và luyện tập thử thách thực tế cùng Senpai hỗ trợ bởi Trợ lý AI.
             </p>
+
+            {/* Feature Showcase Mockups */}
+            <div className={styles.featureShowcase}>
+              {/* Card 1: Etiquette */}
+              <div className={`${styles.mockCard} ${styles.cardEtiquette}`}>
+                <div className={styles.cardHeader}>
+                  <span className={styles.cardBadge}>Thử thách ứng xử</span>
+                  <span className={styles.cardStatus}>Đang học</span>
+                </div>
+                <p className={styles.cardTitle}>Văn hóa rượu bia Nomikai</p>
+                <div className={styles.cardAction}>
+                  <span className={styles.actionIcon}>🍻</span>
+                  <span className={styles.actionText}>Quy tắc rót bia cho sếp chuẩn Nhật</span>
+                </div>
+              </div>
+
+              {/* Card 2: AI Senpai Feedback */}
+              <div className={`${styles.mockCard} ${styles.cardAI}`}>
+                <div className={styles.cardHeader}>
+                  <span className={`${styles.cardBadge} ${styles.aiBadge}`}>Trợ lý AI Senpai</span>
+                  <span className={styles.cardPulse}></span>
+                </div>
+                <p className={styles.cardContent}>"Rirekisho của bạn đã chuẩn phong cách Keigo. Hãy điều chỉnh thêm phần PR bản thân..."</p>
+                <div className={styles.cardFooter}>
+                  <span className={styles.aiAvatar}>🤖</span>
+                  <span className={styles.aiName}>AI Mentor Feedback</span>
+                </div>
+              </div>
+
+              {/* Card 3: CV Progress */}
+              <div className={`${styles.mockCard} ${styles.cardCV}`}>
+                <div className={styles.cardHeader}>
+                  <span className={styles.cardBadge}>Trình tạo CV (JIS)</span>
+                  <span className={styles.cardPercent}>85%</span>
+                </div>
+                <div className={styles.cvProgress}>
+                  <div className={styles.cvProgressBar} style={{ width: '85%' }}></div>
+                </div>
+                <div className={styles.cvTarget}>
+                  <span>LINE Corp (Tokyo)</span>
+                  <span>Ứng tuyển Dev</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div style={{ fontSize: '0.78rem', opacity: 0.6, zIndex: 1 }}>
+          <div className={styles.authPromoFooter}>
             © {new Date().getFullYear()} Nihon Career Ready. Thiết kế tối giản tinh tế.
           </div>
-          <div className="auth-promo-wave" />
         </div>
 
         {/* Right Side: Form panel */}
-        <div className="auth-form-side">
-          <div className="auth-header">
-            <h2 className="auth-title" style={{ fontSize: '1.5rem', marginBottom: '0.35rem' }}>
-              {authMode === 'login' ? 'Đăng Nhập' : authMode === 'register' ? 'Tạo Tài Khoản' : 'Khôi Phục'}
-            </h2>
-            <p className="auth-subtitle" style={{ fontSize: '0.85rem' }}>
-              {authMode === 'login' 
-                ? 'Đăng nhập để tiếp tục học quy tắc văn hóa Nhật Bản' 
-                : authMode === 'register' 
-                ? 'Đăng ký tài khoản thành viên mới'
-                : 'Khôi phục mật khẩu thông qua câu hỏi bảo mật'
-              }
-            </p>
-          </div>
+        <div className={styles.authFormSide}>
+          {/* Floating Theme Toggle */}
+          <button
+            type="button"
+            className={styles.themeToggleBtn}
+            onClick={onToggleTheme}
+            title={`Chuyển sang nền ${theme === 'light' ? 'tối' : 'sáng'}`}
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
 
-          {errorMsg && (
-            <div style={{ color: 'var(--jp-red)', background: 'rgba(188, 0, 45, 0.05)', padding: '0.65rem 0.85rem', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '1.25rem', borderLeft: '3px solid var(--jp-red)', lineHeight: '1.4' }}>
-              {errorMsg}
+          <div className={styles.formContainer}>
+            <div className={styles.authHeader}>
+              <h2 className={styles.authTitle}>
+                {authMode === 'login' ? 'Đăng Nhập' : authMode === 'register' ? 'Tạo Tài Khoản' : 'Khôi Phục'}
+              </h2>
+              <p className={styles.authSubtitle}>
+                {authMode === 'login' 
+                  ? 'Chào mừng bạn quay lại với Nihon Career Ready' 
+                  : authMode === 'register' 
+                  ? 'Đăng ký tài khoản thành viên mới'
+                  : 'Khôi phục mật khẩu thông qua câu hỏi bảo mật'
+                }
+              </p>
             </div>
-          )}
 
-          {successMsg && (
-            <div style={{ color: '#2ecc71', background: 'rgba(46, 204, 113, 0.05)', padding: '0.65rem 0.85rem', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '1.25rem', borderLeft: '3px solid #2ecc71', lineHeight: '1.4' }}>
-              {successMsg}
-            </div>
-          )}
+            {/* Social Logins */}
+            {authMode === 'login' && (
+              <>
+                <div className={styles.socialButtons}>
+                  <button 
+                    type="button" 
+                    className={styles.socialBtn}
+                    onClick={() => alert('Đăng nhập bằng Google đang bảo trì, vui lòng dùng Email / Mật khẩu!')}
+                  >
+                    <svg className={styles.socialIcon} viewBox="0 0 24 24" width="18" height="18">
+                      <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.57 15 1 12 1 7.24 1 3.2 3.76 1.34 7.78l3.86 3c.9-2.7 3.42-4.74 6.8-4.74z"/>
+                      <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.73 2.89c2.18-2 3.7-4.97 3.7-8.62z"/>
+                      <path fill="#FBBC05" d="M5.2 14.78c-.23-.69-.36-1.42-.36-2.18s.13-1.49.36-2.18L1.34 7.42C.48 9.17 0 11.03 0 12.6c0 1.57.48 3.43 1.34 5.18l3.86-3z"/>
+                      <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.73-2.89c-1.1.74-2.52 1.18-4.23 1.18-3.38 0-5.9-2.04-6.8-4.74L1.34 16.64C3.2 20.66 7.24 23 12 23z"/>
+                    </svg>
+                    <span>Google</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className={styles.socialBtn}
+                    onClick={() => alert('Đăng nhập bằng GitHub đang bảo trì, vui lòng dùng Email / Mật khẩu!')}
+                  >
+                    <svg className={styles.socialIcon} viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                    </svg>
+                    <span>GitHub</span>
+                  </button>
+                </div>
+                <div className={styles.divider}>
+                  <span>Hoặc đăng nhập bằng Email</span>
+                </div>
+              </>
+            )}
 
-          {authMode === 'forgot' ? (
-            !userFound ? (
-              // Step 1: Input email to search
-              <form onSubmit={handleFindAccount}>
-                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                  <label className="form-label">Email tài khoản</label>
-                  <div style={{ position: 'relative' }}>
-                    <Mail size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)', pointerEvents: 'none' }} />
+            {errorMsg && (
+              <div className={`${styles.messageBox} ${styles.errorBox}`}>
+                {errorMsg}
+              </div>
+            )}
+
+            {successMsg && (
+              <div className={`${styles.messageBox} ${styles.successBox}`}>
+                {successMsg}
+              </div>
+            )}
+
+            {authMode === 'forgot' ? (
+              !userFound ? (
+                // Step 1: Input email to search
+                <form onSubmit={handleFindAccount}>
+                  <div className={styles.formGroup}>
+                    <Mail size={18} className={styles.inputIcon} />
                     <input
                       type="email"
-                      className="form-input form-input-icon-left"
-                      placeholder="user@gmail.com"
+                      className={`${styles.floatingInput} ${email ? styles.hasValue : ''}`}
+                      placeholder=" "
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
+                    <label className={styles.floatingLabel}>Email tài khoản</label>
                   </div>
-                </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', minHeight: '42px' }}>
-                  Tìm tài khoản <ArrowRight size={15} />
-                </button>
-              </form>
-            ) : !answerVerified ? (
-              // Step 2: Answer security question
-              <form onSubmit={handleVerifyAnswer}>
-                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                  <div style={{ background: 'var(--jp-soft-surface)', borderLeft: '3px solid var(--jp-blue)', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--jp-text-muted)', display: 'block', marginBottom: '0.2' }}>Câu hỏi bảo mật của bạn:</span>
-                    <strong style={{ color: 'var(--jp-text)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>🔒 {userQuestion}</strong>
+                  <button type="submit" className={styles.btnPrimary}>
+                    Tìm tài khoản <ArrowRight size={18} />
+                  </button>
+                </form>
+              ) : !answerVerified ? (
+                // Step 2: Answer security question
+                <form onSubmit={handleVerifyAnswer}>
+                  <div className={styles.securityQuestionDisplay}>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>Câu hỏi bảo mật của bạn:</span>
+                    <strong style={{ color: 'var(--jp-text)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🔒 {userQuestion}</strong>
                   </div>
-                  <label className="form-label">Câu trả lời bảo mật</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Nhập câu trả lời bí mật..."
-                    value={userAnswerInput}
-                    onChange={(e) => setUserAnswerInput(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', minHeight: '42px' }}>
-                  Xác nhận câu trả lời <ArrowRight size={15} />
-                </button>
-              </form>
-            ) : (
-              // Step 3: Set new password
-              <form onSubmit={handleResetPassword}>
-                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                  <label className="form-label">Mật khẩu mới</label>
-                  <div style={{ position: 'relative' }}>
-                    <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)', pointerEvents: 'none' }} />
+                  <div className={styles.formGroup}>
+                    <HelpCircle size={18} className={styles.inputIcon} />
+                    <input
+                      type="text"
+                      className={`${styles.floatingInput} ${userAnswerInput ? styles.hasValue : ''}`}
+                      placeholder=" "
+                      value={userAnswerInput}
+                      onChange={(e) => setUserAnswerInput(e.target.value)}
+                      required
+                    />
+                    <label className={styles.floatingLabel}>Câu trả lời bảo mật</label>
+                  </div>
+                  <button type="submit" className={styles.btnPrimary}>
+                    Xác nhận câu trả lời <ArrowRight size={18} />
+                  </button>
+                </form>
+              ) : (
+                // Step 3: Set new password
+                <form onSubmit={handleResetPassword}>
+                  <div className={styles.formGroup}>
+                    <Lock size={18} className={styles.inputIcon} />
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      className="form-input form-input-icon-both"
-                      placeholder="Mật khẩu mới (tối thiểu 6 ký tự)..."
+                      className={`${styles.floatingInput} ${newPassword ? styles.hasValue : ''}`}
+                      placeholder=" "
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
                     />
+                    <label className={styles.floatingLabel}>Mật khẩu mới</label>
                     <button
                       type="button"
-                      className="pwd-toggle-btn"
+                      className={styles.pwdToggleBtn}
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', minHeight: '42px' }}>
-                  Cập nhật mật khẩu <CheckCircle size={15} />
-                </button>
-              </form>
-            )
-          ) : (
-            <form onSubmit={handleSubmit}>
-              {authMode === 'register' && (
-                <>
-                  <div className="form-group">
-                    <label className="form-label">Họ và Tên</label>
-                    <div style={{ position: 'relative' }}>
-                      <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)', pointerEvents: 'none' }} />
+                  <button type="submit" className={styles.btnPrimary}>
+                    Cập nhật mật khẩu <CheckCircle size={18} />
+                  </button>
+                </form>
+              )
+            ) : (
+              <form onSubmit={handleSubmit}>
+                {authMode === 'register' && (
+                  <>
+                    <div className={styles.formGroup}>
+                      <User size={18} className={styles.inputIcon} />
                       <input
                         type="text"
-                        className="form-input form-input-icon-left"
-                        placeholder="Nguyễn Văn A"
+                        className={`${styles.floatingInput} ${name ? styles.hasValue : ''}`}
+                        placeholder=" "
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
                       />
+                      <label className={styles.floatingLabel}>Họ và Tên</label>
                     </div>
-                  </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Chọn câu hỏi bảo mật</label>
-                    <select 
-                      className="form-input"
-                      value={securityQuestion}
-                      onChange={(e) => setSecurityQuestion(e.target.value)}
-                      style={{ padding: '0.55rem 0.85rem', height: '42px' }}
-                    >
-                      {SECURITY_QUESTIONS.map((q, idx) => (
-                        <option key={idx} value={q}>{q}</option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.selectLabel}>Chọn câu hỏi bảo mật</label>
+                      <select 
+                        className={styles.selectInput}
+                        value={securityQuestion}
+                        onChange={(e) => setSecurityQuestion(e.target.value)}
+                      >
+                        {SECURITY_QUESTIONS.map((q, idx) => (
+                          <option key={idx} value={q}>{q}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Câu trả lời bảo mật</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Nhập câu trả lời để khôi phục sau này..."
-                      value={securityAnswer}
-                      onChange={(e) => setSecurityAnswer(e.target.value)}
-                      required
-                    />
-                  </div>
-                </>
-              )}
+                    <div className={styles.formGroup}>
+                      <HelpCircle size={18} className={styles.inputIcon} />
+                      <input
+                        type="text"
+                        className={`${styles.floatingInput} ${securityAnswer ? styles.hasValue : ''}`}
+                        placeholder=" "
+                        value={securityAnswer}
+                        onChange={(e) => setSecurityAnswer(e.target.value)}
+                        required
+                      />
+                      <label className={styles.floatingLabel}>Câu trả lời bảo mật</label>
+                    </div>
+                  </>
+                )}
 
-              <div className="form-group">
-                <label className="form-label">Email đăng nhập</label>
-                <div style={{ position: 'relative' }}>
-                  <Mail size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)', pointerEvents: 'none' }} />
+                <div className={styles.formGroup}>
+                  <Mail size={18} className={styles.inputIcon} />
                   <input
                     type="email"
-                    className="form-input form-input-icon-left"
-                    placeholder="user@gmail.com"
+                    className={`${styles.floatingInput} ${email ? styles.hasValue : ''}`}
+                    placeholder=" "
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
+                  <label className={styles.floatingLabel}>Email đăng nhập</label>
                 </div>
-              </div>
 
-              <div className="form-group" style={{ marginBottom: authMode === 'register' ? '0.75rem' : '1.25rem' }}>
-                <label className="form-label">Mật khẩu</label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--jp-text-muted)', pointerEvents: 'none' }} />
+                <div className={styles.formGroup}>
+                  <Lock size={18} className={styles.inputIcon} />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    className="form-input form-input-icon-both"
-                    placeholder="••••••••"
+                    className={`${styles.floatingInput} ${password ? styles.hasValue : ''}`}
+                    placeholder=" "
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <label className={styles.floatingLabel}>Mật khẩu</label>
                   <button
                     type="button"
-                    className="pwd-toggle-btn"
+                    className={styles.pwdToggleBtn}
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
 
                 {/* Password Strength Meter for Register Mode */}
                 {authMode === 'register' && password && (
-                  <div className="password-strength-container">
-                    <div className="password-strength-label">
-                      <span>Độ bảo mật mật khẩu:</span>
-                      <strong className={`strength-${strength.color}`} style={{ 
-                        color: strength.color === 'weak' ? 'var(--jp-red)' : strength.color === 'medium' ? '#f1c40f' : '#2ecc71'
-                      }}>{strength.label}</strong>
+                  <div className={styles.passwordStrength}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span style={{ color: 'var(--jp-text-muted)' }}>Độ bảo mật mật khẩu:</span>
+                      <strong style={{ color: strength.color === styles.barWeak ? '#ef4444' : strength.color === styles.barMedium ? '#eab308' : '#22c55e' }}>{strength.label}</strong>
                     </div>
-                    <div className="password-strength-bars">
-                      <div className={`password-strength-bar ${strength.score >= 1 ? strength.color : ''}`} />
-                      <div className={`password-strength-bar ${strength.score >= 2 ? strength.color : ''}`} />
-                      <div className={`password-strength-bar ${strength.score >= 3 ? strength.color : ''}`} />
+                    <div className={styles.passwordStrengthBars}>
+                      <div className={`${styles.strengthBar} ${strength.score >= 1 ? strength.color : ''}`} />
+                      <div className={`${styles.strengthBar} ${strength.score >= 2 ? strength.color : ''}`} />
+                      <div className={`${styles.strengthBar} ${strength.score >= 3 ? strength.color : ''}`} />
                     </div>
                   </div>
                 )}
-              </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', minHeight: '42px', marginTop: '0.5rem' }}>
-                {authMode === 'login' ? 'Đăng nhập' : 'Đăng ký'} <ArrowRight size={15} />
-              </button>
-            </form>
-          )}
-
-          {/* Switch flow link */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', textAlign: 'center', marginTop: '1.25rem', fontSize: '0.82rem' }}>
-            {authMode === 'login' && (
-              <button
-                onClick={() => {
-                  setAuthMode('forgot');
-                  setErrorMsg('');
-                  setSuccessMsg('');
-                  setUserFound(false);
-                  setAnswerVerified(false);
-                  setUserAnswerInput('');
-                }}
-                style={{ background: 'none', border: 'none', color: 'var(--jp-red)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
-              >
-                <HelpCircle size={14} /> Quên mật khẩu?
-              </button>
+                <button type="submit" className={styles.btnPrimary}>
+                  {authMode === 'login' ? 'Đăng nhập' : 'Đăng ký'} <ArrowRight size={18} />
+                </button>
+              </form>
             )}
 
-            <div>
-              <span style={{ color: 'var(--jp-text-muted)' }}>
-                {authMode === 'login' || authMode === 'forgot' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-              </span>
-              <button
-                onClick={() => {
-                  setAuthMode(authMode === 'login' ? 'register' : 'login');
-                  setErrorMsg('');
-                  setSuccessMsg('');
-                  setUserFound(false);
-                  setAnswerVerified(false);
-                  setUserAnswerInput('');
-                }}
-                style={{ background: 'none', border: 'none', color: 'var(--jp-blue)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                {authMode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập tại đây'}
-              </button>
+            {/* Switch flow link */}
+            <div className={styles.linksContainer}>
+              {authMode === 'login' && (
+                <button
+                  onClick={() => {
+                    setAuthMode('forgot');
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                    setUserFound(false);
+                    setAnswerVerified(false);
+                    setUserAnswerInput('');
+                  }}
+                  className={styles.forgotLink}
+                >
+                  <HelpCircle size={14} /> Quên mật khẩu?
+                </button>
+              )}
+
+              <div>
+                <span style={{ color: 'var(--jp-text-muted)' }}>
+                  {authMode === 'login' || authMode === 'forgot' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
+                </span>
+                <button
+                  onClick={() => {
+                    setAuthMode(authMode === 'login' ? 'register' : 'login');
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                    setUserFound(false);
+                    setAnswerVerified(false);
+                    setUserAnswerInput('');
+                  }}
+                  className={styles.switchLink}
+                >
+                  {authMode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập tại đây'}
+                </button>
+              </div>
             </div>
           </div>
 
         </div>
 
-
       </div>
     </div>
   );
 }
+
 
 

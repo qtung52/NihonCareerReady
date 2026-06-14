@@ -408,7 +408,19 @@ export default function AdminPanel({
                       <td style={{ padding: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span 
-                            style={{ fontSize: '1.5rem', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}
+                            style={{ 
+                              fontSize: '1.5rem', 
+                              width: '40px', 
+                              height: '40px', 
+                              aspectRatio: '1 / 1',
+                              borderRadius: '50%',
+                              flexShrink: 0,
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              cursor: 'pointer', 
+                              overflow: 'hidden' 
+                            }}
                             onClick={() => onViewProfile && onViewProfile(user.email, user.name, user.careerGoal)}
                             title="Xem thông tin người dùng"
                           >

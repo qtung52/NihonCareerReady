@@ -12,13 +12,14 @@
   --jp-bg: #f5f7fb;
   /* Very soft warm light gray */
   --jp-card-bg: #ffffff;
+  --jp-surface: #f1f5f9;
   --jp-surface-raised: #ffffff;
   --jp-soft-surface: rgba(15, 44, 89, 0.03);
   --jp-soft-red: #fff9f9;
   --jp-nav-bg: rgba(255, 255, 255, 0.85);
   --jp-text: #2c3e50;
   /* Deep charcoal for clean readability */
-  --jp-text-muted: #7f8c8d;
+  --jp-text-muted: #4a5568;
   --jp-border: #e2e8f0;
   --jp-shadow-sm: 0 1px 2px rgba(15, 44, 89, 0.04), 0 8px 24px rgba(15, 44, 89, 0.04);
   --jp-shadow: 0 10px 34px rgba(15, 44, 89, 0.08);
@@ -40,12 +41,13 @@
   --jp-blue-light: #1a1d2e;
   --jp-bg: #0f1117;
   --jp-card-bg: #1a1d2e;
+  --jp-surface: #252836;
   --jp-surface-raised: #1a1d2e;
   --jp-soft-surface: rgba(79, 142, 247, 0.1);
   --jp-soft-red: rgba(232, 54, 93, 0.1);
   --jp-nav-bg: rgba(15, 17, 23, 0.88);
   --jp-text: #ffffff;
-  --jp-text-muted: #8b8fa8;
+  --jp-text-muted: #a0aec0;
   --jp-border: #2a2e47;
   --jp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --jp-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
@@ -153,9 +155,16 @@ body {
 
 /* Layout container */
 .container {
-  max-width: 1240px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 4%;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1.25rem;
+  }
 }
 
 /* Header & Navigation */
@@ -2249,4 +2258,236 @@ body {
 
 .fb-comment-wrapper {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* =========================================
+   Gamified RolePlay UI (Modern Refresh)
+   ========================================= */
+.rp-progress-container {
+  width: 100%;
+  height: 12px;
+  background: var(--jp-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.rp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  border-radius: 10px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.rp-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.rp-gamified-card {
+  background: var(--jp-card-bg);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--jp-border);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  transition: transform 0.3s;
+  animation: fadeIn 0.4s ease-out;
+}
+
+:root[data-theme="dark"] .rp-gamified-card {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.rp-gamified-illustration {
+  background: linear-gradient(135deg, var(--jp-surface), var(--jp-surface-raised));
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid var(--jp-border);
+  min-height: 220px;
+}
+
+.rp-gamified-content {
+  padding: 2rem;
+}
+
+.rp-gamified-title {
+  font-family: var(--font-japanese);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--jp-blue);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.rp-gamified-desc {
+  font-size: 1.05rem;
+  color: var(--jp-text);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.rp-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rp-gamified-option {
+  display: flex;
+  align-items: stretch;
+  background: var(--jp-card-bg);
+  border: 2px solid var(--jp-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+  text-align: left;
+  padding: 0;
+  opacity: 0;
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.rp-gamified-option:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border-color: var(--jp-blue-light);
+}
+
+.rp-gamified-option.selected {
+  border-color: var(--jp-blue);
+  background: rgba(15, 44, 89, 0.03);
+}
+
+.rp-gamified-option.selected-correct {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.05);
+}
+
+.rp-gamified-option.selected-incorrect {
+  border-color: var(--jp-red);
+  background: rgba(188, 0, 45, 0.03);
+}
+
+.rp-gamified-option.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rp-gamified-option-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  background: var(--jp-surface-raised);
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--jp-text-muted);
+  border-right: 2px solid var(--jp-border);
+  transition: all 0.2s;
+}
+
+.rp-gamified-option:hover:not(:disabled) .rp-gamified-option-letter {
+  background: var(--jp-blue-light);
+  color: var(--jp-blue);
+}
+
+.rp-gamified-option.selected .rp-gamified-option-letter {
+  background: var(--jp-blue);
+  color: white;
+  border-right-color: var(--jp-blue);
+}
+
+.rp-gamified-option.selected-correct .rp-gamified-option-letter {
+  background: #2ecc71;
+  color: white;
+  border-right-color: #2ecc71;
+}
+
+.rp-gamified-option.selected-incorrect .rp-gamified-option-letter {
+  background: var(--jp-red);
+  color: white;
+  border-right-color: var(--jp-red);
+}
+
+.rp-gamified-option-text {
+  padding: 1.2rem;
+  font-size: 1rem;
+  color: var(--jp-text);
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Inline Feedback Panel */
+.rp-inline-feedback {
+  margin-top: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.rp-feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: white;
+}
+
+.rp-feedback-header.correct {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.rp-feedback-header.incorrect {
+  background: linear-gradient(135deg, var(--jp-red), #c0392b);
+}
+
+.rp-feedback-body {
+  background: var(--jp-surface-raised);
+  padding: 1.5rem;
+  border: 1px solid var(--jp-border);
+  border-top: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

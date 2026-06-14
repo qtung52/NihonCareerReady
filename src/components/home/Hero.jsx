@@ -1,47 +1,62 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import styles from './Hero.module.css';
 
 export default function Hero({ onViewChange }) {
   return (
     <div className={styles.heroSection}>
+      {/* Background Sakura/Particles */}
+      <div className={styles.particlesContainer}>
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className={styles.particle} style={{
+            left: `${Math.random() * 100}%`,
+            animationDuration: `${Math.random() * 5 + 5}s`,
+            animationDelay: `${Math.random() * 5}s`
+          }}></div>
+        ))}
+      </div>
+
       <div className={styles.heroContentWrapper}>
-        {/* Text Content */}
         <div className={styles.textContent}>
-          <span className={styles.tag}>ỨNG DỤNG CHO SINH VIÊN VIỆT NAM</span>
-          <h1 className={styles.title}>Chuẩn bị Hành trang Công sở Nhật Bản</h1>
+          <div className={styles.tagWrapper}>
+            <span className={styles.tag}><Sparkles size={14} style={{ marginRight: '6px' }} /> ỨNG DỤNG CHO SINH VIÊN VIỆT NAM</span>
+          </div>
+          <h1 className={styles.title}>
+            Bệ phóng vững chắc tới <br/>
+            <span className={styles.textGradient}>Công sở Nhật Bản</span>
+          </h1>
           <p className={styles.subtitle}>
-            Học tập các quy tắc ứng xử chuẩn Nhật, rèn luyện tình huống thực tế và tạo CV Rirekisho đúng chuẩn một cách nhanh chóng, tối giản.
+            Trải nghiệm học tập văn hóa doanh nghiệp Nhật Bản theo phong cách hoàn toàn mới. Nắm bắt quy tắc, luyện tập tình huống và tạo CV Rirekisho chỉ trong vài phút.
           </p>
           <div className={styles.ctaGroup}>
             <button className={styles.btnPrimary} onClick={() => onViewChange('survey')}>
-              Làm bài Test Đánh Giá <ArrowRight size={18} />
+              Bắt đầu hành trình <ArrowRight size={18} />
             </button>
             <button className={styles.btnSecondary} onClick={() => onViewChange('dictionary')}>
-              Xem Sổ Tay
+              Khám phá Sổ tay
             </button>
           </div>
         </div>
 
-        {/* Illustration Mockup */}
         <div className={styles.illustration}>
-          <div className={styles.mockupCard}>
-            <div className={styles.mockupBadge}>
-              N3+
-            </div>
+          {/* Glassmorphism Cards */}
+          <div className={styles.glassCardPrimary}>
             <div className={styles.mockupHeader}>
-              <div className={styles.mockupAvatar}>👨‍💼</div>
+              <div className={styles.mockupAvatar}>👩‍💻</div>
               <div style={{ flex: 1 }}>
-                <div className={`${styles.mockupLine} ${styles.short}`}></div>
-                <div className={styles.mockupLine} style={{ width: '40%' }}></div>
+                <div className={styles.mockupTitle}>Nihon Career Ready</div>
+                <div className={styles.mockupSubtitle}>Hoàn thành lộ trình</div>
               </div>
             </div>
-            <div className={styles.mockupLine}></div>
-            <div className={styles.mockupLine}></div>
-            <div className={`${styles.mockupLine} ${styles.short}`}></div>
+            <div className={styles.progressBar}>
+              <div className={styles.progressFill} style={{ width: '85%' }}></div>
+            </div>
             
-            <div style={{ marginTop: '2rem', display: 'flex', gap: '0.5rem' }}>
-              <div style={{ height: '30px', flex: 1, background: 'var(--jp-soft-surface)', borderRadius: '4px' }}></div>
-              <div style={{ height: '30px', flex: 1, background: 'var(--jp-soft-surface)', borderRadius: '4px' }}></div>
+            <div className={styles.glassCardSecondary}>
+              <span style={{ fontSize: '1.8rem' }}>💮</span>
+              <div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Điểm văn hóa</div>
+                <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Hạng S (Xuất sắc)</div>
+              </div>
             </div>
           </div>
         </div>

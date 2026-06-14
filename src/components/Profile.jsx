@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { User, Key, Save, AlertCircle, CheckCircle2, Upload } from 'lucide-react';
+import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
+import styles from './Profile.module.css';
 
 const AVATARS = [
   { id: 'avatar-1', emoji: '🧑‍💻', name: 'Developer Senpai' },
@@ -142,146 +143,113 @@ export default function Profile({ currentUser, onUpdateProfile }) {
   };
 
   return (
-    <div className="profile-container">
-      <div className="section-header">
-        <h2 className="section-title">Cài đặt Tài khoản - Profile Setting</h2>
-        <p className="section-subtitle">Chỉnh sửa hồ sơ cá nhân và quản lý bảo mật tài khoản.</p>
+    <div className={styles.container}>
+      <div className={styles.coverPhoto}>
+        {/* Beautiful cover photo banner */}
       </div>
 
-      <div className="profile-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div className={styles.profileHeader}>
+        <div className={styles.avatarWrapper}>
+          {avatar.startsWith('data:image') ? (
+            <img src={avatar} alt="avatar" className={styles.avatarImage} />
+          ) : (
+            avatar
+          )}
+        </div>
+        <div className={styles.userInfoHeader}>
+          <h2 className={styles.userName}>{displayName || currentUser.name}</h2>
+          <div className={styles.userRole}>
+            <span className={`${styles.roleBadge} ${currentUser.isAdmin ? styles.adminBadge : currentUser.isSenpai ? styles.senpaiBadge : styles.studentBadge}`}>
+              {currentUser.isAdmin ? 'Quản trị viên (Admin)' : currentUser.isSenpai ? 'Senpai' : 'Học viên'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.bentoGrid}>
         
+        {/* Top Full Width Card: Avatar Edit */}
+        <div className={`${styles.bentoCard} ${styles.avatarCard}`}>
+          <h3 className={styles.cardTitle}>
+             <Camera size={20} /> Ảnh đại diện (Avatar)
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+             <div className={styles.avatarList}>
+                {AVATARS.map(av => (
+                  <button
+                    key={av.id}
+                    type="button"
+                    onClick={() => setAvatar(av.emoji)}
+                    className={`${styles.avatarOption} ${avatar === av.emoji ? styles.selected : ''}`}
+                    title={av.name}
+                  >
+                    {av.emoji}
+                  </button>
+                ))}
+              </div>
+              <div>
+                <label className={styles.uploadLabel}>
+                  <Upload size={16} /> Tải ảnh từ máy (Max 2MB)
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                </label>
+              </div>
+          </div>
+        </div>
+
         {/* Left Card: Personal Information */}
-        <div className="card-face profile-card" style={{ padding: '2rem', height: 'fit-content', background: 'var(--jp-card-bg)', border: '1px solid var(--jp-border)', borderRadius: 'var(--jp-radius)', transform: 'none', position: 'relative', display: 'block' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.2rem', borderBottom: '2px solid var(--jp-red)', paddingBottom: '0.5rem' }}>
+        <div className={`${styles.bentoCard} ${styles.infoCard}`}>
+          <h3 className={styles.cardTitle}>
             <User size={20} /> Thông tin cá nhân
           </h3>
 
           {profileMsg.text && (
-            <div style={{
-              padding: '0.75rem',
-              borderRadius: 'var(--jp-radius)',
-              background: profileMsg.type === 'success' ? '#e6f4ea' : '#fce8e6',
-              color: profileMsg.type === 'success' ? '#137333' : '#c5221f',
-              fontSize: '0.85rem',
-              marginBottom: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              {profileMsg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <div className={`${styles.messageBox} ${profileMsg.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+              {profileMsg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
               {profileMsg.text}
             </div>
           )}
 
           <form onSubmit={handleUpdateInfo}>
-            {/* Avatar Selector */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Ảnh đại diện (Avatar)</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
-                <div style={{ fontSize: '3rem', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--jp-blue-light)', borderRadius: '50%', border: '2px solid var(--jp-blue)', overflow: 'hidden' }}>
-                  {avatar.startsWith('data:image') ? (
-                    <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    avatar
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {AVATARS.map(av => (
-                      <button
-                        key={av.id}
-                        type="button"
-                        onClick={() => setAvatar(av.emoji)}
-                        style={{
-                          fontSize: '1.5rem',
-                          padding: '0.3rem',
-                          border: avatar === av.emoji ? '2px solid var(--jp-red)' : '1px solid var(--jp-border)',
-                          background: avatar === av.emoji ? 'var(--jp-soft-red)' : 'var(--jp-surface-raised)',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          transition: '0.2s'
-                        }}
-                        title={av.name}
-                      >
-                        {av.emoji}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', background: 'var(--jp-surface-raised)', border: '1px dashed var(--jp-border)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--jp-text-muted)', transition: 'all 0.2s' }} className="hover-scale">
-                      <Upload size={14} /> Tải ảnh lên (Max 2MB)
-                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Display Name */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Tên hiển thị</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Tên hiển thị</label>
               <input
                 type="text"
-                className="form-control"
+                className={styles.formInput}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Nhập tên hiển thị của bạn..."
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
                 required
               />
             </div>
 
-            {/* Email (Readonly) */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600, color: 'var(--jp-text-muted)' }}>Địa chỉ Email (Không thể thay đổi)</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Địa chỉ Email (Không thể thay đổi)</label>
               <input
                 type="text"
-                className="form-control"
+                className={styles.formInput}
                 value={currentUser.email}
                 disabled
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px', background: 'var(--jp-surface-raised)', cursor: 'not-allowed' }}
               />
             </div>
 
-            {/* Role (Readonly) */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--jp-text-muted)' }}>Vai trò hiện tại (Role)</label>
-              <div style={{
-                padding: '0.75rem',
-                border: '1px solid var(--jp-border)',
-                borderRadius: '4px',
-                background: 'var(--jp-surface-raised)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                <span 
-                  className={currentUser.isAdmin ? 'admin-rgb-tag' : ''}
-                  style={{ 
-                  background: !currentUser.isAdmin && currentUser.isSenpai ? 'var(--jp-blue)' : !currentUser.isAdmin ? '#eee' : undefined, 
-                  color: !currentUser.isAdmin && currentUser.isSenpai ? 'white' : !currentUser.isAdmin ? '#666' : undefined,
-                  fontSize: '0.85rem', 
-                  padding: '4px 12px', 
-                  borderRadius: '12px',
-                  fontWeight: !currentUser.isAdmin ? 'normal' : undefined,
-                  display: 'inline-block'
-                }}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Vai trò hiện tại (Role)</label>
+              <div className={styles.roleBox}>
+                <span className={`${styles.roleTag} ${currentUser.isAdmin ? styles.adminTag : currentUser.isSenpai ? styles.senpaiTag : styles.studentTag}`}>
                   {currentUser.isAdmin ? 'Quản trị viên (Admin)' : currentUser.isSenpai ? 'Senpai' : 'Học viên'}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)', fontStyle: 'italic' }}>
+                <span className={styles.roleDesc}>
                   {currentUser.isAdmin ? 'Bạn có toàn quyền truy cập Admin Panel.' : currentUser.isSenpai ? 'Bạn là thành viên có kinh nghiệm được chia sẻ kiến thức.' : 'Thành viên học tập bình thường.'}
                 </span>
               </div>
             </div>
 
-            {/* Career Path */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Mục tiêu nghề nghiệp</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Mục tiêu nghề nghiệp</label>
               <select
-                className="form-control"
+                className={styles.formInput}
                 value={careerGoal}
                 onChange={(e) => setCareerGoal(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
               >
                 {/* Nhóm IT & Công nghệ */}
                 <optgroup label="💻 IT & Công nghệ">
@@ -352,92 +320,79 @@ export default function Profile({ currentUser, onUpdateProfile }) {
               </select>
             </div>
 
-            {/* Bio */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Mô tả bản thân (Bio)</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Mô tả bản thân (Bio)</label>
               <textarea
-                className="form-control"
+                className={styles.formTextarea}
                 rows="3"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Hãy giới thiệu ngắn gọn về bản thân hoặc định hướng công việc của bạn..."
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px', resize: 'vertical' }}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
-              <Save size={16} /> Lưu thông tin hồ sơ
+            <button type="submit" className={styles.btnPrimary}>
+              <Save size={18} /> Lưu thông tin hồ sơ
             </button>
           </form>
         </div>
 
         {/* Right Card: Security & Password */}
-        <div className="card-face profile-card" style={{ padding: '2rem', height: 'fit-content', background: 'var(--jp-card-bg)', border: '1px solid var(--jp-border)', borderRadius: 'var(--jp-radius)', transform: 'none', position: 'relative', display: 'block' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--jp-blue)', marginBottom: '1.5rem', fontSize: '1.2rem', borderBottom: '2px solid var(--jp-red)', paddingBottom: '0.5rem' }}>
-            <Key size={20} /> Đổi mật khẩu tài khoản
-          </h3>
+        <div className={`${styles.bentoCard} ${styles.securityCard}`}>
+          <div>
+            <h3 className={styles.cardTitle}>
+              <Key size={20} /> Đổi mật khẩu tài khoản
+            </h3>
 
-          {passMsg.text && (
-            <div style={{
-              padding: '0.75rem',
-              borderRadius: 'var(--jp-radius)',
-              background: passMsg.type === 'success' ? '#e6f4ea' : '#fce8e6',
-              color: passMsg.type === 'success' ? '#137333' : '#c5221f',
-              fontSize: '0.85rem',
-              marginBottom: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              {passMsg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-              {passMsg.text}
-            </div>
-          )}
+            {passMsg.text && (
+              <div className={`${styles.messageBox} ${passMsg.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+                {passMsg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                {passMsg.text}
+              </div>
+            )}
 
-          <form onSubmit={handleUpdatePassword}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Mật khẩu hiện tại</label>
-              <input
-                type="password"
-                className="form-control"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Nhập mật khẩu đang sử dụng..."
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
-                required
-              />
-            </div>
+            <form onSubmit={handleUpdatePassword}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu đang sử dụng..."
+                  required
+                />
+              </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Mật khẩu mới</label>
-              <input
-                type="password"
-                className="form-control"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mật khẩu mới (tối thiểu 6 ký tự)..."
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
-                required
-              />
-            </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Mật khẩu mới</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mật khẩu mới (tối thiểu 6 ký tự)..."
+                  required
+                />
+              </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Xác nhận mật khẩu mới</label>
-              <input
-                type="password"
-                className="form-control"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới..."
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
-                required
-              />
-            </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Xác nhận mật khẩu mới</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Nhập lại mật khẩu mới..."
+                  required
+                />
+              </div>
 
-            <button type="submit" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center', color: 'var(--jp-red)', borderColor: 'var(--jp-red)', marginBottom: '2rem' }}>
-              <Key size={16} /> Thay đổi mật khẩu
-            </button>
-          </form>
+              <button type="submit" className={styles.btnOutline}>
+                <Key size={18} /> Thay đổi mật khẩu
+              </button>
+            </form>
+          </div>
 
           {/* Setup / Change Security Question */}
           <SecurityQuestionSection currentUser={currentUser} onUpdateProfile={onUpdateProfile} />
@@ -495,36 +450,25 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
   };
 
   return (
-    <div style={{ borderTop: '1px dashed var(--jp-border)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--jp-blue)', marginBottom: '1rem', fontSize: '1.1rem' }}>
+    <div style={{ paddingTop: '1.5rem', marginTop: 'auto' }}>
+      <h3 className={styles.cardTitle} style={{ fontSize: '1.15rem' }}>
         <User size={18} /> Câu hỏi bảo mật reset password
       </h3>
       
       {msg.text && (
-        <div style={{
-          padding: '0.75rem',
-          borderRadius: 'var(--jp-radius)',
-          background: msg.type === 'success' ? '#e6f4ea' : '#fce8e6',
-          color: msg.type === 'success' ? '#137333' : '#c5221f',
-          fontSize: '0.85rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          {msg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+        <div className={`${styles.messageBox} ${msg.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+          {msg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           {msg.text}
         </div>
       )}
 
       <form onSubmit={handleSaveQuestion}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Chọn câu hỏi</label>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Chọn câu hỏi</label>
           <select
-            className="form-control"
+            className={styles.formInput}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
           >
             {SECURITY_QUESTIONS.map((q, idx) => (
               <option key={idx} value={q}>{q}</option>
@@ -532,21 +476,20 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
           </select>
         </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Câu trả lời</label>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Câu trả lời</label>
           <input
             type="text"
-            className="form-control"
+            className={styles.formInput}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="Nhập câu trả lời để lấy lại mật khẩu sau này..."
-            style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--jp-border)', borderRadius: '4px' }}
             required
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
-          <Save size={16} /> Lưu câu hỏi bảo mật
+        <button type="submit" className={styles.btnPrimary}>
+          <Save size={18} /> Lưu câu hỏi bảo mật
         </button>
       </form>
     </div>
