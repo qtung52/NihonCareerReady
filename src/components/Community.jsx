@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search, MoreVertical, Edit3, Image as ImageIcon } from 'lucide-react';
 import { getSharedArray, isSupabaseEnabled, setSharedArray } from '../lib/sharedStore';
@@ -87,6 +87,27 @@ function timeAgo(isoString) {
   return `${diffInYears} năm trước`;
 }
 
+// Format absolute time to a Vietnamese-style locale string
+function formatAbsoluteTime(isoString) {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date)) return isoString;
+  return date.toLocaleString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Mới nhất' },
+  { value: 'oldest', label: 'Cũ nhất' },
+  { value: 'popular', label: 'Yêu thích nhất' },
+  { value: 'replies', label: 'Thảo luận nhiều' }
+];
+
 // Mask email for privacy: nguyen.van.a@gmail.com → ngu****@***.com
 function maskEmail(email) {
   if (!email) return 'Ẩn danh';
@@ -103,6 +124,18 @@ export default function Community({ currentUser, onViewProfile }) {
   const [activeTag, setActiveTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+        setIsSortOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   // Post question form state
   const [newTitle, setNewTitle] = useState('');
@@ -241,7 +274,9 @@ export default function Community({ currentUser, onViewProfile }) {
           title: editingThreadTitle.trim(),
           content: editingThreadContent.trim(),
           tag: editingThreadTag,
-          tagName: matchedTopic ? matchedTopic.name : t.tagName
+          tagName: matchedTopic ? matchedTopic.name : t.tagName,
+          isEdited: true,
+          editedAt: new Date().toISOString()
         };
       }
       return t;
@@ -264,7 +299,9 @@ export default function Community({ currentUser, onViewProfile }) {
           if (ans.id === replyId) {
             return {
               ...ans,
-              content: editingReplyContent.trim()
+              content: editingReplyContent.trim(),
+              isEdited: true,
+              editedAt: new Date().toISOString()
             };
           }
           return ans;
@@ -478,18 +515,37 @@ export default function Community({ currentUser, onViewProfile }) {
               />
             </div>
 
-            <div className={styles.sortBox}>
+            <div className={styles.sortBox} ref={sortDropdownRef}>
               <span className={styles.sortLabel}>Sắp xếp:</span>
-              <select
-                className={styles.sortSelect}
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="newest">Mới nhất</option>
-                <option value="oldest">Cũ nhất</option>
-                <option value="popular">Yêu thích nhất</option>
-                <option value="replies">Thảo luận nhiều</option>
-              </select>
+              <div className={styles.customDropdown}>
+                <button
+                  type="button"
+                  className={styles.dropdownToggle}
+                  onClick={() => setIsSortOpen(!isSortOpen)}
+                >
+                  <span>
+                    {SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Mới nhất'}
+                  </span>
+                  <ChevronDown size={16} className={`${styles.dropdownChevron} ${isSortOpen ? styles.chevronOpen : ''}`} />
+                </button>
+                {isSortOpen && (
+                  <div className={styles.dropdownMenu}>
+                    {SORT_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`${styles.dropdownOption} ${sortBy === opt.value ? styles.activeOption : ''}`}
+                        onClick={() => {
+                          setSortBy(opt.value);
+                          setIsSortOpen(false);
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -563,7 +619,15 @@ export default function Community({ currentUser, onViewProfile }) {
                           {thread.author}
                         </div>
                         <div className={styles.postMeta}>
-                          <span>{timeAgo(thread.date) || thread.date}</span>
+                          <span>{timeAgo(thread.date)} ({formatAbsoluteTime(thread.date)})</span>
+                          {thread.isEdited && (
+                            <>
+                              <span>•</span>
+                              <span className={styles.editedLabel} title={`Chỉnh sửa lúc: ${formatAbsoluteTime(thread.editedAt)}`}>
+                                (đã chỉnh sửa {timeAgo(thread.editedAt)})
+                              </span>
+                            </>
+                          )}
                           <span>•</span>
                           <span className={styles.postTag}>
                             <Tag size={12} />
@@ -739,7 +803,15 @@ export default function Community({ currentUser, onViewProfile }) {
                                 )}
                               </div>
                               <div className={styles.replyMeta}>
-                                <span>{timeAgo(ans.date) || ans.date}</span>
+                                <span>{timeAgo(ans.date)} ({formatAbsoluteTime(ans.date)})</span>
+                                {ans.isEdited && (
+                                  <>
+                                    <span>•</span>
+                                    <span className={styles.editedLabel} title={`Chỉnh sửa lúc: ${formatAbsoluteTime(ans.editedAt)}`}>
+                                      (đã chỉnh sửa {timeAgo(ans.editedAt)})
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>

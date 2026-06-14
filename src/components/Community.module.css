@@ -610,22 +610,94 @@
 
 .sortLabel {
   font-size: 0.85rem;
-
   white-space: nowrap;
 }
 
-.sortSelect {
-  padding: 0.5rem 2rem 0.5rem 1rem;
+.customDropdown {
+  position: relative;
+  display: inline-block;
+  min-width: 160px;
+}
+
+.dropdownToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
   border: 1px solid var(--jp-border);
   background: var(--jp-surface-raised);
+  color: var(--jp-text);
   font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-.sortSelect:focus {
-  outline: none;
+.dropdownToggle:hover {
   border-color: var(--jp-blue);
+  background: var(--jp-surface);
+}
+
+.dropdownChevron {
+  transition: transform 0.2s ease;
+  color: var(--jp-text-muted);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--jp-card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--jp-border);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 0.4rem;
+  min-width: 180px;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: slideUpFade 0.2s ease-out;
+}
+
+.dropdownOption {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--jp-text);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.dropdownOption:hover {
+  background: var(--jp-surface-raised);
+  color: var(--jp-blue);
+}
+
+.dropdownOption.activeOption {
+  background: rgba(25, 118, 210, 0.08);
+  color: var(--jp-blue);
+  font-weight: 600;
+}
+
+.editedLabel {
+  font-style: italic;
+  font-size: 0.75rem;
+  color: var(--jp-text-muted);
+  font-weight: 400;
 }
 
 .moreMenu {

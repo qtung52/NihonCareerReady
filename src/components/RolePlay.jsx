@@ -260,7 +260,7 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
                 <RefreshCw size={70} />
               </div>
             )}
-            
+
             <h2 style={{ fontSize: '2rem', color: 'var(--jp-blue)', fontFamily: 'var(--font-japanese)', marginBottom: '0.5rem' }}>
               Hoàn thành Thử thách!
             </h2>
@@ -269,15 +269,15 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
             </p>
 
             <p style={{ fontSize: '1.05rem', color: 'var(--jp-text)', maxWidth: '500px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-              {score === roleplay.length 
+              {score === roleplay.length
                 ? "Tuyệt vời! Bạn đã nắm bắt hoàn hảo các quy tắc ứng xử nơi công sở Nhật Bản. Giữ vững phong độ này nhé!"
-                : score >= roleplay.length / 2 
-                ? "Khá lắm! Bạn đã có những hiểu biết cơ bản tốt, nhưng hãy tiếp tục ôn luyện để xử lý mượt mà hơn nhé."
-                : "Đừng nản chí! Văn hóa Nhật có nhiều quy tắc ẩn, hãy thử lại và đọc kỹ phần giải thích để tiến bộ hơn."}
+                : score >= roleplay.length / 2
+                  ? "Khá lắm! Bạn đã có những hiểu biết cơ bản tốt, nhưng hãy tiếp tục ôn luyện để xử lý mượt mà hơn nhé."
+                  : "Đừng nản chí! Văn hóa Nhật có nhiều quy tắc ẩn, hãy thử lại và đọc kỹ phần giải thích để tiến bộ hơn."}
             </p>
 
             <button className="btn btn-primary" onClick={handleRetry} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <RefreshCw size={20} /> Chơi lại từ đầu
+              <RefreshCw size={20} /> Làm lại từ đầu
             </button>
           </div>
         </div>
@@ -302,10 +302,10 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
             {/* Illustration */}
             <div className="rp-gamified-illustration">
               {currentScenario.imageUrl ? (
-                <img 
-                  src={currentScenario.imageUrl} 
-                  alt="Minh họa tình huống" 
-                  style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain' }} 
+                <img
+                  src={currentScenario.imageUrl}
+                  alt="Minh họa tình huống"
+                  style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain' }}
                 />
               ) : (
                 <ScenarioIllustration id={currentScenario.id} />
@@ -351,7 +351,7 @@ export default function RolePlay({ roleplay = SCENARIOS }) {
                 <div className="rp-inline-feedback">
                   <div className={`rp-feedback-header ${selectedOption.isCorrect ? 'correct' : 'incorrect'}`}>
                     {selectedOption.isCorrect ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
-                    <span>{selectedOption.isCorrect ? 'ĐÁP ÁN ĐÚNG! (正解)' : 'CHƯA CHÍNH XÁC!'}</span>
+                    <span>{selectedOption.isCorrect ? 'ĐÁP ÁN ĐÚNG! (正解)' : 'CHƯA CHÍNH XÁC! (間違った答え)'}</span>
                   </div>
                   <div className="rp-feedback-body">
                     <p style={{ color: 'var(--jp-text)', fontSize: '0.98rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
