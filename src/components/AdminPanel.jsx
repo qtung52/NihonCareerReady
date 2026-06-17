@@ -254,7 +254,7 @@ export default function AdminPanel({
   const handleDeleteUser = async (email) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản ${email}? Hành động này không thể khôi phục.`)) {
       const currentUsers = await getSharedArray('users', []);
-      const filtered = currentUsers.filter(u => u.email !== email);
+      const filtered = currentUsers.filter(u => (u.email || '').trim().toLowerCase() !== email.trim().toLowerCase());
       await setSharedArray('users', filtered);
       setUsersList(filtered);
       setNotification(`Đã xóa tài khoản ${email} thành công.`);
@@ -345,10 +345,10 @@ export default function AdminPanel({
   };
 
   const handleUpdateUserCustomRole = async (email, newRole) => {
-    if (window.confirm(`Bạn có chắc muốn thay đổi vai trò của ${email} thành "${newRole}"?`)) {
+    if (window.confirm(`Bạn có muốn thay đổi vai trò của ${email} thành "${newRole}"?`)) {
       const currentUsers = await getSharedArray('users', []);
       const updated = currentUsers.map(u => {
-        if (u.email === email) {
+        if ((u.email || '').trim().toLowerCase() === email.trim().toLowerCase()) {
           return {
             ...u,
             customRole: newRole,
@@ -361,7 +361,7 @@ export default function AdminPanel({
       await setSharedArray('users', updated);
       setUsersList(updated);
 
-      if (currentUser && currentUser.email === email) {
+      if (currentUser && currentUser.email.trim().toLowerCase() === email.trim().toLowerCase()) {
         onUpdateProfile({
           customRole: newRole,
           isAdmin: newRole === 'Admin',
@@ -378,7 +378,7 @@ export default function AdminPanel({
     if (window.confirm(`Bạn có muốn reset mật khẩu của tài khoản ${email} về mặc định "123456"?`)) {
       const currentUsers = await getSharedArray('users', []);
       const updated = currentUsers.map(u => {
-        if (u.email === email) {
+        if ((u.email || '').trim().toLowerCase() === email.trim().toLowerCase()) {
           return { ...u, password: '123456' };
         }
         return u;

@@ -100,7 +100,7 @@ function App() {
         
         // Auto-sync roles and profile fields from the database so users don't have to re-login
         const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const dbUser = users.find(u => u.email === parsedUser.email);
+        const dbUser = users.find(u => (u.email || '').trim().toLowerCase() === parsedUser.email.trim().toLowerCase());
         if (dbUser) {
           parsedUser.isAdmin = !!dbUser.isAdmin;
           parsedUser.isSenpai = !!dbUser.isSenpai;
@@ -145,7 +145,7 @@ function App() {
       if (Array.isArray(roleData) && roleData.length > 0) setRoleplay(roleData);
       
       if (currentUser && Array.isArray(usersData)) {
-        const freshUserData = usersData.find(u => u.email === currentUser.email);
+        const freshUserData = usersData.find(u => (u.email || '').trim().toLowerCase() === currentUser.email.trim().toLowerCase());
         if (freshUserData) {
           const hasChanged = 
             freshUserData.isAdmin !== currentUser.isAdmin ||
@@ -204,7 +204,7 @@ function App() {
 
     // Update in database list
     const users = await getSharedArray('users', []);
-    const idx = users.findIndex(u => u.email === currentUser.email);
+    const idx = users.findIndex(u => (u.email || '').trim().toLowerCase() === currentUser.email.trim().toLowerCase());
     if (idx !== -1) {
       users[idx] = {
         ...users[idx],
@@ -323,7 +323,7 @@ function App() {
     setProfileModalClosing(false);
 
     const users = await getSharedArray('users', []);
-    const matchedUser = users.find(u => u.email === email);
+    const matchedUser = users.find(u => (u.email || '').trim().toLowerCase() === (email || '').trim().toLowerCase());
     if (matchedUser) {
       setProfileModalUser({
         name: matchedUser.name || fallbackName,

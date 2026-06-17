@@ -62,13 +62,14 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     setSuccessMsg('');
 
     const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    if (email !== 'admin@nihon.com' && !gmailRegex.test(email)) {
+    const searchEmail = email.trim().toLowerCase();
+    if (searchEmail !== 'admin@nihon.com' && !gmailRegex.test(searchEmail)) {
       setErrorMsg('Email tìm kiếm phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
       return;
     }
 
     const users = await getSharedArray('users', []);
-    const found = users.find(u => u.email === email);
+    const found = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail);
 
     if (found) {
       if (!found.securityQuestion) {
@@ -78,7 +79,7 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
       setFoundUserEmail(found.email);
       setUserQuestion(found.securityQuestion);
       setUserFound(true);
-    } else if (email === 'admin@nihon.com') {
+    } else if (searchEmail === 'admin@nihon.com') {
       setErrorMsg('Tài khoản Admin không thể khôi phục qua câu hỏi bảo mật.');
     } else {
       setErrorMsg('Không tìm thấy tài khoản nào khớp với Email này.');
@@ -92,7 +93,8 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     setSuccessMsg('');
 
     const users = await getSharedArray('users', []);
-    const found = users.find(u => u.email === foundUserEmail);
+    const searchEmail = (foundUserEmail || '').trim().toLowerCase();
+    const found = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail);
 
     if (!found) {
       setErrorMsg('Không tìm thấy tài khoản.');
@@ -119,7 +121,8 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     }
 
     const users = await getSharedArray('users', []);
-    const userIdx = users.findIndex(u => u.email === foundUserEmail);
+    const searchEmail = (foundUserEmail || '').trim().toLowerCase();
+    const userIdx = users.findIndex(u => (u.email || '').trim().toLowerCase() === searchEmail);
 
     if (userIdx !== -1) {
       users[userIdx].password = newPassword;
@@ -146,12 +149,13 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
 
     // Regex check strict @gmail.com format
     const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    const searchEmail = email.trim().toLowerCase();
 
     if (authMode === 'login') {
-      if (email === 'admin@nihon.com' && password === 'admin123') {
+      if (searchEmail === 'admin@nihon.com' && password === 'admin123') {
         const adminUser = {
           name: 'Admin Senpai',
-          email,
+          email: 'admin@nihon.com',
           isAdmin: true,
           avatar: '🦊',
           bio: 'Quản trị viên hệ thống Nihon Career Ready. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
@@ -162,13 +166,13 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
         return;
       }
 
-      if (!gmailRegex.test(email)) {
+      if (!gmailRegex.test(searchEmail)) {
         setErrorMsg('Email đăng nhập phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
         return;
       }
 
       const users = await getSharedArray('users', []);
-      const user = users.find(u => u.email === email && u.password === password);
+      const user = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail && u.password === password);
 
       if (user) {
         const loggedUser = {
@@ -186,12 +190,13 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
         setErrorMsg('Sai email hoặc mật khẩu! Vui lòng kiểm tra lại.');
       }
     } else if (authMode === 'register') {
-      if (!name || !email || !password || !securityAnswer) {
+      const trimmedName = name.trim();
+      if (!trimmedName || !email || !password || !securityAnswer) {
         setErrorMsg('Vui lòng điền đầy đủ tất cả thông tin.');
         return;
       }
 
-      if (!gmailRegex.test(email)) {
+      if (!gmailRegex.test(searchEmail)) {
         setErrorMsg('Email đăng ký phải đúng định dạng @gmail.com (Ví dụ: user@gmail.com)');
         return;
       }
@@ -202,19 +207,25 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
       }
 
       const users = await getSharedArray('users', []);
-      if (users.some(u => u.email === email)) {
+      if (users.some(u => (u.email || '').trim().toLowerCase() === searchEmail)) {
         setErrorMsg('Email này đã được đăng ký!');
         return;
       }
 
-      if (users.some(u => u.name.trim().toLowerCase() === name.trim().toLowerCase()) || name.trim().toLowerCase() === 'admin senpai') {
+      const checkName = trimmedName;
+      const isNameTaken = users.some(u => {
+        const existingName = (u.name || '').trim();
+        return existingName === checkName;
+      }) || checkName.toLowerCase() === 'admin senpai';
+
+      if (isNameTaken) {
         setErrorMsg('Tên hiển thị này đã tồn tại! Vui lòng chọn tên khác.');
         return;
       }
 
       const newUser = {
-        name,
-        email,
+        name: trimmedName,
+        email: searchEmail,
         password,
         avatar: '🧑‍💻',
         bio: '',

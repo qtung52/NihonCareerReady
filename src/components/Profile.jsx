@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera, ChevronDown, X, RotateCw, RefreshCw, Minus, Plus } from 'lucide-react';
+import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera, ChevronDown, X, RotateCw, RefreshCw, Minus, Plus, Crop, Globe, FlipHorizontal } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 import styles from './Profile.module.css';
 
@@ -106,7 +106,8 @@ export default function Profile({ currentUser, onUpdateProfile }) {
   const [avatar, setAvatar] = useState(currentUser.avatar || '🧑‍💻');
   const [bio, setBio] = useState(currentUser.bio || '');
   const [careerGoal, setCareerGoal] = useState(currentUser.careerGoal || 'Software Engineer (Japan)');
-  
+  const fileInputRef = useRef(null);
+
   // Cropper modal states
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [isCropperClosing, setIsCropperClosing] = useState(false);
@@ -128,7 +129,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       setIsCropperClosing(false);
     }, 300);
   };
-  
+
   // Custom dropdown state & ref
   const [isCareerGoalOpen, setIsCareerGoalOpen] = useState(false);
   const careerGoalDropdownRef = useRef(null);
@@ -147,7 +148,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   // Message feedback
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' });
   const [passMsg, setPassMsg] = useState({ type: '', text: '' });
@@ -160,14 +161,23 @@ export default function Profile({ currentUser, onUpdateProfile }) {
     }
 
     const users = await getSharedArray('users', []);
-    const isNameTaken = users.some(u => u.email !== currentUser.email && u.name.trim().toLowerCase() === displayName.trim().toLowerCase());
-    if (isNameTaken || displayName.trim().toLowerCase() === 'admin senpai') {
+    const trimmedDisplayName = displayName.trim();
+    const checkName = trimmedDisplayName;
+    const isNameTaken = users.some(u => {
+      const uEmail = (u.email || '').trim().toLowerCase();
+      const curEmail = currentUser.email.trim().toLowerCase();
+      if (uEmail === curEmail) return false;
+      const uName = (u.name || '').trim();
+      return uName === checkName;
+    }) || checkName.toLowerCase() === 'admin senpai';
+
+    if (isNameTaken) {
       setProfileMsg({ type: 'error', text: 'Tên hiển thị này đã tồn tại! Vui lòng chọn tên khác.' });
       return;
     }
 
     await onUpdateProfile({
-      name: displayName,
+      name: trimmedDisplayName,
       avatar,
       bio,
       careerGoal
@@ -248,13 +258,28 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       </div>
 
       <div className={styles.profileHeader}>
-        <div className={styles.avatarWrapper}>
+        <div
+          className={styles.avatarWrapper}
+          onClick={() => fileInputRef.current?.click()}
+          title="Tải ảnh đại diện mới"
+        >
           {avatar.startsWith('data:image') ? (
             <img src={avatar} alt="avatar" className={styles.avatarImage} />
           ) : (
-            avatar
+            <span style={{ display: 'block', lineHeight: 1 }}>{avatar}</span>
           )}
+          <div className={styles.avatarHoverOverlay}>
+            <Camera size={26} className={styles.cameraIcon} />
+            <span className={styles.hoverText}>Thay đổi</span>
+          </div>
         </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleAvatarUpload}
+        />
         <div className={styles.userInfoHeader}>
           <h2 className={styles.userName}>{displayName || currentUser.name}</h2>
           <div className={styles.userRole}>
@@ -266,32 +291,35 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       </div>
 
       <div className={styles.bentoGrid}>
-        
+
         {/* Top Full Width Card: Avatar Edit */}
         <div className={`${styles.bentoCard} ${styles.avatarCard}`}>
           <h3 className={styles.cardTitle}>
-             <Camera size={20} /> Ảnh đại diện (Avatar)
+            <Camera size={20} /> Ảnh đại diện (Avatar)
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-             <div className={styles.avatarList}>
-                {AVATARS.map(av => (
-                  <button
-                    key={av.id}
-                    type="button"
-                    onClick={() => setAvatar(av.emoji)}
-                    className={`${styles.avatarOption} ${avatar === av.emoji ? styles.selected : ''}`}
-                    title={av.name}
-                  >
-                    {av.emoji}
-                  </button>
-                ))}
-              </div>
-              <div>
-                <label className={styles.uploadLabel}>
-                  <Upload size={16} /> Tải ảnh từ máy (Max 2MB)
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
-                </label>
-              </div>
+            <div className={styles.avatarList}>
+              {AVATARS.map(av => (
+                <button
+                  key={av.id}
+                  type="button"
+                  onClick={() => setAvatar(av.emoji)}
+                  className={`${styles.avatarOption} ${avatar === av.emoji ? styles.selected : ''}`}
+                  title={av.name}
+                >
+                  {av.emoji}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <span
+                className={styles.uploadLabel}
+                onClick={() => fileInputRef.current?.click()}
+                title="Chọn ảnh từ thiết bị"
+              >
+                <Upload size={16} /> Tải ảnh từ máy (Max 2MB)
+              </span>
+            </div>
           </div>
         </div>
 
@@ -520,7 +548,7 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
     });
 
     await setSharedArray('users', updatedUsers);
-    
+
     // Sync into currentUser session state
     onUpdateProfile({
       securityQuestion: question,
@@ -536,7 +564,7 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
       <h3 className={styles.cardTitle} style={{ fontSize: '1.15rem' }}>
         <User size={18} /> Câu hỏi bảo mật reset password
       </h3>
-      
+
       {msg.text && (
         <div className={`${styles.messageBox} ${msg.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
           {msg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -604,7 +632,45 @@ function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const [baseDimensions, setBaseDimensions] = useState({ width: 250, height: 250 });
   const imgRef = useRef(null);
+
+  const handleImageLoad = (e) => {
+    const { naturalWidth, naturalHeight } = e.target;
+    const C = 250; // Crop circle diameter
+    let baseW = C;
+    let baseH = C;
+
+    if (naturalWidth > naturalHeight) {
+      // Landscape: height fits C, width scales proportionally
+      baseH = C;
+      baseW = C * (naturalWidth / naturalHeight);
+    } else {
+      // Portrait: width fits C, height scales proportionally
+      baseW = C;
+      baseH = C * (naturalHeight / naturalWidth);
+    }
+
+    setBaseDimensions({ width: baseW, height: baseH });
+    setOffset({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  const handleZoomChange = (nextZoom) => {
+    const clampedZoom = Math.min(3, Math.max(1, nextZoom));
+    setZoom(clampedZoom);
+    setOffset((prev) => {
+      const wZoom = baseDimensions.width * clampedZoom;
+      const hZoom = baseDimensions.height * clampedZoom;
+      const limitX = Math.max(0, (wZoom - 250) / 2);
+      const limitY = Math.max(0, (hZoom - 250) / 2);
+      return {
+        x: Math.min(limitX, Math.max(-limitX, prev.x)),
+        y: Math.min(limitY, Math.max(-limitY, prev.y))
+      };
+    });
+  };
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -615,7 +681,22 @@ function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
     if (!isDragging) return;
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
-    setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+
+    setOffset((prev) => {
+      const newX = prev.x + dx;
+      const newY = prev.y + dy;
+
+      const wZoom = baseDimensions.width * zoom;
+      const hZoom = baseDimensions.height * zoom;
+
+      const limitX = Math.max(0, (wZoom - 250) / 2);
+      const limitY = Math.max(0, (hZoom - 250) / 2);
+
+      return {
+        x: Math.min(limitX, Math.max(-limitX, newX)),
+        y: Math.min(limitY, Math.max(-limitY, newY))
+      };
+    });
     setDragStart({ x: e.clientX, y: e.clientY });
   };
 
@@ -634,15 +715,23 @@ function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
     if (!isDragging || e.touches.length !== 1) return;
     const dx = e.touches[0].clientX - dragStart.x;
     const dy = e.touches[0].clientY - dragStart.y;
-    setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
-    setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-  };
 
-  const handleReset = () => {
-    setZoom(1);
-    setRotation(0);
-    setFlipH(false);
-    setOffset({ x: 0, y: 0 });
+    setOffset((prev) => {
+      const newX = prev.x + dx;
+      const newY = prev.y + dy;
+
+      const wZoom = baseDimensions.width * zoom;
+      const hZoom = baseDimensions.height * zoom;
+
+      const limitX = Math.max(0, (wZoom - 250) / 2);
+      const limitY = Math.max(0, (hZoom - 250) / 2);
+
+      return {
+        x: Math.min(limitX, Math.max(-limitX, newX)),
+        y: Math.min(limitY, Math.max(-limitY, newY))
+      };
+    });
+    setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
   };
 
   const handleSave = () => {
@@ -663,25 +752,22 @@ function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
     // Apply rotation
     ctx.rotate((rotation * Math.PI) / 180);
 
-    // Ratio of canvas size (150px) to UI crop area (250px) is 0.6
+    // Ratio of canvas size (150px) to crop circle size (250px) is 0.6
     const ratio = 150 / 250;
 
     // Apply offset (scaled to canvas size)
     ctx.translate(offset.x * ratio, offset.y * ratio);
 
     // Draw the image centered
-    const displayedWidth = imgElement.clientWidth;
-    const displayedHeight = imgElement.clientHeight;
-
-    // Apply zoom
-    ctx.scale(zoom, zoom);
+    const wZoom = baseDimensions.width * zoom;
+    const hZoom = baseDimensions.height * zoom;
 
     ctx.drawImage(
       imgElement,
-      (-displayedWidth / 2) * ratio,
-      (-displayedHeight / 2) * ratio,
-      displayedWidth * ratio,
-      displayedHeight * ratio
+      (-wZoom / 2) * ratio,
+      (-hZoom / 2) * ratio,
+      wZoom * ratio,
+      hZoom * ratio
     );
 
     const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -690,17 +776,18 @@ function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
 
   return (
     <div className={`modal-overlay ${isClosing ? 'closing' : ''}`}>
-      <div className={`modal-content ${styles.cropperModalContent} ${isClosing ? 'closing' : ''}`}>
-        <div className={styles.modalHeader}>
-          <h3>Chỉnh sửa Ảnh Đại Diện</h3>
-          <button type="button" className={styles.modalCloseBtn} onClick={onClose} title="Đóng">
+      <div className={`modal-content ${styles.tiktokModalContent} ${isClosing ? 'closing' : ''}`}>
+        <div className={styles.tiktokHeader}>
+          <h3>Chọn ảnh đại diện</h3>
+          <button type="button" className={styles.tiktokCloseBtn} onClick={onClose} title="Đóng">
             <X size={18} />
           </button>
         </div>
 
-        <div className={styles.modalBody}>
+        <div className={styles.tiktokBody}>
+          {/* Crop Area */}
           <div
-            className={styles.cropWrapper}
+            className={styles.tiktokCropWrapper}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -713,61 +800,61 @@ function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
               ref={imgRef}
               src={src}
               alt="To crop"
-              className={styles.cropImageElement}
+              onLoad={handleImageLoad}
               style={{
+                width: `${baseDimensions.width}px`,
+                height: `${baseDimensions.height}px`,
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
+                position: 'absolute',
+                maxWidth: 'none',
+                maxHeight: 'none',
+                transition: isDragging ? 'none' : 'transform 0.1s ease',
+                pointerEvents: 'none',
+                userSelect: 'none'
               }}
             />
-            <div className={styles.cropCircleOverlay} />
+            <div className={styles.tiktokCropCircle} />
           </div>
 
-          <div className={styles.controlsContainer}>
-            <div className={styles.zoomControl}>
-              <Minus size={16} />
+          {/* Controls */}
+          <div className={styles.tiktokControls}>
+            <div className={styles.tiktokZoomRow}>
+              <Minus size={18} className={styles.tiktokZoomIcon} onClick={() => handleZoomChange(zoom - 0.1)} />
               <input
                 type="range"
                 min="1"
                 max="3"
-                step="0.05"
+                step="0.01"
                 value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className={styles.zoomSlider}
+                onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                className={styles.tiktokZoomSlider}
               />
-              <Plus size={16} />
+              <Plus size={18} className={styles.tiktokZoomIcon} onClick={() => handleZoomChange(zoom + 0.1)} />
             </div>
 
-            <div className={styles.toolRow}>
-              <button
-                type="button"
-                className={styles.btnTool}
-                onClick={() => setRotation((prev) => (prev + 90) % 360)}
-              >
-                <RotateCw size={12} /> Xoay 90°
+            {/* Action Buttons Row */}
+            <div className={styles.tiktokButtonRow}>
+              <button type="button" className={styles.tiktokBtnTool} onClick={() => setRotation(prev => (prev + 90) % 360)}>
+                <RotateCw size={15} /> Xoay 90°
               </button>
-              <button
-                type="button"
-                className={styles.btnTool}
-                onClick={() => setFlipH((prev) => !prev)}
-              >
-                Lật ngang
+              <button type="button" className={styles.tiktokBtnTool} onClick={() => setFlipH(prev => !prev)}>
+                <FlipHorizontal size={15} /> Lật ngang
               </button>
-              <button
-                type="button"
-                className={styles.btnTool}
-                onClick={handleReset}
-              >
-                <RefreshCw size={12} /> Đặt lại
+              <button type="button" className={styles.tiktokBtnTool} onClick={handleSave}>
+                <Crop size={15} /> Cắt ảnh
               </button>
             </div>
+
           </div>
         </div>
 
-        <div className={styles.modalFooter}>
-          <button type="button" className={styles.btnCancel} onClick={onClose}>
+        {/* Footer */}
+        <div className={styles.tiktokFooter}>
+          <button type="button" className={styles.tiktokBtnCancel} onClick={onClose}>
             Hủy
           </button>
-          <button type="button" className={styles.btnSave} onClick={handleSave}>
-            Cắt & Lưu
+          <button type="button" className={styles.tiktokBtnSave} onClick={handleSave}>
+            Lưu
           </button>
         </div>
       </div>
