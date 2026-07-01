@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search, MoreVertical, Edit3, Image as ImageIcon, RefreshCw } from 'lucide-react';
-import { getSharedArray, isSupabaseEnabled, setSharedArray } from '../lib/sharedStore';
+import { Send, MessageSquare, Tag, MessageCircle, Trash2, X, Briefcase, ChevronDown, ChevronUp, Heart, Search, MoreVertical, Edit3, Image as ImageIcon, RefreshCw, Bookmark, ThumbsUp } from 'lucide-react';
+import { getSharedArray, isSupabaseEnabled, setSharedArray, deleteFileByUrlFromSupabase } from '../lib/sharedStore';
 import CustomDropdown from './CustomDropdown';
+import ImageUploadCropModal from './ImageUploadCropModal';
 import styles from './Community.module.css';
 
 export const FORUM_TOPICS = [
@@ -120,8 +121,33 @@ function maskEmail(email) {
   return `${maskedLocal}@${maskedDomain}`;
 }
 
-export default function Community({ currentUser, onViewProfile }) {
+export default function Community({ currentUser, onViewProfile, onUpdateProfile, onViewChange }) {
   const [threads, setThreads] = useState([]);
+
+  // Fetch JLPT level helper
+  const getUserJlptLevel = (email) => {
+    const u = users.find(user => user.email === email);
+    return u?.jlptLevel || null;
+  };
+
+  // Bookmark / Save Thread helper
+  const handleSaveThread = (threadId) => {
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để lưu câu hỏi!");
+      return;
+    }
+    if (typeof onUpdateProfile !== 'function') return;
+
+    const savedList = currentUser.savedThreads || [];
+    const isSaved = savedList.includes(threadId);
+    const updatedSaved = isSaved
+      ? savedList.filter(id => id !== threadId)
+      : [...savedList, threadId];
+    
+    onUpdateProfile({
+      savedThreads: updatedSaved
+    });
+  };
   const [activeTag, setActiveTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -146,16 +172,7 @@ export default function Community({ currentUser, onViewProfile }) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateModalClosing, setIsCreateModalClosing] = useState(false);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   // Reply state
   const [replyTexts, setReplyTexts] = useState({});
@@ -176,6 +193,32 @@ export default function Community({ currentUser, onViewProfile }) {
   const [editingThreadTag, setEditingThreadTag] = useState('');
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [editingReplyContent, setEditingReplyContent] = useState('');
+  const [editingThreadImage, setEditingThreadImage] = useState(null);
+  const [isCreatePostCropperOpen, setIsCreatePostCropperOpen] = useState(false);
+  const [isEditPostCropperOpen, setIsEditPostCropperOpen] = useState(false);
+  const [deleteConfirmData, setDeleteConfirmData] = useState(null);
+  const [isDeleteConfirmClosing, setIsDeleteConfirmClosing] = useState(false);  const [previewImage, setPreviewImage] = useState(null);
+  const [isPreviewClosing, setIsPreviewClosing] = useState(false);
+
+  const handleClosePreview = () => {
+    setIsPreviewClosing(true);
+    setTimeout(() => {
+      setPreviewImage(null);
+      setIsPreviewClosing(false);
+    }, 250);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (previewImage) {
+          handleClosePreview();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewImage]);
 
   const [syncStatus, setSyncStatus] = useState('loading'); // loading | online | offline
   const [users, setUsers] = useState([]);
@@ -210,6 +253,31 @@ export default function Community({ currentUser, onViewProfile }) {
       clearInterval(interval);
     };
   }, []);
+
+  // Auto-scroll and expand focused thread from localStorage
+  useEffect(() => {
+    const focusThreadId = localStorage.getItem('active_thread_focus');
+    if (focusThreadId && threads.length > 0) {
+      localStorage.removeItem('active_thread_focus');
+      const tid = parseInt(focusThreadId);
+      if (!isNaN(tid)) {
+        setExpandedThreads(prev => ({
+          ...prev,
+          [tid]: true
+        }));
+        setTimeout(() => {
+          const element = document.getElementById(`thread-card-${tid}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add(styles.highlightedCard);
+            setTimeout(() => {
+              element.classList.remove(styles.highlightedCard);
+            }, 3000);
+          }
+        }, 500);
+      }
+    }
+  }, [threads]);
 
   const saveThreads = async (updatedThreads) => {
     setThreads(updatedThreads);
@@ -262,6 +330,7 @@ export default function Community({ currentUser, onViewProfile }) {
     setEditingThreadTitle(thread.title);
     setEditingThreadContent(thread.content);
     setEditingThreadTag(thread.tag);
+    setEditingThreadImage(thread.image || null);
     setActiveMenu(null); // close dropdown
   };
 
@@ -270,12 +339,18 @@ export default function Community({ currentUser, onViewProfile }) {
     const matchedTopic = FORUM_TOPICS.find(t => t.id === editingThreadTag);
     const updated = threads.map(t => {
       if (t.id === threadId) {
+        if (t.image && t.image !== editingThreadImage) {
+          if (t.image.includes('/storage/v1/object/public/images/')) {
+            deleteFileByUrlFromSupabase(t.image);
+          }
+        }
         return {
           ...t,
           title: editingThreadTitle.trim(),
           content: editingThreadContent.trim(),
           tag: editingThreadTag,
           tagName: matchedTopic ? matchedTopic.name : t.tagName,
+          image: editingThreadImage,
           isEdited: true,
           editedAt: new Date().toISOString()
         };
@@ -284,6 +359,7 @@ export default function Community({ currentUser, onViewProfile }) {
     });
     saveThreads(updated);
     setEditingThreadId(null);
+    setEditingThreadImage(null);
   };
 
   const handleStartEditReply = (reply) => {
@@ -354,14 +430,46 @@ export default function Community({ currentUser, onViewProfile }) {
   };
 
   const handleDeleteThread = (threadId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này không?")) {
-      const updated = threads.filter(t => t.id !== threadId);
-      saveThreads(updated);
-    }
+    setDeleteConfirmData({
+      type: 'thread',
+      threadId,
+      title: 'Xóa câu hỏi',
+      text: 'Bạn có chắc chắn muốn xóa câu hỏi này không? Hành động này không thể hoàn tác.'
+    });
   };
 
   const handleDeleteReply = (threadId, replyId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa câu trả lời này không?")) {
+    setDeleteConfirmData({
+      type: 'reply',
+      threadId,
+      replyId,
+      title: 'Xóa câu trả lời',
+      text: 'Bạn có chắc chắn muốn xóa câu trả lời này không? Hành động này không thể hoàn tác.'
+    });
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    setIsDeleteConfirmClosing(true);
+    setTimeout(() => {
+      setDeleteConfirmData(null);
+      setIsDeleteConfirmClosing(false);
+    }, 200);
+  };
+
+  const executeDeleteAction = () => {
+    if (!deleteConfirmData) return;
+    const { type, threadId, replyId } = deleteConfirmData;
+
+    if (type === 'thread') {
+      const targetThread = threads.find(t => t.id === threadId);
+      if (targetThread && targetThread.image) {
+        if (targetThread.image.includes('/storage/v1/object/public/images/')) {
+          deleteFileByUrlFromSupabase(targetThread.image);
+        }
+      }
+      const updated = threads.filter(t => t.id !== threadId);
+      saveThreads(updated);
+    } else if (type === 'reply') {
       const updated = threads.map(t => {
         if (t.id === threadId) {
           return {
@@ -373,6 +481,7 @@ export default function Community({ currentUser, onViewProfile }) {
       });
       saveThreads(updated);
     }
+    handleCloseDeleteConfirm();
   };
 
   const handleLikeThread = (threadId) => {
@@ -402,7 +511,7 @@ export default function Community({ currentUser, onViewProfile }) {
     const u = users.find(user => user.email === email);
     const avatar = u?.avatar || (email === 'admin@nihon.com' ? '🦊' : '🧑‍💻');
 
-    if (avatar.startsWith('data:')) {
+    if (avatar && (avatar.startsWith('data:') || avatar.startsWith('http') || avatar.startsWith('/'))) {
       return <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />;
     }
     return <span style={{ fontSize: size }}>{avatar}</span>;
@@ -561,7 +670,8 @@ export default function Community({ currentUser, onViewProfile }) {
 
   const filteredThreads = threads
     .filter(t => {
-      const matchesTag = activeTag === 'all' || t.tag === activeTag;
+      const matchesTag = activeTag === 'all' 
+        || (activeTag === 'saved' ? (currentUser?.savedThreads || []).includes(t.id) : t.tag === activeTag);
       const matchesSearch = searchQuery.trim() === '' || 
         t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -589,7 +699,8 @@ export default function Community({ currentUser, onViewProfile }) {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Góc Senpai - Kouhai</h2>
-        <p className={styles.subtitle}>Diễn đàn thảo luận thời gian thực. Nơi hỏi đáp và chia sẻ kinh nghiệm văn hóa doanh nghiệp Nhật.</p>
+        <p className={styles.subtitle}>Diễn đàn thảo luận thời gian thực. Hỏi đáp và chia sẻ kinh nghiệm văn hóa doanh nghiệp Nhật Bản với cộng đồng.</p>
+
         <p style={{
           marginTop: '0.5rem',
           fontSize: '0.85rem',
@@ -609,16 +720,25 @@ export default function Community({ currentUser, onViewProfile }) {
       <div className={styles.layout}>
         {/* Left Side: Threads List */}
         <div className={styles.mainFeed}>
-          {/* Create Post Box */}
-          <div className={styles.createPostBox}>
-            <div className={styles.createPostTop}>
-              <div className={styles.avatar}>{renderAvatar(currentUser?.email, '1.2rem')}</div>
+          {/* Create Post Box (Quick Question Design from Screenshot) */}
+          <div className={styles.quickQuestionContainer}>
+            <div className={styles.quickQuestionWrapper}>
+              <div className={styles.qCircleIcon}>
+                {renderAvatar(currentUser?.email, '1.1rem')}
+              </div>
+              <input
+                type="text"
+                className={styles.quickQuestionInput}
+                placeholder={`Bạn đang muốn hỏi gì, ${currentUser ? currentUser.name : 'hợp tác viên'}?`}
+                onClick={() => setIsCreateModalOpen(true)}
+                readOnly
+              />
               <button
                 type="button"
-                className={styles.createPostInputBtn}
+                className={styles.quickQuestionBtn}
                 onClick={() => setIsCreateModalOpen(true)}
               >
-                Bạn đang thắc mắc điều gì{currentUser ? `, ${currentUser.name}` : ''}?
+                + Đăng
               </button>
             </div>
           </div>
@@ -634,6 +754,15 @@ export default function Community({ currentUser, onViewProfile }) {
                 {topic.name}
               </button>
             ))}
+            {currentUser && (
+              <button 
+                className={`${styles.filterBtn} ${activeTag === 'saved' ? styles.active : ''}`} 
+                onClick={() => setActiveTag('saved')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Bookmark size={12} /> Đã lưu
+              </button>
+            )}
           </div>
 
           {/* Search & Sort Bar */}
@@ -730,6 +859,23 @@ export default function Community({ currentUser, onViewProfile }) {
                         onChange={(e) => setEditingThreadContent(e.target.value)}
                       />
                     </div>
+                    {editingThreadImage && (
+                      <div className={styles.imagePreviewWrapper}>
+                        <img src={editingThreadImage} alt="Preview" className={styles.imagePreview} />
+                        <button type="button" className={styles.removeImageBtn} onClick={() => setEditingThreadImage(null)}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <span 
+                        className={styles.imageUploadLabel} 
+                        style={{ display: 'inline-flex', cursor: 'pointer', gap: '0.5rem', alignItems: 'center' }}
+                        onClick={() => setIsEditPostCropperOpen(true)}
+                      >
+                        <ImageIcon size={20} className={styles.uploadIcon} /> Thêm hoặc thay đổi ảnh minh họa
+                      </span>
+                    </div>
                     <div className={styles.editActions}>
                       <button className={styles.btnOutline} onClick={() => setEditingThreadId(null)}>Hủy</button>
                       <button className={styles.btnPrimary} onClick={() => handleSaveEditThread(thread.id)}>Lưu</button>
@@ -738,8 +884,9 @@ export default function Community({ currentUser, onViewProfile }) {
                 );
               }
 
+              const threadJlpt = getUserJlptLevel(thread.authorEmail);
               return (
-                <div key={thread.id} className={styles.postCard}>
+                <div key={thread.id} id={`thread-card-${thread.id}`} className={styles.postCard}>
                   <div className={styles.postHeader}>
                     <div className={styles.authorInfo}>
                       <div 
@@ -758,6 +905,9 @@ export default function Community({ currentUser, onViewProfile }) {
                           >
                             {thread.author}
                           </span>
+                          {threadJlpt && threadJlpt !== 'Chưa có' && (
+                            <span className={styles.jlptBadge}>{threadJlpt}</span>
+                          )}
                           {renderSenpaiNametag(thread.authorEmail)}
                         </div>
                         <div className={styles.postMeta}>
@@ -820,7 +970,14 @@ export default function Community({ currentUser, onViewProfile }) {
                   <p className={styles.postContent}>{thread.content}</p>
                   
                   {thread.image && (
-                    <img src={thread.image} alt="Attached" className={styles.postImage} />
+                    <img 
+                      src={thread.image} 
+                      alt="Attached" 
+                      className={styles.postImage} 
+                      onClick={() => setPreviewImage(thread.image)}
+                      title="Click để phóng to ảnh"
+                      style={{ cursor: 'zoom-in' }}
+                    />
                   )}
 
                   <div className={styles.postActions}>
@@ -839,6 +996,15 @@ export default function Community({ currentUser, onViewProfile }) {
                     >
                       <MessageSquare size={18} className={expandedThreads[thread.id] ? styles.iconOpen : ''} /> 
                       <span>Trả lời {thread.answers.length > 0 && `(${thread.answers.length})`}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleSaveThread(thread.id)}
+                      className={`${styles.actionBtn} ${(currentUser?.savedThreads || []).includes(thread.id) ? styles.saved : ''}`}
+                      title={(currentUser?.savedThreads || []).includes(thread.id) ? "Bỏ lưu câu hỏi" : "Lưu câu hỏi"}
+                    >
+                      <Bookmark size={18} fill={(currentUser?.savedThreads || []).includes(thread.id) ? 'currentColor' : 'none'} />
+                      <span>{(currentUser?.savedThreads || []).includes(thread.id) ? 'Đã lưu' : 'Lưu'}</span>
                     </button>
                   </div>
                   
@@ -878,6 +1044,7 @@ export default function Community({ currentUser, onViewProfile }) {
                           );
                         }
 
+                        const replyJlpt = getUserJlptLevel(ans.authorEmail);
                         return (
                           <div key={ans.id || `ans-${Math.random()}`} className={styles.replyCard}>
                             <div 
@@ -888,41 +1055,36 @@ export default function Community({ currentUser, onViewProfile }) {
                               {renderAvatar(ans.authorEmail, '0.9rem')}
                             </div>
                             <div className={styles.replyContentWrapper}>
-                              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                                <div className={styles.replyContent}>
-                                  <div className={styles.replyHeader}>
-                                    <span 
-                                      className={styles.replyAuthor}
-                                      onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
-                                      title="Xem thông tin người dùng"
-                                    >
-                                      {ans.author}
-                                    </span>
-                                    {renderSenpaiNametag(ans.authorEmail, ans.role)}
-                                  </div>
-                                  <p className={styles.replyText}>{ans.content}</p>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
-                                    <button
-                                      onClick={() => handleHelpfulVote(thread.id, ans.id)}
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: ans.helpfulVotes?.includes(currentUser?.email) ? 'var(--jp-red)' : 'var(--jp-text-muted)',
-                                        fontSize: '0.75rem',
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '3px',
-                                        fontWeight: 600,
-                                        padding: 0
-                                      }}
-                                    >
-                                      👍 Hữu ích {ans.helpfulVotes?.length > 0 && `(${ans.helpfulVotes.length})`}
-                                    </button>
-                                  </div>
+                              <div className={styles.replyContent}>
+                                <div className={styles.replyHeader}>
+                                  <span 
+                                    className={styles.replyAuthor}
+                                    onClick={() => onViewProfile && onViewProfile(ans.authorEmail, ans.author, displayRole)}
+                                    title="Xem thông tin người dùng"
+                                  >
+                                    {ans.author}
+                                  </span>
+                                  {replyJlpt && replyJlpt !== 'Chưa có' && (
+                                    <span className={styles.jlptBadge}>{replyJlpt}</span>
+                                  )}
+                                  {renderSenpaiNametag(ans.authorEmail, ans.role)}
                                 </div>
-                                
-                                {/* Reply Action menu dropdown */}
+                                <p className={styles.replyText}>{ans.content}</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+                                  <button
+                                    onClick={() => handleHelpfulVote(thread.id, ans.id)}
+                                    className={`${styles.helpfulBtn} ${ans.helpfulVotes?.includes(currentUser?.email) ? styles.helpfulActive : ''}`}
+                                    title="Đánh giá câu trả lời hữu ích"
+                                  >
+                                    <ThumbsUp size={12} className={styles.helpfulIcon} />
+                                    <span>Hữu ích</span>
+                                    {ans.helpfulVotes?.length > 0 && (
+                                      <span className={styles.helpfulCount}>{ans.helpfulVotes.length}</span>
+                                    )}
+                                  </button>
+                                </div>
+
+                                {/* Reply Action menu dropdown inside replyContent */}
                                 {currentUser && (currentUser.email === ans.authorEmail || currentUser.isAdmin) && (
                                   <div className={styles.moreMenu}>
                                     <button 
@@ -1089,15 +1251,98 @@ export default function Community({ currentUser, onViewProfile }) {
               )}
 
               <div className={styles.modalFooter}>
-                <label className={styles.imageUploadLabel}>
-                  <input type="file" accept="image/*" className={styles.hiddenInput} onChange={handleImageUpload} />
+                <span className={styles.imageUploadLabel} onClick={() => setIsCreatePostCropperOpen(true)} style={{ cursor: 'pointer' }}>
                   <ImageIcon size={20} className={styles.uploadIcon} /> Thêm ảnh minh họa
-                </label>
+                </span>
                 <button type="submit" className={styles.submitBtnInline}>
                   <Send size={16} /> Đăng câu hỏi
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      <ImageUploadCropModal
+        isOpen={isCreatePostCropperOpen}
+        onClose={() => setIsCreatePostCropperOpen(false)}
+        onSave={(url) => setNewImage(url)}
+        aspectRatio={0}
+        cropShape="rect"
+      />
+
+      <ImageUploadCropModal
+        isOpen={isEditPostCropperOpen}
+        onClose={() => setIsEditPostCropperOpen(false)}
+        onSave={(url) => setEditingThreadImage(url)}
+        aspectRatio={0}
+        cropShape="rect"
+      />
+
+      {deleteConfirmData && createPortal(
+        <div 
+          className={`${styles.confirmModalOverlay} ${isDeleteConfirmClosing ? styles.closing : ''}`}
+          onClick={handleCloseDeleteConfirm}
+        >
+          <div 
+            className={`${styles.confirmModalContent} ${isDeleteConfirmClosing ? styles.closing : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem', color: 'var(--jp-red)' }}>
+              <div style={{
+                background: 'var(--jp-soft-red)',
+                padding: '0.85rem',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid rgba(188, 0, 45, 0.1)'
+              }}>
+                <Trash2 size={28} />
+              </div>
+            </div>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', fontWeight: 700, color: 'var(--jp-text)' }}>
+              {deleteConfirmData.title}
+            </h3>
+            <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.88rem', color: 'var(--jp-text-muted)', lineHeight: '1.5' }}>
+              {deleteConfirmData.text}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', width: '100%' }}>
+              <button 
+                type="button" 
+                className={styles.confirmCancelBtn} 
+                onClick={handleCloseDeleteConfirm}
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                type="button" 
+                className={styles.confirmDeleteBtn} 
+                onClick={executeDeleteAction}
+              >
+                Đồng ý xóa
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {previewImage && createPortal(
+        <div 
+          className={`${styles.imageLightboxOverlay} ${isPreviewClosing ? styles.closing : ''}`}
+          onClick={handleClosePreview}
+        >
+          <button className={styles.lightboxCloseBtn} onClick={handleClosePreview} title="Đóng (Esc)">
+            <X size={24} />
+          </button>
+          <div className={styles.lightboxImageContainer} onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={previewImage} 
+              alt="Full Preview" 
+              className={`${styles.lightboxImage} ${isPreviewClosing ? styles.closing : ''}`} 
+            />
           </div>
         </div>,
         document.body

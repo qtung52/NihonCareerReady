@@ -1098,3 +1098,71 @@
 .tiktokBtnSave:hover {
   background: #0066d6;
 }
+
+.savedThreadsCard {
+  grid-column: span 12;
+  animation-delay: 0.5s;
+}
+
+.savedThreadsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+
+.savedThreadItem {
+  background: var(--jp-card-bg);
+  border: 1px solid var(--jp-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.savedThreadItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+  border-color: var(--jp-blue);
+}
+
+.savedThreadMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--jp-text-muted);
+}
+
+.savedThreadTag {
+  background: rgba(25, 118, 210, 0.08);
+  color: var(--jp-blue);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.savedThreadAuthor {
+  font-weight: 600;
+  color: var(--jp-text);
+}
+
+.savedThreadTitle {
+  font-weight: 600;
+  color: var(--jp-text);
+  font-size: 0.95rem;
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.2s;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.savedThreadTitle:hover {
+  color: var(--jp-blue);
+  text-decoration: underline;
+}

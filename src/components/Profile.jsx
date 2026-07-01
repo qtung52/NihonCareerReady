@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera, ChevronDown, X, RotateCw, RefreshCw, Minus, Plus, Crop, Globe, FlipHorizontal } from 'lucide-react';
+import { User, Key, Save, AlertCircle, CheckCircle2, Upload, Camera, ChevronDown, X, RotateCw, RefreshCw, Minus, Plus, Crop, Globe, FlipHorizontal, Bookmark } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
+import ImageUploadCropModal from './ImageUploadCropModal';
 import styles from './Profile.module.css';
 
 const AVATARS = [
@@ -107,28 +108,28 @@ export default function Profile({ currentUser, onUpdateProfile }) {
   const [bio, setBio] = useState(currentUser.bio || '');
   const [careerGoal, setCareerGoal] = useState(currentUser.careerGoal || 'Software Engineer (Japan)');
   const [selfDeclaredExperience, setSelfDeclaredExperience] = useState(currentUser.selfDeclaredExperience || '');
-  const fileInputRef = useRef(null);
+  // JLPT level state
+  const [jlptLevel, setJlptLevel] = useState(currentUser.jlptLevel || 'Chưa có');
+  const [isJlptOpen, setIsJlptOpen] = useState(false);
+  const jlptDropdownRef = useRef(null);
+
+  // Saved threads state
+  const [savedThreadsList, setSavedThreadsList] = useState([]);
 
   // Cropper modal states
   const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const [isCropperClosing, setIsCropperClosing] = useState(false);
-  const [rawImageSrc, setRawImageSrc] = useState('');
 
-  const handleCroppedAvatar = (croppedDataUrl) => {
-    setIsCropperClosing(true);
-    setTimeout(() => {
-      setAvatar(croppedDataUrl);
-      setIsCropperOpen(false);
-      setIsCropperClosing(false);
-    }, 300);
-  };
-
-  const handleCloseCropper = () => {
-    setIsCropperClosing(true);
-    setTimeout(() => {
-      setIsCropperOpen(false);
-      setIsCropperClosing(false);
-    }, 300);
+  const handleCroppedAvatar = async (croppedUrl) => {
+    setAvatar(croppedUrl);
+    setIsCropperOpen(false);
+    try {
+      await onUpdateProfile({ avatar: croppedUrl });
+      setProfileMsg({ type: 'success', text: 'Cập nhật ảnh đại diện thành công!' });
+      setTimeout(() => setProfileMsg({ type: '', text: '' }), 4000);
+    } catch (e) {
+      setProfileMsg({ type: 'error', text: 'Lỗi cập nhật ảnh đại diện lên hệ thống.' });
+      setTimeout(() => setProfileMsg({ type: '', text: '' }), 4000);
+    }
   };
 
   // Custom dropdown state & ref
@@ -140,10 +141,34 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       if (careerGoalDropdownRef.current && !careerGoalDropdownRef.current.contains(event.target)) {
         setIsCareerGoalOpen(false);
       }
+      if (jlptDropdownRef.current && !jlptDropdownRef.current.contains(event.target)) {
+        setIsJlptOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Fetch saved threads
+  useEffect(() => {
+    const fetchSavedThreads = async () => {
+      try {
+        const allThreads = await getSharedArray('threads', []);
+        const userSavedIds = currentUser.savedThreads || [];
+        const filtered = allThreads.filter(t => userSavedIds.some(id => String(id) === String(t.id)));
+        setSavedThreadsList(filtered);
+      } catch {
+        const local = localStorage.getItem('nihon_threads');
+        if (local) {
+          const allThreads = JSON.parse(local);
+          const userSavedIds = currentUser.savedThreads || [];
+          const filtered = allThreads.filter(t => userSavedIds.some(id => String(id) === String(t.id)));
+          setSavedThreadsList(filtered);
+        }
+      }
+    };
+    fetchSavedThreads();
+  }, [currentUser.savedThreads]);
 
   // Password state
   const [oldPassword, setOldPassword] = useState('');
@@ -153,6 +178,17 @@ export default function Profile({ currentUser, onUpdateProfile }) {
   // Message feedback
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' });
   const [passMsg, setPassMsg] = useState({ type: '', text: '' });
+
+  // Load role levels dynamically to determine authority rank
+  const [roleLevels, setRoleLevels] = useState({ 'Học viên': 1, 'Senpai': 2, 'Admin': 3 });
+
+  useEffect(() => {
+    const fetchRoleLevels = async () => {
+      const levels = await getSharedArray('role_levels', { 'Học viên': 1, 'Senpai': 2, 'Admin': 3 });
+      setRoleLevels(levels);
+    };
+    fetchRoleLevels();
+  }, []);
 
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
@@ -182,7 +218,8 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       avatar,
       bio,
       careerGoal,
-      selfDeclaredExperience
+      selfDeclaredExperience,
+      jlptLevel
     });
     setProfileMsg({ type: 'success', text: 'Cập nhật thông tin cá nhân thành công!' });
     setTimeout(() => setProfileMsg({ type: '', text: '' }), 4000);
@@ -235,23 +272,7 @@ export default function Profile({ currentUser, onUpdateProfile }) {
     setTimeout(() => setPassMsg({ type: '', text: '' }), 4000);
   };
 
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setProfileMsg({ type: 'error', text: 'Vui lòng chọn file hình ảnh hợp lệ (jpg, png,...)' });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setRawImageSrc(event.target.result);
-      setIsCropperOpen(true);
-      e.target.value = '';
-    };
-    reader.readAsDataURL(file);
-  };
 
   return (
     <div className={styles.container}>
@@ -262,10 +283,10 @@ export default function Profile({ currentUser, onUpdateProfile }) {
       <div className={styles.profileHeader}>
         <div
           className={styles.avatarWrapper}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setIsCropperOpen(true)}
           title="Tải ảnh đại diện mới"
         >
-          {avatar.startsWith('data:image') ? (
+          {avatar && (avatar.startsWith('data:') || avatar.startsWith('http') || avatar.startsWith('/')) ? (
             <img src={avatar} alt="avatar" className={styles.avatarImage} />
           ) : (
             <span style={{ display: 'block', lineHeight: 1 }}>{avatar}</span>
@@ -275,13 +296,6 @@ export default function Profile({ currentUser, onUpdateProfile }) {
             <span className={styles.hoverText}>Thay đổi</span>
           </div>
         </div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={handleAvatarUpload}
-        />
         <div className={styles.userInfoHeader}>
           <h2 className={styles.userName}>{displayName || currentUser.name}</h2>
           <div className={styles.userRole}>
@@ -316,10 +330,10 @@ export default function Profile({ currentUser, onUpdateProfile }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <span
                 className={styles.uploadLabel}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setIsCropperOpen(true)}
                 title="Chọn ảnh từ thiết bị"
               >
-                <Upload size={16} /> Tải ảnh từ máy (Max 2MB)
+                <Upload size={16} /> Tải ảnh từ máy (Max 5MB)
               </span>
             </div>
           </div>
@@ -410,6 +424,37 @@ export default function Profile({ currentUser, onUpdateProfile }) {
             </div>
 
             <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Trình độ tiếng Nhật (JLPT)</label>
+              <div className={styles.customDropdown} ref={jlptDropdownRef}>
+                <button
+                  type="button"
+                  className={styles.dropdownToggle}
+                  onClick={() => setIsJlptOpen(!isJlptOpen)}
+                >
+                  <span>{jlptLevel}</span>
+                  <ChevronDown size={16} className={`${styles.dropdownChevron} ${isJlptOpen ? styles.chevronOpen : ''}`} />
+                </button>
+                {isJlptOpen && (
+                  <div className={styles.dropdownMenu}>
+                    {['Chưa có', 'N5', 'N4', 'N3', 'N2', 'N1'].map(lvl => (
+                      <button
+                        key={lvl}
+                        type="button"
+                        className={`${styles.dropdownOption} ${jlptLevel === lvl ? styles.activeOption : ''}`}
+                        onClick={() => {
+                          setJlptLevel(lvl);
+                          setIsJlptOpen(false);
+                        }}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
               <label className={styles.formLabel}>Mô tả bản thân (Bio)</label>
               <textarea
                 className={styles.formTextarea}
@@ -420,9 +465,14 @@ export default function Profile({ currentUser, onUpdateProfile }) {
               />
             </div>
 
-            {currentUser.isSenpai && (
+            {(() => {
+              const userRole = currentUser.customRole || (currentUser.isAdmin ? 'Admin' : currentUser.isSenpai ? 'Senpai' : 'Học viên');
+              const userLevel = roleLevels[userRole] || (currentUser.isAdmin ? 3 : currentUser.isSenpai ? 2 : 1);
+              const minLevelRequired = roleLevels['Senpai'] || 2;
+              return userLevel >= minLevelRequired;
+            })() && (
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Kinh nghiệm tự khai (Chỉ hiển thị cho Senpai)</label>
+                <label className={styles.formLabel}>Kinh nghiệm tự khai (Chỉ hiển thị cho Senpai hoặc cao hơn)</label>
                 <input
                   type="text"
                   className={styles.formInput}
@@ -500,17 +550,48 @@ export default function Profile({ currentUser, onUpdateProfile }) {
           <SecurityQuestionSection currentUser={currentUser} onUpdateProfile={onUpdateProfile} />
         </div>
 
+        {/* Saved Threads Card */}
+        <div className={`${styles.bentoCard} ${styles.savedThreadsCard}`}>
+          <h3 className={styles.cardTitle}>
+            <Bookmark size={20} /> Bài viết đã lưu ({savedThreadsList.length})
+          </h3>
+          {savedThreadsList.length === 0 ? (
+            <p style={{ color: 'var(--jp-text-muted)', fontSize: '0.9rem' }}>
+              Bạn chưa lưu bài viết nào. Hãy lưu các chia sẻ bổ ích của Senpai trên Diễn đàn nhé!
+            </p>
+          ) : (
+            <div className={styles.savedThreadsList}>
+              {savedThreadsList.map(thread => (
+                <div key={thread.id} className={styles.savedThreadItem}>
+                  <div className={styles.savedThreadMeta}>
+                    <span className={styles.savedThreadTag}>{thread.tagName}</span>
+                    <span>•</span>
+                    <span className={styles.savedThreadAuthor}>{thread.author}</span>
+                  </div>
+                  <a
+                    href="#/senpai"
+                    onClick={() => {
+                      localStorage.setItem('active_thread_focus', thread.id);
+                    }}
+                    className={styles.savedThreadTitle}
+                  >
+                    {thread.title}
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {isCropperOpen && createPortal(
-        <AvatarCropperModal
-          src={rawImageSrc}
-          isClosing={isCropperClosing}
-          onClose={handleCloseCropper}
-          onSave={handleCroppedAvatar}
-        />,
-        document.body
-      )}
+      <ImageUploadCropModal
+        isOpen={isCropperOpen}
+        onClose={() => setIsCropperOpen(false)}
+        onSave={handleCroppedAvatar}
+        aspectRatio={1}
+        cropShape="circle"
+      />
     </div>
   );
 }
@@ -635,244 +716,6 @@ function SecurityQuestionSection({ currentUser, onUpdateProfile }) {
           <Save size={18} /> Lưu câu hỏi bảo mật
         </button>
       </form>
-    </div>
-  );
-}
-
-/* Avatar Cropper Modal Component */
-function AvatarCropperModal({ src, isClosing, onClose, onSave }) {
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [flipH, setFlipH] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const [baseDimensions, setBaseDimensions] = useState({ width: 250, height: 250 });
-  const imgRef = useRef(null);
-
-  const handleImageLoad = (e) => {
-    const { naturalWidth, naturalHeight } = e.target;
-    const C = 250; // Crop circle diameter
-    let baseW = C;
-    let baseH = C;
-
-    if (naturalWidth > naturalHeight) {
-      // Landscape: height fits C, width scales proportionally
-      baseH = C;
-      baseW = C * (naturalWidth / naturalHeight);
-    } else {
-      // Portrait: width fits C, height scales proportionally
-      baseW = C;
-      baseH = C * (naturalHeight / naturalWidth);
-    }
-
-    setBaseDimensions({ width: baseW, height: baseH });
-    setOffset({ x: 0, y: 0 });
-    setZoom(1);
-  };
-
-  const handleZoomChange = (nextZoom) => {
-    const clampedZoom = Math.min(3, Math.max(1, nextZoom));
-    setZoom(clampedZoom);
-    setOffset((prev) => {
-      const wZoom = baseDimensions.width * clampedZoom;
-      const hZoom = baseDimensions.height * clampedZoom;
-      const limitX = Math.max(0, (wZoom - 250) / 2);
-      const limitY = Math.max(0, (hZoom - 250) / 2);
-      return {
-        x: Math.min(limitX, Math.max(-limitX, prev.x)),
-        y: Math.min(limitY, Math.max(-limitY, prev.y))
-      };
-    });
-  };
-
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
-
-    setOffset((prev) => {
-      const newX = prev.x + dx;
-      const newY = prev.y + dy;
-
-      const wZoom = baseDimensions.width * zoom;
-      const hZoom = baseDimensions.height * zoom;
-
-      const limitX = Math.max(0, (wZoom - 250) / 2);
-      const limitY = Math.max(0, (hZoom - 250) / 2);
-
-      return {
-        x: Math.min(limitX, Math.max(-limitX, newX)),
-        y: Math.min(limitY, Math.max(-limitY, newY))
-      };
-    });
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e) => {
-    if (e.touches.length === 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    }
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    const dx = e.touches[0].clientX - dragStart.x;
-    const dy = e.touches[0].clientY - dragStart.y;
-
-    setOffset((prev) => {
-      const newX = prev.x + dx;
-      const newY = prev.y + dy;
-
-      const wZoom = baseDimensions.width * zoom;
-      const hZoom = baseDimensions.height * zoom;
-
-      const limitX = Math.max(0, (wZoom - 250) / 2);
-      const limitY = Math.max(0, (hZoom - 250) / 2);
-
-      return {
-        x: Math.min(limitX, Math.max(-limitX, newX)),
-        y: Math.min(limitY, Math.max(-limitY, newY))
-      };
-    });
-    setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-  };
-
-  const handleSave = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 150; // Output avatar size
-    canvas.height = 150;
-    const ctx = canvas.getContext('2d');
-
-    const imgElement = imgRef.current;
-    if (!imgElement) return;
-
-    // Center of canvas: (75, 75)
-    ctx.translate(75, 75);
-
-    // Apply flip
-    ctx.scale(flipH ? -1 : 1, 1);
-
-    // Apply rotation
-    ctx.rotate((rotation * Math.PI) / 180);
-
-    // Ratio of canvas size (150px) to crop circle size (250px) is 0.6
-    const ratio = 150 / 250;
-
-    // Apply offset (scaled to canvas size)
-    ctx.translate(offset.x * ratio, offset.y * ratio);
-
-    // Draw the image centered
-    const wZoom = baseDimensions.width * zoom;
-    const hZoom = baseDimensions.height * zoom;
-
-    ctx.drawImage(
-      imgElement,
-      (-wZoom / 2) * ratio,
-      (-hZoom / 2) * ratio,
-      wZoom * ratio,
-      hZoom * ratio
-    );
-
-    const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    onSave(croppedDataUrl);
-  };
-
-  return (
-    <div className={`modal-overlay ${isClosing ? 'closing' : ''}`}>
-      <div className={`modal-content ${styles.tiktokModalContent} ${isClosing ? 'closing' : ''}`}>
-        <div className={styles.tiktokHeader}>
-          <h3>Chọn ảnh đại diện</h3>
-          <button type="button" className={styles.tiktokCloseBtn} onClick={onClose} title="Đóng">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className={styles.tiktokBody}>
-          {/* Crop Area */}
-          <div
-            className={styles.tiktokCropWrapper}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleMouseUp}
-          >
-            <img
-              ref={imgRef}
-              src={src}
-              alt="To crop"
-              onLoad={handleImageLoad}
-              style={{
-                width: `${baseDimensions.width}px`,
-                height: `${baseDimensions.height}px`,
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
-                position: 'absolute',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                transition: isDragging ? 'none' : 'transform 0.1s ease',
-                pointerEvents: 'none',
-                userSelect: 'none'
-              }}
-            />
-            <div className={styles.tiktokCropCircle} />
-          </div>
-
-          {/* Controls */}
-          <div className={styles.tiktokControls}>
-            <div className={styles.tiktokZoomRow}>
-              <Minus size={18} className={styles.tiktokZoomIcon} onClick={() => handleZoomChange(zoom - 0.1)} />
-              <input
-                type="range"
-                min="1"
-                max="3"
-                step="0.01"
-                value={zoom}
-                onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
-                className={styles.tiktokZoomSlider}
-              />
-              <Plus size={18} className={styles.tiktokZoomIcon} onClick={() => handleZoomChange(zoom + 0.1)} />
-            </div>
-
-            {/* Action Buttons Row */}
-            <div className={styles.tiktokButtonRow}>
-              <button type="button" className={styles.tiktokBtnTool} onClick={() => setRotation(prev => (prev + 90) % 360)}>
-                <RotateCw size={15} /> Xoay 90°
-              </button>
-              <button type="button" className={styles.tiktokBtnTool} onClick={() => setFlipH(prev => !prev)}>
-                <FlipHorizontal size={15} /> Lật ngang
-              </button>
-              <button type="button" className={styles.tiktokBtnTool} onClick={handleSave}>
-                <Crop size={15} /> Cắt ảnh
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className={styles.tiktokFooter}>
-          <button type="button" className={styles.tiktokBtnCancel} onClick={onClose}>
-            Hủy
-          </button>
-          <button type="button" className={styles.tiktokBtnSave} onClick={handleSave}>
-            Lưu
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

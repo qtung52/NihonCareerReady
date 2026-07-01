@@ -1,44 +1,64 @@
+/* ── Features Section ─────────────────────────────────────── */
 .featuresSection {
-  padding: 6rem 2rem;
+  padding: 7rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .sectionTitle {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: 2.6rem;
+  font-weight: 900;
   color: var(--jp-text);
-  margin-bottom: 3rem;
+  margin-bottom: 3.5rem;
   text-align: center;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
 }
 
+/* ── Bento Grid ───────────────────────────────────────────── */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 280px;
-  gap: 1.5rem;
+  grid-auto-rows: 290px;
+  gap: 1.25rem;
 }
 
+/* ── Card Base ─────────────────────────────────────────────── */
 .card {
   background: var(--jp-card-bg);
   border: 1px solid var(--jp-border);
   border-radius: 24px;
   padding: 2.5rem;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.04);
 }
+
+/* Subtle inner glow overlay on hover */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), transparent 70%);
+}
+
+.card:hover::after { opacity: 1; }
 
 :root[data-theme="dark"] .card {
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
-/* Bento Box Positioning */
+/* ── Bento Positioning ──────────────────────────────────── */
 .card:nth-child(1) {
   grid-column: span 2;
   grid-row: span 1;
@@ -47,9 +67,10 @@
 .card:nth-child(2) {
   grid-column: span 1;
   grid-row: span 2;
-  background: linear-gradient(135deg, var(--jp-blue), #1a365d);
+  background: linear-gradient(145deg, var(--jp-blue) 0%, #1a365d 100%);
   color: white;
   border: none;
+  box-shadow: 0 8px 32px rgba(15, 44, 89, 0.25);
 }
 
 .card:nth-child(3) {
@@ -57,133 +78,149 @@
   grid-row: span 1;
 }
 
-.card:nth-child(4) {
-  grid-column: span 1;
-  grid-row: span 1;
-  background: linear-gradient(135deg, var(--jp-red), #c0392b);
-  color: white;
-  border: none;
-}
-
+/* ── Hover States ────────────────────────────────────────── */
 .card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  border-color: rgba(15, 44, 89, 0.2);
 }
 
 :root[data-theme="dark"] .card:hover {
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255,255,255,0.12);
 }
 
-/* Specific hovers for gradients */
 .card:nth-child(2):hover {
-  box-shadow: 0 20px 40px rgba(15, 44, 89, 0.3);
+  transform: translateY(-6px);
+  box-shadow: 0 24px 56px rgba(15, 44, 89, 0.4);
 }
 
-.card:nth-child(4):hover {
-  box-shadow: 0 20px 40px rgba(232, 54, 93, 0.3);
-}
-
+/* ── Icon Wrapper ────────────────────────────────────────── */
 .iconWrapper {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--jp-soft-surface);
   color: var(--jp-blue);
-  transition: all 0.4s ease;
-  margin-bottom: auto; /* Pushes content down if needed, or keeps it top */
-}
-
-/* Styling exceptions for gradient cards */
-.card:nth-child(2) .iconWrapper {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.card:nth-child(4) .iconWrapper {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+  margin-bottom: auto;
+  flex-shrink: 0;
 }
 
 .card:nth-child(1) .iconWrapper {
-  background: var(--jp-soft-red);
+  background: rgba(232, 54, 93, 0.1);
   color: var(--jp-red);
 }
 
-.card:hover .iconWrapper {
-  transform: scale(1.15) rotate(5deg);
-}
-
-.cardTitle {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--jp-text);
-  margin: 1.5rem 0 0.75rem;
-}
-
-.card:nth-child(2) .cardTitle,
-.card:nth-child(4) .cardTitle {
+.card:nth-child(2) .iconWrapper {
+  background: rgba(255, 255, 255, 0.12);
   color: white;
 }
 
+.card:nth-child(3) .iconWrapper {
+  background: rgba(15, 44, 89, 0.08);
+  color: var(--jp-blue);
+}
+
+.card:hover .iconWrapper {
+  transform: rotate(8deg) scale(1.12);
+}
+
+.card:nth-child(1):hover .iconWrapper { background: rgba(232,54,93,0.16); }
+.card:nth-child(3):hover .iconWrapper { background: rgba(15,44,89,0.14); }
+
+/* ── Card Title ──────────────────────────────────────────── */
+.cardTitle {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--jp-text);
+  margin: 1.5rem 0 0.6rem;
+  letter-spacing: -0.3px;
+}
+
+.card:nth-child(2) .cardTitle { color: white; }
+
+/* ── Card Description ────────────────────────────────────── */
 .cardDesc {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--jp-text-muted);
-  line-height: 1.6;
+  line-height: 1.65;
   margin: 0;
-  max-width: 90%;
+  max-width: 88%;
 }
 
-.card:nth-child(2) .cardDesc,
-.card:nth-child(4) .cardDesc {
-  color: rgba(255, 255, 255, 0.85);
-}
+.card:nth-child(2) .cardDesc { color: rgba(255, 255, 255, 0.82); }
 
-/* Background graphics for Bento boxes */
+/* ── Decorative Graphic ───────────────────────────────────── */
 .bentoGraphic {
   position: absolute;
-  bottom: -20px;
-  right: -20px;
-  opacity: 0.05;
-  transition: all 0.4s ease;
+  bottom: -16px;
+  right: -16px;
+  opacity: 0.06;
+  transition: opacity 0.35s ease, transform 0.35s ease;
   pointer-events: none;
+  line-height: 1;
 }
 
-.card:nth-child(2) .bentoGraphic,
-.card:nth-child(4) .bentoGraphic {
-  opacity: 0.15;
-}
+.card:nth-child(2) .bentoGraphic { opacity: 0.12; }
 
 .card:hover .bentoGraphic {
-  transform: scale(1.1);
+  transform: scale(1.08) rotate(-5deg);
   opacity: 0.1;
 }
 
-.card:nth-child(2):hover .bentoGraphic,
-.card:nth-child(4):hover .bentoGraphic {
-  opacity: 0.25;
+.card:nth-child(2):hover .bentoGraphic { opacity: 0.22; }
+
+/* ── Arrow hint on hover ─────────────────────────────────── */
+.card::before {
+  content: '→';
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.75rem;
+  font-size: 1.1rem;
+  color: var(--jp-text-muted);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.card:nth-child(2)::before { color: rgba(255,255,255,0.6); }
+
+.card:hover::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 260px;
   }
   .card:nth-child(1) { grid-column: span 2; grid-row: span 1; }
   .card:nth-child(2) { grid-column: span 1; grid-row: span 1; }
   .card:nth-child(3) { grid-column: span 1; grid-row: span 1; }
-  .card:nth-child(4) { grid-column: span 2; grid-row: span 1; }
 }
 
 @media (max-width: 600px) {
+  .featuresSection { padding: 5rem 1.25rem; }
+  .sectionTitle { font-size: 2rem; }
   .grid {
     grid-template-columns: 1fr;
     grid-auto-rows: auto;
   }
-  .card { padding: 2rem; min-height: 220px; }
-  .card:nth-child(1), .card:nth-child(2), .card:nth-child(3), .card:nth-child(4) {
+  .card {
+    padding: 2rem;
+    min-height: 220px;
+  }
+  .card:nth-child(1),
+  .card:nth-child(2),
+  .card:nth-child(3) {
     grid-column: span 1;
     grid-row: span 1;
   }
+  .card::before { display: none; }
 }

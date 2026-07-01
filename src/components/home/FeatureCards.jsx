@@ -1,4 +1,4 @@
-import { BookOpen, Award, Users, Sparkles } from 'lucide-react';
+import { BookOpen, Award, Users } from 'lucide-react';
 import styles from './FeatureCards.module.css';
 
 export default function FeatureCards({ onViewChange }) {
@@ -27,25 +27,30 @@ export default function FeatureCards({ onViewChange }) {
   ];
 
   return (
-    <div className={styles.featuresSection}>
-      <h2 className={styles.sectionTitle}>Chìa khóa mở cửa <span style={{ color: 'var(--jp-red)' }}>Thành công</span></h2>
+    <div className={`${styles.featuresSection} reveal-on-scroll`}>
+      <h2 className={styles.sectionTitle}>
+        Chìa khóa mở cửa <span style={{ color: 'var(--jp-red)' }}>Thành công</span>
+      </h2>
       <div className={styles.grid}>
         {features.map((feat) => {
           const Icon = feat.icon;
           return (
-            <div 
-              key={feat.id} 
+            <div
+              key={feat.id}
               className={styles.card}
               onClick={() => onViewChange(feat.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && onViewChange(feat.id)}
             >
               <div className={styles.iconWrapper}>
-                <Icon size={28} />
+                <Icon size={26} />
               </div>
               <h3 className={styles.cardTitle}>{feat.title}</h3>
               <p className={styles.cardDesc}>{feat.desc}</p>
-              
+
               {/* Decorative Graphic */}
-              <div className={styles.bentoGraphic} style={{ fontSize: '8rem' }}>
+              <div className={styles.bentoGraphic} style={{ fontSize: '8rem', lineHeight: 1 }}>
                 {feat.graphic}
               </div>
             </div>

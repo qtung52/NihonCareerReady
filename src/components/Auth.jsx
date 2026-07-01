@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Mail, User, ArrowRight, HelpCircle, CheckCircle, Eye, EyeOff, Sun, Moon, Sparkles } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, HelpCircle, CheckCircle, Eye, EyeOff, Sun, Moon, Sparkles, Loader2 } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 import CustomDropdown from './CustomDropdown';
 import styles from './Auth.module.css';
@@ -31,8 +31,10 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
   const [newPassword, setNewPassword] = useState('');
   const [foundUserEmail, setFoundUserEmail] = useState('');
 
+  // Messages and Loader states
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const getPasswordStrength = (pwd) => {
     if (!pwd) return { score: 0, label: '', color: '' };
@@ -60,29 +62,36 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    setIsLoading(true);
 
-    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    const searchEmail = email.trim().toLowerCase();
-    if (searchEmail !== 'admin@nihon.com' && !gmailRegex.test(searchEmail)) {
-      setErrorMsg('Email tìm kiếm phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
-      return;
-    }
-
-    const users = await getSharedArray('users', []);
-    const found = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail);
-
-    if (found) {
-      if (!found.securityQuestion) {
-        setErrorMsg('Tài khoản này chưa thiết lập câu hỏi bảo mật. Vui lòng liên hệ quản trị viên.');
+    try {
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      const searchEmail = email.trim().toLowerCase();
+      if (searchEmail !== 'admin@nihon.com' && !gmailRegex.test(searchEmail)) {
+        setErrorMsg('Email tìm kiếm phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
         return;
       }
-      setFoundUserEmail(found.email);
-      setUserQuestion(found.securityQuestion);
-      setUserFound(true);
-    } else if (searchEmail === 'admin@nihon.com') {
-      setErrorMsg('Tài khoản Admin không thể khôi phục qua câu hỏi bảo mật.');
-    } else {
-      setErrorMsg('Không tìm thấy tài khoản nào khớp với Email này.');
+
+      const users = await getSharedArray('users', []);
+      const found = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail);
+
+      if (found) {
+        if (!found.securityQuestion) {
+          setErrorMsg('Tài khoản này chưa thiết lập câu hỏi bảo mật. Vui lòng liên hệ quản trị viên.');
+          return;
+        }
+        setFoundUserEmail(found.email);
+        setUserQuestion(found.securityQuestion);
+        setUserFound(true);
+      } else if (searchEmail === 'admin@nihon.com') {
+        setErrorMsg('Tài khoản Admin không thể khôi phục qua câu hỏi bảo mật.');
+      } else {
+        setErrorMsg('Không tìm thấy tài khoản nào khớp với Email này.');
+      }
+    } catch (err) {
+      setErrorMsg('Đã xảy ra lỗi hệ thống.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -91,21 +100,28 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    setIsLoading(true);
 
-    const users = await getSharedArray('users', []);
-    const searchEmail = (foundUserEmail || '').trim().toLowerCase();
-    const found = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail);
+    try {
+      const users = await getSharedArray('users', []);
+      const searchEmail = (foundUserEmail || '').trim().toLowerCase();
+      const found = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail);
 
-    if (!found) {
-      setErrorMsg('Không tìm thấy tài khoản.');
-      return;
-    }
+      if (!found) {
+        setErrorMsg('Không tìm thấy tài khoản.');
+        return;
+      }
 
-    if (found.securityAnswer?.trim().toLowerCase() === userAnswerInput.trim().toLowerCase()) {
-      setAnswerVerified(true);
-      setSuccessMsg('Trả lời đúng! Vui lòng nhập mật khẩu mới.');
-    } else {
-      setErrorMsg('Câu trả lời không đúng. Vui lòng thử lại.');
+      if (found.securityAnswer?.trim().toLowerCase() === userAnswerInput.trim().toLowerCase()) {
+        setAnswerVerified(true);
+        setSuccessMsg('Trả lời đúng! Vui lòng nhập mật khẩu mới.');
+      } else {
+        setErrorMsg('Câu trả lời không đúng. Vui lòng thử lại.');
+      }
+    } catch (err) {
+      setErrorMsg('Đã xảy ra lỗi hệ thống.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -114,31 +130,38 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    setIsLoading(true);
 
-    if (newPassword.length < 6) {
-      setErrorMsg('Mật khẩu mới phải từ 6 ký tự trở lên.');
-      return;
-    }
+    try {
+      if (newPassword.length < 6) {
+        setErrorMsg('Mật khẩu mới phải từ 6 ký tự trở lên.');
+        return;
+      }
 
-    const users = await getSharedArray('users', []);
-    const searchEmail = (foundUserEmail || '').trim().toLowerCase();
-    const userIdx = users.findIndex(u => (u.email || '').trim().toLowerCase() === searchEmail);
+      const users = await getSharedArray('users', []);
+      const searchEmail = (foundUserEmail || '').trim().toLowerCase();
+      const userIdx = users.findIndex(u => (u.email || '').trim().toLowerCase() === searchEmail);
 
-    if (userIdx !== -1) {
-      users[userIdx].password = newPassword;
-      await setSharedArray('users', users);
-      setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập.');
-      setTimeout(() => {
-        setAuthMode('login');
-        setUserFound(false);
-        setAnswerVerified(false);
-        setUserAnswerInput('');
-        setNewPassword('');
-        setFoundUserEmail('');
-        setUserQuestion('');
-      }, 1500);
-    } else {
-      setErrorMsg('Không tìm thấy tài khoản để cập nhật.');
+      if (userIdx !== -1) {
+        users[userIdx].password = newPassword;
+        await setSharedArray('users', users);
+        setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập.');
+        setTimeout(() => {
+          setAuthMode('login');
+          setUserFound(false);
+          setAnswerVerified(false);
+          setUserAnswerInput('');
+          setNewPassword('');
+          setFoundUserEmail('');
+          setUserQuestion('');
+        }, 1500);
+      } else {
+        setErrorMsg('Không tìm thấy tài khoản để cập nhật.');
+      }
+    } catch (err) {
+      setErrorMsg('Lỗi cập nhật mật khẩu.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -146,117 +169,121 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    setIsLoading(true);
 
-    // Regex check strict @gmail.com format
-    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    const searchEmail = email.trim().toLowerCase();
+    try {
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      const searchEmail = email.trim().toLowerCase();
 
-    if (authMode === 'login') {
-      if (searchEmail === 'admin@nihon.com' && password === 'admin123') {
-        const adminUser = {
-          name: 'Admin Senpai',
-          email: 'admin@nihon.com',
-          isAdmin: true,
-          avatar: '🦊',
-          bio: 'Quản trị viên hệ thống From Uni to Japan. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
-          careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản'
+      if (authMode === 'login') {
+        if (searchEmail === 'admin@nihon.com' && password === 'admin123') {
+          const adminUser = {
+            name: 'Admin Senpai',
+            email: 'admin@nihon.com',
+            isAdmin: true,
+            avatar: '🦊',
+            bio: 'Quản trị viên hệ thống From Uni to Japan. Rất vui được hỗ trợ và định hướng văn hóa cho các bạn Kouhai.',
+            careerGoal: 'Lãnh đạo Giáo dục / Nhân sự Nhật Bản'
+          };
+          localStorage.setItem('session_user', JSON.stringify(adminUser));
+          onLogin(adminUser);
+          return;
+        }
+
+        if (!gmailRegex.test(searchEmail)) {
+          setErrorMsg('Email đăng nhập phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
+          return;
+        }
+
+        const users = await getSharedArray('users', []);
+        const user = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail && u.password === password);
+
+        if (user) {
+          const loggedUser = {
+            name: user.name,
+            email: user.email,
+            isAdmin: !!user.isAdmin,
+            isSenpai: !!user.isSenpai,
+            avatar: user.avatar || '🧑‍💻',
+            bio: user.bio || '',
+            careerGoal: user.careerGoal || 'Software Engineer (Japan)'
+          };
+          localStorage.setItem('session_user', JSON.stringify(loggedUser));
+          onLogin(loggedUser);
+        } else {
+          setErrorMsg('Sai email hoặc mật khẩu! Vui lòng kiểm tra lại.');
+        }
+      } else if (authMode === 'register') {
+        const trimmedName = name.trim();
+        if (!trimmedName || !email || !password || !securityAnswer) {
+          setErrorMsg('Vui lòng điền đầy đủ tất cả thông tin.');
+          return;
+        }
+
+        if (!gmailRegex.test(searchEmail)) {
+          setErrorMsg('Email đăng ký phải đúng định dạng @gmail.com (Ví dụ: user@gmail.com)');
+          return;
+        }
+
+        if (password.length < 6) {
+          setErrorMsg('Mật khẩu đăng ký phải từ 6 ký tự trở lên.');
+          return;
+        }
+
+        const users = await getSharedArray('users', []);
+        if (users.some(u => (u.email || '').trim().toLowerCase() === searchEmail)) {
+          setErrorMsg('Email này đã được đăng ký!');
+          return;
+        }
+
+        const checkName = trimmedName;
+        const isNameTaken = users.some(u => {
+          const existingName = (u.name || '').trim();
+          return existingName === checkName;
+        }) || checkName.toLowerCase() === 'admin senpai';
+
+        if (isNameTaken) {
+          setErrorMsg('Tên hiển thị này đã tồn tại! Vui lòng chọn tên khác.');
+          return;
+        }
+
+        const newUser = {
+          name: trimmedName,
+          email: searchEmail,
+          password,
+          avatar: '🧑‍💻',
+          bio: '',
+          careerGoal: 'Software Engineer (Japan)',
+          securityQuestion,
+          securityAnswer
         };
-        localStorage.setItem('session_user', JSON.stringify(adminUser));
-        onLogin(adminUser);
-        return;
+        users.push(newUser);
+        await setSharedArray('users', users);
+
+        setSuccessMsg('Đăng ký tài khoản kèm câu hỏi bảo mật thành công! Hãy đăng nhập.');
+        setAuthMode('login');
+        setName('');
+        setPassword('');
+        setSecurityAnswer('');
       }
-
-      if (!gmailRegex.test(searchEmail)) {
-        setErrorMsg('Email đăng nhập phải đúng định dạng @gmail.com (Ví dụ: abc@gmail.com)');
-        return;
-      }
-
-      const users = await getSharedArray('users', []);
-      const user = users.find(u => (u.email || '').trim().toLowerCase() === searchEmail && u.password === password);
-
-      if (user) {
-        const loggedUser = {
-          name: user.name,
-          email: user.email,
-          isAdmin: !!user.isAdmin,
-          isSenpai: !!user.isSenpai,
-          avatar: user.avatar || '🧑‍💻',
-          bio: user.bio || '',
-          careerGoal: user.careerGoal || 'Software Engineer (Japan)'
-        };
-        localStorage.setItem('session_user', JSON.stringify(loggedUser));
-        onLogin(loggedUser);
-      } else {
-        setErrorMsg('Sai email hoặc mật khẩu! Vui lòng kiểm tra lại.');
-      }
-    } else if (authMode === 'register') {
-      const trimmedName = name.trim();
-      if (!trimmedName || !email || !password || !securityAnswer) {
-        setErrorMsg('Vui lòng điền đầy đủ tất cả thông tin.');
-        return;
-      }
-
-      if (!gmailRegex.test(searchEmail)) {
-        setErrorMsg('Email đăng ký phải đúng định dạng @gmail.com (Ví dụ: user@gmail.com)');
-        return;
-      }
-
-      if (password.length < 6) {
-        setErrorMsg('Mật khẩu đăng ký phải từ 6 ký tự trở lên.');
-        return;
-      }
-
-      const users = await getSharedArray('users', []);
-      if (users.some(u => (u.email || '').trim().toLowerCase() === searchEmail)) {
-        setErrorMsg('Email này đã được đăng ký!');
-        return;
-      }
-
-      const checkName = trimmedName;
-      const isNameTaken = users.some(u => {
-        const existingName = (u.name || '').trim();
-        return existingName === checkName;
-      }) || checkName.toLowerCase() === 'admin senpai';
-
-      if (isNameTaken) {
-        setErrorMsg('Tên hiển thị này đã tồn tại! Vui lòng chọn tên khác.');
-        return;
-      }
-
-      const newUser = {
-        name: trimmedName,
-        email: searchEmail,
-        password,
-        avatar: '🧑‍💻',
-        bio: '',
-        careerGoal: 'Software Engineer (Japan)',
-        securityQuestion,
-        securityAnswer
-      };
-      users.push(newUser);
-      await setSharedArray('users', users);
-
-      setSuccessMsg('Đăng ký tài khoản kèm câu hỏi bảo mật thành công! Hãy đăng nhập.');
-      setAuthMode('login');
-      setName('');
-      setPassword('');
-      setSecurityAnswer('');
+    } catch (err) {
+      setErrorMsg('Đã xảy ra lỗi trong quá trình xử lý.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className={styles.authWrapper}>
       <div className={styles.authContainer}>
-
         {/* Left Side: Promo panel */}
         <div className={styles.authPromo}>
           {/* Background Sakura/Particles */}
           <div className={styles.particlesContainer}>
-            {[...Array(12)].map((_, i) => {
-              // Stable pseudo-random values to prevent rendering jitter when state updates
-              const leftPos = (i * 8.3) + ((i * 7) % 6);
-              const baseDuration = ((i * 3) % 5) + 6; // base duration: 6 to 10
-              const animDelay = ((i * 7) % 5) * 0.8; // delay: 0s to 3.2s
+            {[...Array(8)].map((_, i) => {
+              const leftPos = (i * 12.5) + ((i * 5) % 6);
+              const baseDuration = ((i * 3) % 4) + 7;
+              const animDelay = ((i * 5) % 4) * 0.8;
               
               return (
                 <svg
@@ -305,37 +332,35 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                   </div>
                 </div>
                 <div className={styles.progressBar}>
-                  <div className={styles.progressFill} style={{ width: '85%' }}></div>
+                  <div className={styles.progressFill}></div>
                 </div>
 
-                <div className={styles.glassCardSecondary}>
-                  <span style={{ fontSize: '1.8rem' }}>💮</span>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9, color: 'var(--jp-text-muted)' }}>Điểm văn hóa</div>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--jp-text)' }}>Hạng S (Xuất sắc)</div>
+                <div className={styles.mockupBadgeRow}>
+                  <span style={{ fontSize: '1.4rem' }}>💮</span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--jp-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', lineHeight: 1.2 }}>Điểm văn hóa</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--jp-text)', lineHeight: 1.2 }}>Hạng S (Xuất sắc)</span>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Social Proof */}
           </div>
 
           <div className={styles.authPromoFooter}>
-            © {new Date().getFullYear()} From Uni to Japan. Thiết kế tối giản tinh tế.
+            © {new Date().getFullYear()} From Uni to Japan. Thiết kế tinh tế & tối giản.
           </div>
         </div>
 
         {/* Right Side: Form panel */}
         <div className={styles.authFormSide}>
-          {/* Floating Theme Toggle */}
+          {/* Theme Toggle inside card side for harmony */}
           <button
             type="button"
             className={styles.themeToggleBtn}
             onClick={onToggleTheme}
             title={`Chuyển sang nền ${theme === 'light' ? 'tối' : 'sáng'}`}
           >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
 
           <div className={styles.formContainer}>
@@ -356,8 +381,6 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                 }
               </p>
             </div>
-
-
 
             {errorMsg && (
               <div className={`${styles.messageBox} ${styles.errorBox}`}>
@@ -385,18 +408,27 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
-                    <label className={styles.floatingLabel}>Email tài khoản</label>
+                    <label className={styles.floatingLabel}>Email đăng nhập</label>
                   </div>
-                  <button type="submit" className={styles.btnPrimary}>
-                    Tìm tài khoản <ArrowRight size={18} />
+                  <button type="submit" className={styles.btnPrimary} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className={styles.spinner} size={18} />
+                        Đang tìm...
+                      </>
+                    ) : (
+                      <>
+                        Tìm tài khoản <ArrowRight size={18} />
+                      </>
+                    )}
                   </button>
                 </form>
               ) : !answerVerified ? (
                 // Step 2: Answer security question
                 <form onSubmit={handleVerifyAnswer}>
                   <div className={styles.securityQuestionDisplay}>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>Câu hỏi bảo mật của bạn:</span>
-                    <strong style={{ color: 'var(--jp-text)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🔒 {userQuestion}</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--jp-text-muted)', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>Câu hỏi bảo mật của bạn:</span>
+                    <strong style={{ color: 'var(--jp-text)', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🔒 {userQuestion}</strong>
                   </div>
                   <div className={styles.formGroup}>
                     <HelpCircle size={18} className={styles.inputIcon} />
@@ -408,10 +440,19 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                       onChange={(e) => setUserAnswerInput(e.target.value)}
                       required
                     />
-                    <label className={styles.floatingLabel}>Câu trả lời bảo mật</label>
+                    <label className={styles.floatingLabel}>Câu trả lời của bạn</label>
                   </div>
-                  <button type="submit" className={styles.btnPrimary}>
-                    Xác nhận câu trả lời <ArrowRight size={18} />
+                  <button type="submit" className={styles.btnPrimary} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className={styles.spinner} size={18} />
+                        Đang kiểm tra...
+                      </>
+                    ) : (
+                      <>
+                        Xác nhận câu trả lời <ArrowRight size={18} />
+                      </>
+                    )}
                   </button>
                 </form>
               ) : (
@@ -436,8 +477,17 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                  <button type="submit" className={styles.btnPrimary}>
-                    Cập nhật mật khẩu <CheckCircle size={18} />
+                  <button type="submit" className={styles.btnPrimary} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className={styles.spinner} size={18} />
+                        Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        Cập nhật mật khẩu <CheckCircle size={18} />
+                      </>
+                    )}
                   </button>
                 </form>
               )
@@ -530,8 +580,17 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                   </div>
                 )}
 
-                <button type="submit" className={styles.btnPrimary}>
-                  {authMode === 'login' ? 'Đăng nhập' : 'Đăng ký'} <ArrowRight size={18} />
+                <button type="submit" className={styles.btnPrimary} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className={styles.spinner} size={18} />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      {authMode === 'login' ? 'Đăng nhập' : 'Đăng ký'} <ArrowRight size={18} />
+                    </>
+                  )}
                 </button>
               </form>
             )}
@@ -554,7 +613,7 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
                 </button>
               )}
 
-              <div>
+              <div className={styles.switchAccountRow}>
                 <span style={{ color: 'var(--jp-text-muted)' }}>
                   {authMode === 'login' || authMode === 'forgot' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
                 </span>
@@ -574,13 +633,8 @@ export default function Auth({ onLogin, theme, onToggleTheme }) {
               </div>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
   );
 }
-
-
-

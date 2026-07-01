@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Cpu, WifiOff, ChevronLeft, ChevronRight, RefreshCw, Sparkles, Copy, ThumbsUp, Volume2 } from 'lucide-react';
+import { MessageSquare, Send, X, Minimize2, Maximize2, Bot, Cpu, WifiOff, ChevronLeft, ChevronRight, RefreshCw, Sparkles, Copy, ThumbsUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -158,7 +158,7 @@ export default function ChatBox({ currentUser }) {
   const abortControllerRef = useRef(null);
   const streamingMsgIdRef = useRef(null);
   const textareaRef = useRef(null);
-  const activeUtterancesRef = useRef([]);
+
 
   useEffect(() => {
     const adjustHeight = () => {
@@ -382,60 +382,51 @@ export default function ChatBox({ currentUser }) {
   };
 
   const handleCopyMessage = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
+    // Convert markdown to clean plain text, preserving table structure
+    const cleanText = text
+      // Convert markdown tables to plain-text aligned tables
+      .replace(/^(\|.+\|)\n(\|[-: |]+\|)\n((?:\|.+\|\n?)*)/gm, (match, header, separator, body) => {
+        const parseRow = (row) => row.split('|').map(c => c.trim()).filter((c, i, a) => i > 0 && i < a.length - 1);
+        const headers = parseRow(header);
+        const rows = body.trim().split('\n').map(parseRow);
+        const allRows = [headers, ...rows];
+        const colWidths = headers.map((_, ci) =>
+          Math.max(...allRows.map(r => (r[ci] || '').length))
+        );
+        const formatRow = (r) => r.map((c, ci) => (c || '').padEnd(colWidths[ci])).join('  |  ');
+        const divider = colWidths.map(w => '-'.repeat(w)).join('--+--');
+        return [formatRow(headers), divider, ...rows.map(formatRow)].join('\n');
+      })
+      // Remove bold/italic markers
+      .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/__(.+?)__/g, '$1')
+      .replace(/_(.+?)_/g, '$1')
+      // Remove inline code backticks but keep content
+      .replace(/`([^`]+)`/g, '$1')
+      // Remove code block fences
+      .replace(/```[\w]*\n?([\s\S]*?)```/g, '$1')
+      // Remove heading markers
+      .replace(/^#{1,6}\s+/gm, '')
+      // Remove blockquote markers
+      .replace(/^>\s*/gm, '')
+      // Remove horizontal rules
+      .replace(/^[-*_]{3,}\s*$/gm, '')
+      // Remove links but keep text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Remove image syntax entirely
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+      // Clean up excessive blank lines
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    navigator.clipboard.writeText(cleanText).then(() => {
       setCopyToast('Đã sao chép!');
       setTimeout(() => setCopyToast(null), 2000);
     });
   };
 
-  const handleSpeakMessage = (text) => {
-    try {
-      window.speechSynthesis.cancel();
-      activeUtterancesRef.current = []; // Clear old references
-      
-      const cleanText = text.replace(/[*#`_~]/g, '').replace(/\[.*?\]/g, '');
-      
-      // Split text into Japanese segments and Non-Japanese segments
-      const segments = cleanText.split(/([\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\uff66-\uff9f]+)/g);
-      
-      segments.forEach((seg) => {
-        const trimmed = seg.trim();
-        if (!trimmed) return;
-        
-        const jpChars = (trimmed.match(/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\uff66-\uff9f]/g) || []).length;
-        const viAccents = (trimmed.match(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ]/ig) || []).length;
-        const enWords = (trimmed.match(/\b(the|and|you|that|was|for|are|with|have|this|from|your|hello|interview|resume|company|japan|work|salary|nomikai|ojigi|boss|manager|english|japanese|vietnamese|cv|status|mode|api|key)\b/gi) || []).length;
-
-        let lang = 'vi-VN';
-        if (jpChars > 0) {
-          lang = 'ja-JP';
-        } else if (enWords > 0 && viAccents === 0) {
-          lang = 'en-US';
-        }
-        
-        const utterance = new SpeechSynthesisUtterance(trimmed);
-        utterance.lang = lang;
-        
-        if (window.speechSynthesis.getVoices) {
-          const voices = window.speechSynthesis.getVoices();
-          const matchingVoice = voices.find(v => v.lang.startsWith(lang));
-          if (matchingVoice) {
-            utterance.voice = matchingVoice;
-          }
-        }
-        
-        utterance.rate = lang === 'ja-JP' ? 1.0 : 0.95;
-        
-        // Keep reference to prevent GC in iOS Safari
-        utterance.onend = () => {
-          activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
-        };
-        activeUtterancesRef.current.push(utterance);
-        
-        window.speechSynthesis.speak(utterance);
-      });
-    } catch (e) { /* skip */ }
-  };
 
   const handleLikeMessage = (msgId) => {
     setLikedMessages(prev => {
@@ -1752,13 +1743,7 @@ export default function ChatBox({ currentUser }) {
                         >
                           <ThumbsUp size={10} /> {likedMessages.has(msg.id) ? 'Đã thích' : 'Thích'}
                         </button>
-                        <button
-                          className="msg-action-btn"
-                          onClick={() => handleSpeakMessage(msg.text)}
-                          title="Phát âm"
-                        >
-                          <Volume2 size={10} /> Đọc
-                        </button>
+
                       </div>
                     )}
                   </div>

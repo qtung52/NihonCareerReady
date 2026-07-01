@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, BookOpen, Award, CheckCircle, FileText, Trash2, Edit3, X, Upload, Users, Key, BarChart2, MessageSquare, LayoutTemplate, ChevronDown, ChevronUp, Heart, MessageCircle, HelpCircle } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 import { MANNERS_DATA } from '../data/mannersData';
@@ -20,6 +21,45 @@ export default function AdminPanel({
   const [expandedThreadId, setExpandedThreadId] = useState(null);
   const [rolesList, setRolesList] = useState(['Học viên', 'Senpai', 'Admin']);
   const [newRoleInput, setNewRoleInput] = useState('');
+  const [roleLevels, setRoleLevels] = useState({ 'Học viên': 1, 'Senpai': 2, 'Admin': 3 });
+  const [newRoleLevel, setNewRoleLevel] = useState(1);
+
+  // Custom confirm dialog state and ref
+  const resolveRef = useRef(null);
+  const [confirmData, setConfirmData] = useState(null);
+
+  const triggerConfirm = (options) => {
+    return new Promise((resolve) => {
+      resolveRef.current = resolve;
+      setConfirmData({
+        isOpen: true,
+        isClosing: false,
+        title: options.title || 'Xác nhận',
+        message: options.message || '',
+        confirmText: options.confirmText || 'Xác nhận',
+        cancelText: options.cancelText || 'Hủy',
+        type: options.type || 'warning',
+      });
+    });
+  };
+
+  const handleConfirmAction = () => {
+    if (resolveRef.current) resolveRef.current(true);
+    closeConfirmModal();
+  };
+
+  const handleCancelAction = () => {
+    if (resolveRef.current) resolveRef.current(false);
+    closeConfirmModal();
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmData(prev => prev ? { ...prev, isClosing: true } : null);
+    setTimeout(() => {
+      setConfirmData(null);
+      resolveRef.current = null;
+    }, 240);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -27,10 +67,12 @@ export default function AdminPanel({
       const users = await getSharedArray('users', []);
       const threads = await getSharedArray('threads', []);
       const roles = await getSharedArray('custom_roles', ['Học viên', 'Senpai', 'Admin']);
+      const levels = await getSharedArray('role_levels', { 'Học viên': 1, 'Senpai': 2, 'Admin': 3 });
       if (!isMounted) return;
       setUsersList(users);
       setThreadsList(threads);
       setRolesList(roles);
+      setRoleLevels(levels);
     };
 
     fetchAdminData();
@@ -187,7 +229,12 @@ export default function AdminPanel({
   };
 
   const handleDeleteScenario = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
+    if (await triggerConfirm({
+      title: 'Xóa câu hỏi?',
+      message: 'Bạn có chắc chắn muốn xóa câu hỏi này?',
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       let updated;
       if (id.startsWith('built-in-')) {
         const exists = scenariosList.some(s => s.id === id);
@@ -380,16 +427,26 @@ export default function AdminPanel({
     setCorrectOpt(correct ? correct.letter : 'A');
   };
 
-  const handleDeleteDictItem = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa thẻ quy tắc này?')) {
+  const handleDeleteDictItem = async (id) => {
+    if (await triggerConfirm({
+      title: 'Xóa thẻ quy tắc?',
+      message: 'Bạn có chắc chắn muốn xóa thẻ quy tắc này?',
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       onDeleteDictionary(id);
       setNotification('Đã xóa thẻ quy tắc thành công!');
       setTimeout(() => setNotification(''), 3000);
     }
   };
 
-  const handleDeleteRoleItem = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa tình huống này?')) {
+  const handleDeleteRoleItem = async (id) => {
+    if (await triggerConfirm({
+      title: 'Xóa tình huống?',
+      message: 'Bạn có chắc chắn muốn xóa tình huống này?',
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       onDeleteRoleplay(id);
       setNotification('Đã xóa tình huống thành công!');
       setTimeout(() => setNotification(''), 3000);
@@ -398,7 +455,12 @@ export default function AdminPanel({
 
   // User actions
   const handleDeleteUser = async (email) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản ${email}? Hành động này không thể khôi phục.`)) {
+    if (await triggerConfirm({
+      title: 'Xóa tài khoản?',
+      message: `Bạn có chắc chắn muốn xóa tài khoản ${email}? Hành động này không thể khôi phục.`,
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       const currentUsers = await getSharedArray('users', []);
       const filtered = currentUsers.filter(u => (u.email || '').trim().toLowerCase() !== email.trim().toLowerCase());
       await setSharedArray('users', filtered);
@@ -409,7 +471,12 @@ export default function AdminPanel({
   };
 
   const handleDeleteThread = async (id, title) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa bài viết "${title}"? Tất cả bình luận liên quan cũng sẽ bị xóa.`)) {
+    if (await triggerConfirm({
+      title: 'Xóa bài viết?',
+      message: `Bạn có chắc chắn muốn xóa bài viết "${title}"? Tất cả bình luận liên quan cũng sẽ bị xóa.`,
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       const currentThreads = await getSharedArray('threads', []);
       const filtered = currentThreads.filter(t => t.id !== id);
       await setSharedArray('threads', filtered);
@@ -423,7 +490,12 @@ export default function AdminPanel({
   };
 
   const handleDeleteReply = async (threadId, replyId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) {
+    if (await triggerConfirm({
+      title: 'Xóa bình luận?',
+      message: 'Bạn có chắc chắn muốn xóa bình luận này?',
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       const currentThreads = await getSharedArray('threads', []);
       const updated = currentThreads.map(t => {
         if (t.id === threadId) {
@@ -454,8 +526,15 @@ export default function AdminPanel({
     const updatedRoles = [...rolesList, cleanRoleName];
     await setSharedArray('custom_roles', updatedRoles);
     setRolesList(updatedRoles);
+
+    // Save level
+    const updatedLevels = { ...roleLevels, [cleanRoleName]: parseInt(newRoleLevel, 10) };
+    await setSharedArray('role_levels', updatedLevels);
+    setRoleLevels(updatedLevels);
+
     setNewRoleInput('');
-    setNotification(`Đã tạo vai trò "${cleanRoleName}" thành công.`);
+    setNewRoleLevel(1); // Reset
+    setNotification(`Đã tạo vai trò "${cleanRoleName}" với cấp quyền ${newRoleLevel} thành công.`);
     setTimeout(() => setNotification(''), 3000);
   };
 
@@ -465,10 +544,21 @@ export default function AdminPanel({
       return;
     }
 
-    if (window.confirm(`Bạn có chắc chắn muốn xóa vai trò "${roleName}"? Người dùng đang mang vai trò này sẽ tự động chuyển về vai trò "Học viên".`)) {
+    if (await triggerConfirm({
+      title: 'Xóa vai trò?',
+      message: `Bạn có chắc chắn muốn xóa vai trò "${roleName}"? Người dùng đang mang vai trò này sẽ tự động chuyển về vai trò "Học viên".`,
+      confirmText: 'Xóa',
+      type: 'danger'
+    })) {
       const updatedRoles = rolesList.filter(r => r !== roleName);
       await setSharedArray('custom_roles', updatedRoles);
       setRolesList(updatedRoles);
+
+      // Clean up level
+      const updatedLevels = { ...roleLevels };
+      delete updatedLevels[roleName];
+      await setSharedArray('role_levels', updatedLevels);
+      setRoleLevels(updatedLevels);
 
       const currentUsers = await getSharedArray('users', []);
       const updatedUsers = currentUsers.map(u => {
@@ -491,15 +581,21 @@ export default function AdminPanel({
   };
 
   const handleUpdateUserCustomRole = async (email, newRole) => {
-    if (window.confirm(`Bạn có muốn thay đổi vai trò của ${email} thành "${newRole}"?`)) {
+    const targetLevel = roleLevels[newRole] || (newRole === 'Admin' ? 3 : newRole === 'Senpai' ? 2 : 1);
+    if (await triggerConfirm({
+      title: 'Thay đổi vai trò?',
+      message: `Bạn có muốn thay đổi vai trò của ${email} thành "${newRole}"?`,
+      confirmText: 'Thay đổi',
+      type: 'warning'
+    })) {
       const currentUsers = await getSharedArray('users', []);
       const updated = currentUsers.map(u => {
         if ((u.email || '').trim().toLowerCase() === email.trim().toLowerCase()) {
           return {
             ...u,
             customRole: newRole,
-            isAdmin: newRole === 'Admin',
-            isSenpai: newRole === 'Senpai' || newRole === 'Admin'
+            isAdmin: targetLevel >= 3,
+            isSenpai: targetLevel >= 2
           };
         }
         return u;
@@ -510,8 +606,8 @@ export default function AdminPanel({
       if (currentUser && currentUser.email.trim().toLowerCase() === email.trim().toLowerCase()) {
         onUpdateProfile({
           customRole: newRole,
-          isAdmin: newRole === 'Admin',
-          isSenpai: newRole === 'Senpai' || newRole === 'Admin'
+          isAdmin: targetLevel >= 3,
+          isSenpai: targetLevel >= 2
         });
       }
 
@@ -520,8 +616,50 @@ export default function AdminPanel({
     }
   };
 
+  const handleUpdateRoleLevel = async (roleName, newLevel) => {
+    const parsedLevel = parseInt(newLevel, 10);
+    const updatedLevels = { ...roleLevels, [roleName]: parsedLevel };
+    await setSharedArray('role_levels', updatedLevels);
+    setRoleLevels(updatedLevels);
+
+    // Sync all users carrying this role
+    const currentUsers = await getSharedArray('users', []);
+    const updatedUsers = currentUsers.map(u => {
+      const uRole = u.customRole || (u.isAdmin ? 'Admin' : u.isSenpai ? 'Senpai' : 'Học viên');
+      if (uRole === roleName) {
+        return {
+          ...u,
+          isSenpai: parsedLevel >= 2,
+          isAdmin: parsedLevel >= 3
+        };
+      }
+      return u;
+    });
+    await setSharedArray('users', updatedUsers);
+    setUsersList(updatedUsers);
+
+    // If current logged-in user is affected, update profile state instantly
+    if (currentUser) {
+      const curRole = currentUser.customRole || (currentUser.isAdmin ? 'Admin' : currentUser.isSenpai ? 'Senpai' : 'Học viên');
+      if (curRole === roleName) {
+        onUpdateProfile({
+          isSenpai: parsedLevel >= 2,
+          isAdmin: parsedLevel >= 3
+        });
+      }
+    }
+
+    setNotification(`Đã cập nhật cấp quyền của vai trò "${roleName}" thành công.`);
+    setTimeout(() => setNotification(''), 3000);
+  };
+
   const handleResetUserPassword = async (email) => {
-    if (window.confirm(`Bạn có muốn reset mật khẩu của tài khoản ${email} về mặc định "123456"?`)) {
+    if (await triggerConfirm({
+      title: 'Reset mật khẩu?',
+      message: `Bạn có muốn reset mật khẩu của tài khoản ${email} về mặc định "123456"?`,
+      confirmText: 'Reset',
+      type: 'warning'
+    })) {
       const currentUsers = await getSharedArray('users', []);
       const updated = currentUsers.map(u => {
         if ((u.email || '').trim().toLowerCase() === email.trim().toLowerCase()) {
@@ -879,7 +1017,7 @@ export default function AdminPanel({
                             onClick={() => onViewProfile && onViewProfile(user.email, user.name, user.careerGoal)}
                             title="Xem thông tin người dùng"
                           >
-                            {user.avatar?.startsWith('data:image') ? (
+                            {user.avatar && (user.avatar.startsWith('data:') || user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? (
                               <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                             ) : (
                               user.avatar || '🧑‍💻'
@@ -984,6 +1122,27 @@ export default function AdminPanel({
                     style={{ width: '100%' }}
                   />
                 </div>
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label className="form-label" style={{ fontSize: '0.85rem', marginBottom: '0.4rem', display: 'block' }}>Cấp quyền hạn (Authority Level)</label>
+                  <select
+                    className="form-input"
+                    value={newRoleLevel}
+                    onChange={(e) => setNewRoleLevel(parseInt(e.target.value, 10))}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--jp-border)', 
+                      background: 'var(--jp-surface)', 
+                      color: 'var(--jp-text)',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value={1}>Cấp 1 - Học viên (Quyền cơ bản)</option>
+                    <option value={2}>Cấp 2 - Senpai (Viết bài & Kinh nghiệm tự khai)</option>
+                    <option value={3}>Cấp 3 - Admin (Quản trị viên hệ thống)</option>
+                  </select>
+                </div>
                 <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
                   <Plus size={16} /> Thêm vai trò
                 </button>
@@ -996,6 +1155,7 @@ export default function AdminPanel({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {rolesList.map((role) => {
                   const isDefault = ['Học viên', 'Senpai', 'Admin'].includes(role);
+                  const currentLevel = roleLevels[role] || (role === 'Admin' ? 3 : role === 'Senpai' ? 2 : 1);
                   return (
                     <div 
                       key={role} 
@@ -1017,25 +1177,55 @@ export default function AdminPanel({
                           </span>
                         )}
                       </div>
-                      {!isDefault && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRole(role)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--jp-red)',
-                            cursor: 'pointer',
-                            padding: '0.25rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                          title={`Xóa vai trò "${role}"`}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {isDefault ? (
+                          <span style={{ fontSize: '0.72rem', color: 'var(--jp-text-muted)', background: 'var(--jp-border)', padding: '0.2rem 0.5rem', borderRadius: '6px', fontWeight: 600 }}>
+                            Cấp {currentLevel} {currentLevel === 3 ? '(Admin)' : currentLevel === 2 ? '(Senpai)' : '(Học viên)'}
+                          </span>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--jp-text-muted)', fontWeight: 500 }}>Cấp:</span>
+                            <select
+                              value={currentLevel}
+                              onChange={(e) => handleUpdateRoleLevel(role, e.target.value)}
+                              style={{
+                                padding: '0.15rem 0.35rem',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                border: '1px solid var(--jp-border)',
+                                background: 'var(--jp-surface-raised)',
+                                color: 'var(--jp-text)',
+                                fontWeight: 600
+                              }}
+                            >
+                              <option value={1}>1 (Học viên)</option>
+                              <option value={2}>2 (Senpai)</option>
+                              <option value={3}>3 (Admin)</option>
+                            </select>
+                          </div>
+                        )}
+
+                        {!isDefault && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRole(role)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--jp-red)',
+                              cursor: 'pointer',
+                              padding: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title={`Xóa vai trò "${role}"`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -1332,6 +1522,134 @@ export default function AdminPanel({
             )}
           </div>
         </div>
+      )}
+      {/* Custom Confirmation Modal Portal */}
+      {confirmData && confirmData.isOpen && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            animation: confirmData.isClosing ? 'fadeOut 0.2s ease-in forwards' : 'fadeIn 0.2s ease-out forwards'
+          }}
+          onClick={handleCancelAction}
+        >
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+            @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            @keyframes scaleDown { from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; } }
+          `}</style>
+          <div
+            style={{
+              width: '90%',
+              maxWidth: '420px',
+              background: 'var(--jp-card-bg, #ffffff)',
+              borderRadius: '24px',
+              padding: '2rem',
+              color: 'var(--jp-text, #111424)',
+              border: '1px solid var(--jp-border, #e5e5e5)',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+              textAlign: 'center',
+              boxShadow: '0 24px 50px rgba(0, 0, 0, 0.2)',
+              animation: confirmData.isClosing ? 'scaleDown 0.2s ease-in forwards' : 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Type-based Icon */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              background: confirmData.type === 'danger' ? 'rgba(231, 76, 60, 0.1)' : 'rgba(241, 196, 15, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              color: confirmData.type === 'danger' ? 'var(--jp-red, #e74c3c)' : 'var(--jp-blue, #3498db)'
+            }}>
+              <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>
+                {confirmData.type === 'danger' ? '🗑️' : '⚠️'}
+              </span>
+            </div>
+
+            {/* Content */}
+            <div>
+              <h3 style={{
+                fontSize: '1.3rem',
+                fontWeight: 800,
+                color: 'var(--jp-text, #111424)',
+                margin: '0 0 0.5rem 0'
+              }}>
+                {confirmData.title}
+              </h3>
+              <p style={{
+                fontSize: '0.85rem',
+                color: 'var(--jp-text-muted, #777)',
+                lineHeight: 1.6,
+                margin: 0
+              }}>
+                {confirmData.message}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                onClick={handleCancelAction}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  border: '1px solid var(--jp-border, #e5e5e5)',
+                  background: 'none',
+                  color: 'var(--jp-text, #333)',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+              >
+                {confirmData.cancelText}
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  border: 'none',
+                  background: confirmData.type === 'danger'
+                    ? 'linear-gradient(135deg, var(--jp-red, #e8365d) 0%, #c0392b 100%)'
+                    : 'linear-gradient(135deg, var(--jp-blue, #3498db) 0%, #2980b9 100%)',
+                  color: 'white',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  boxShadow: confirmData.type === 'danger'
+                    ? '0 4px 12px rgba(232, 54, 93, 0.2)'
+                    : '0 4px 12px rgba(52, 152, 219, 0.2)',
+                  transition: 'transform 0.15s ease'
+                }}
+              >
+                {confirmData.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

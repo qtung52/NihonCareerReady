@@ -75,6 +75,32 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Scroll-Reveal Utility ─────────────────────────────────── */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger variant for children */
+.reveal-on-scroll:nth-child(2) { transition-delay: 0.1s; }
+.reveal-on-scroll:nth-child(3) { transition-delay: 0.2s; }
+.reveal-on-scroll:nth-child(4) { transition-delay: 0.3s; }
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 select {
   appearance: none;
   -webkit-appearance: none;

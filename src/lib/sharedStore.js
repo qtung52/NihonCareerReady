@@ -192,3 +192,72 @@ export async function seedSharedArray(key, fallback = []) {
   await setSharedArray(key, fallback);
   return fallback;
 }
+
+export async function uploadFileToSupabase(blob, fileName) {
+  if (!isSupabaseEnabled) {
+    throw new Error('Supabase is not configured. Falling back to local storage.');
+  }
+
+  // Tries to upload to 'images' bucket
+  const bucketName = 'images';
+  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucketName}/${fileName}`;
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': blob.type,
+      'x-upsert': 'true'
+    },
+    body: blob
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Supabase Storage upload failed (${response.status}): ${errText}`);
+  }
+
+  // Return public URL
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${fileName}`;
+}
+
+export async function deleteFileFromSupabase(fileName) {
+  if (!isSupabaseEnabled) return;
+  const bucketName = 'images';
+  const deleteUrl = `${SUPABASE_URL}/storage/v1/object/${bucketName}`;
+  try {
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prefixes: [fileName] })
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn(`Supabase Storage delete failed (${response.status}): ${errText}`);
+    }
+  } catch (error) {
+    console.error('Error deleting file from Supabase storage:', error);
+  }
+}
+
+export function extractFileNameFromUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const marker = '/storage/v1/object/public/images/';
+  const index = url.indexOf(marker);
+  if (index !== -1) {
+    return url.substring(index + marker.length);
+  }
+  return null;
+}
+
+export async function deleteFileByUrlFromSupabase(url) {
+  const fileName = extractFileNameFromUrl(url);
+  if (fileName) {
+    await deleteFileFromSupabase(fileName);
+  }
+}

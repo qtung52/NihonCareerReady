@@ -320,12 +320,18 @@
 
 .replyContent {
   background: var(--jp-surface);
-  padding: 0.8rem 1rem;
-  border-radius: 16px 16px 16px 16px;
+  padding: 0.8rem 2.5rem 0.8rem 1rem;
+  border-radius: 16px;
   position: relative;
-  display: inline-block;
-  align-self: flex-start;
-  max-width: 100%;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.replyContent .moreMenu {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
 }
 
 .replyHeader {
@@ -1113,5 +1119,487 @@
 @keyframes spin {
   100% {
     transform: rotate(360deg);
+  }
+}
+
+/* JLPT Badge styling */
+.jlptBadge {
+  background: var(--jp-surface-raised, #f0f0f0);
+  border: 1px solid var(--jp-border, #e0e0e0);
+  color: var(--jp-text-muted, #666666);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Bookmark / Saved state styling */
+.saved {
+  color: var(--jp-blue) !important;
+}
+
+/* Highlight / Flash keyframes for active threads */
+.highlightedCard {
+  animation: flashHighlight 3s ease-out;
+}
+
+@keyframes flashHighlight {
+  0% {
+    border-color: var(--jp-blue);
+    box-shadow: 0 0 16px rgba(25, 118, 210, 0.4);
+  }
+  50% {
+    border-color: var(--jp-blue);
+    box-shadow: 0 0 16px rgba(25, 118, 210, 0.4);
+  }
+  100% {
+    border-color: var(--jp-border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* Supervisor banner styling */
+.supervisorBanner {
+  background: #fdf5f5;
+  border: 1px solid #f5c2c2;
+  color: #c0392b;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.supervisorBanner:hover {
+  background: #fadbd8;
+  border-color: #e74c3c;
+}
+
+/* Quick Question Box from Screenshot styling */
+.quickQuestionContainer {
+  background: var(--jp-card-bg);
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--jp-border);
+}
+
+.quickQuestionWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f6f6f6;
+  border-radius: 12px;
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+  border: 1px solid #eaeaea;
+}
+
+.qCircleIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--jp-surface-raised, #e0e0e0);
+  color: var(--jp-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.quickQuestionInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 0.93rem;
+  color: #333;
+  padding: 0.5rem 0.25rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.quickQuestionInput::placeholder {
+  color: #777;
+}
+
+.quickQuestionBtn {
+  background: #111424;
+  color: white;
+  border: none;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.quickQuestionBtn:hover {
+  background: #1e2238;
+}
+
+/* Dark mode styling overrides for Quick Question Box */
+[data-theme='dark'] .quickQuestionWrapper {
+  background: #1e1e24;
+  border-color: #2e2e38;
+}
+
+[data-theme='dark'] .quickQuestionInput {
+  color: #e0e0e0;
+}
+
+[data-theme='dark'] .quickQuestionInput::placeholder {
+  color: #888;
+}
+
+[data-theme='dark'] .quickQuestionBtn {
+  background: #2b2e3a;
+}
+
+[data-theme='dark'] .quickQuestionBtn:hover {
+  background: #3e4252;
+}
+
+[data-theme='dark'] .supervisorBanner {
+  background: rgba(192, 57, 43, 0.15);
+  border-color: rgba(192, 57, 43, 0.3);
+  color: #ec7063;
+}
+
+[data-theme='dark'] .supervisorBanner:hover {
+  background: rgba(192, 57, 43, 0.25);
+  border-color: rgba(192, 57, 43, 0.5);
+}
+
+/* Highly polished Helpful (Hữu ích) button styling */
+.helpfulBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--jp-surface-raised, #f6f6f6);
+  border: 1px solid var(--jp-border, #e5e5e5);
+  color: var(--jp-text-muted, #777);
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  margin-top: 0.35rem;
+  min-height: unset !important;
+  min-width: unset !important;
+}
+
+.helpfulBtn:hover {
+  background: var(--jp-surface-raised-hover, #efefef);
+  border-color: var(--jp-blue, #1976d2);
+  color: var(--jp-blue, #1976d2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(25, 118, 210, 0.12);
+}
+
+.helpfulIcon {
+  transition: transform 0.25s ease;
+}
+
+.helpfulBtn:hover .helpfulIcon {
+  transform: scale(1.15) rotate(-5deg);
+}
+
+/* Active / Voted status styling */
+.helpfulActive {
+  background: rgba(211, 47, 47, 0.08) !important;
+  border-color: rgba(211, 47, 47, 0.25) !important;
+  color: var(--jp-red, #d32f2f) !important;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.08);
+}
+
+.helpfulActive:hover {
+  background: rgba(211, 47, 47, 0.12) !important;
+  border-color: rgba(211, 47, 47, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.15) !important;
+}
+
+.helpfulActive .helpfulIcon {
+  fill: currentColor;
+  animation: thumbsUpPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.helpfulCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  padding: 0.05rem 0.35rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+
+.helpfulActive .helpfulCount {
+  background: rgba(211, 47, 47, 0.12);
+}
+
+@keyframes thumbsUpPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.4) rotate(-15deg); }
+  75% { transform: scale(0.95); }
+  100% { transform: scale(1.1); }
+}
+
+/* Dark mode styling overrides for Helpful button */
+[data-theme='dark'] .helpfulBtn {
+  background: #1e1e24;
+  border-color: #2e2e38;
+  color: #a0a0a8;
+}
+
+[data-theme='dark'] .helpfulBtn:hover {
+  background: #25252d;
+  border-color: #2196f3;
+  color: #2196f3;
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.15);
+}
+
+[data-theme='dark'] .helpfulActive {
+  background: rgba(239, 83, 80, 0.15) !important;
+  border-color: rgba(239, 83, 80, 0.3) !important;
+  color: #ef5350 !important;
+}
+
+[data-theme='dark'] .helpfulActive:hover {
+  background: rgba(239, 83, 80, 0.22) !important;
+  border-color: rgba(239, 83, 80, 0.4) !important;
+}
+
+/* Custom Confirm Modal styling */
+.confirmModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 44, 89, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2200;
+  padding: 1.5rem;
+  animation: confirmFadeIn 0.2s ease-out forwards;
+}
+
+.confirmModalOverlay.closing {
+  animation: confirmFadeOut 0.2s ease-in forwards;
+}
+
+.confirmModalContent {
+  background: var(--jp-card-bg);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 380px;
+  padding: 2rem;
+  box-shadow: var(--jp-shadow-lg);
+  border: 1px solid var(--jp-border);
+  text-align: center;
+  animation: confirmScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.confirmModalContent.closing {
+  animation: confirmScaleOut 0.2s ease-in forwards;
+}
+
+.confirmCancelBtn {
+  flex: 1;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--jp-border);
+  background: var(--jp-surface-raised, #ffffff);
+  color: var(--jp-text);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmCancelBtn:hover {
+  background: var(--jp-border);
+}
+
+.confirmDeleteBtn {
+  flex: 1;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--jp-red, #dc3545);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.2);
+}
+
+.confirmDeleteBtn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3);
+}
+
+@keyframes confirmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes confirmFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes confirmScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes confirmScaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+}
+
+/* Dark mode overrides */
+[data-theme='dark'] .confirmModalContent {
+  background: #181920;
+  border-color: #242630;
+}
+
+[data-theme='dark'] .confirmCancelBtn {
+  background: #111218;
+  border-color: #242630;
+  color: #d1d1d6;
+}
+
+[data-theme='dark'] .confirmCancelBtn:hover {
+  background: #1e1e24;
+}
+
+/* Image Lightbox / Fullscreen Preview styles */
+.imageLightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 18, 0.88);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 2rem;
+  cursor: zoom-out;
+  animation: lightboxFadeIn 0.25s ease-out forwards;
+}
+
+.imageLightboxOverlay.closing {
+  animation: lightboxFadeOut 0.2s ease-in forwards;
+}
+
+.lightboxCloseBtn {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  z-index: 3100;
+}
+
+.lightboxCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+.lightboxImageContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  max-height: 85vh;
+  cursor: default;
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: lightboxScaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.lightboxImage.closing {
+  animation: lightboxScaleOut 0.2s ease-in forwards;
+}
+
+@keyframes lightboxFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lightboxFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes lightboxScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes lightboxScaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
   }
 }

@@ -66,7 +66,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
             <li className={styles.mobileOnlyItem} style={{ width: '100%' }}>
               <div className={styles.menuUserHeader}>
                 <div className={styles.menuAvatar}>
-                  {currentUser.avatar?.startsWith('data:image') ? (
+                  {currentUser.avatar && (currentUser.avatar.startsWith('data:') || currentUser.avatar.startsWith('http') || currentUser.avatar.startsWith('/')) ? (
                     <img src={currentUser.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     currentUser.avatar || '🧑‍💻'
@@ -147,7 +147,7 @@ export default function Navbar({ activeView, onViewChange, currentUser, onLogout
                 title="Cài đặt tài khoản"
               >
                 <div className={styles.avatar}>
-                  {currentUser.avatar?.startsWith('data:image') ? (
+                  {currentUser.avatar && (currentUser.avatar.startsWith('data:') || currentUser.avatar.startsWith('http') || currentUser.avatar.startsWith('/')) ? (
                     <img src={currentUser.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                   ) : (
                     currentUser.avatar || '🧑‍💻'

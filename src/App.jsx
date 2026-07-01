@@ -10,7 +10,7 @@ import Auth from './components/Auth';
 import AdminPanel from './components/AdminPanel';
 import Profile from './components/Profile';
 import ChatBox from './components/ChatBox';
-import { getSharedArray, seedSharedArray, setSharedArray } from './lib/sharedStore';
+import { getSharedArray, seedSharedArray, setSharedArray, deleteFileByUrlFromSupabase } from './lib/sharedStore';
 
 const viewToHash = (view) => {
   if (view === 'community') return 'senpai';
@@ -156,18 +156,39 @@ function App() {
       try {
         const parsedUser = JSON.parse(session);
         
-        // Auto-sync roles and profile fields from the database so users don't have to re-login
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const dbUser = users.find(u => (u.email || '').trim().toLowerCase() === parsedUser.email.trim().toLowerCase());
-        if (dbUser) {
-          parsedUser.isAdmin = !!dbUser.isAdmin;
-          parsedUser.isSenpai = !!dbUser.isSenpai;
-          parsedUser.name = dbUser.name || parsedUser.name;
-          parsedUser.avatar = dbUser.avatar || parsedUser.avatar || '🧑‍💻';
-          parsedUser.bio = dbUser.bio || parsedUser.bio || '';
-          parsedUser.careerGoal = dbUser.careerGoal || parsedUser.careerGoal || 'Software Engineer (Japan)';
-          localStorage.setItem('session_user', JSON.stringify(parsedUser));
-        }
+        // Auto-sync roles, profile fields, and vocabulary stats from the database so users don't have to re-login
+        getSharedArray('users', []).then(users => {
+          const dbUser = users.find(u => u && u.email && u.email.trim().toLowerCase() === parsedUser.email.trim().toLowerCase());
+          if (dbUser) {
+            parsedUser.isAdmin = !!dbUser.isAdmin;
+            parsedUser.isSenpai = !!dbUser.isSenpai;
+            parsedUser.name = dbUser.name || parsedUser.name;
+            parsedUser.avatar = dbUser.avatar || parsedUser.avatar || '🧑‍💻';
+            parsedUser.bio = dbUser.bio || parsedUser.bio || '';
+            parsedUser.careerGoal = dbUser.careerGoal || parsedUser.careerGoal || 'Software Engineer (Japan)';
+            parsedUser.jlptLevel = dbUser.jlptLevel || parsedUser.jlptLevel || 'Chưa có';
+            parsedUser.savedThreads = dbUser.savedThreads || parsedUser.savedThreads || [];
+            localStorage.setItem('session_user', JSON.stringify(parsedUser));
+
+            // Sync vocabulary stats directly from database (source of truth)
+            if (Array.isArray(dbUser.flippedCards)) {
+              localStorage.setItem('nihon_cards_flipped', JSON.stringify(dbUser.flippedCards));
+            }
+            if (Array.isArray(dbUser.challengesCompleted)) {
+              localStorage.setItem('nihon_challenges_completed', JSON.stringify(dbUser.challengesCompleted));
+            }
+            if (Array.isArray(dbUser.bookmarkedCards)) {
+              localStorage.setItem('nihon_bookmarked_cards', JSON.stringify(dbUser.bookmarkedCards));
+            }
+            if (typeof dbUser.audioListenedCount === 'number') {
+              localStorage.setItem('nihon_audio_listened_count', dbUser.audioListenedCount.toString());
+            }
+
+            // Dispatch update event
+            window.dispatchEvent(new Event('nihon_stats_updated'));
+            setCurrentUser({ ...parsedUser });
+          }
+        });
 
         setCurrentUser(parsedUser);
         
@@ -208,7 +229,7 @@ function App() {
       }
       
       if (currentUser && Array.isArray(usersData)) {
-        const freshUserData = usersData.find(u => (u.email || '').trim().toLowerCase() === currentUser.email.trim().toLowerCase());
+        const freshUserData = usersData.find(u => u && u.email && u.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
         if (freshUserData) {
           const freshIsAdmin = !!freshUserData.isAdmin;
           const freshIsSenpai = !!freshUserData.isSenpai;
@@ -216,6 +237,8 @@ function App() {
           const freshAvatar = freshUserData.avatar || currentUser.avatar || '🧑‍💻';
           const freshBio = freshUserData.bio || currentUser.bio || '';
           const freshCareerGoal = freshUserData.careerGoal || currentUser.careerGoal || 'Software Engineer (Japan)';
+          const freshJlptLevel = freshUserData.jlptLevel || currentUser.jlptLevel || 'Chưa có';
+          const freshSavedThreads = freshUserData.savedThreads || currentUser.savedThreads || [];
 
           const hasChanged = 
             freshIsAdmin !== currentUser.isAdmin ||
@@ -223,7 +246,9 @@ function App() {
             freshName !== currentUser.name ||
             freshAvatar !== currentUser.avatar ||
             freshBio !== currentUser.bio ||
-            freshCareerGoal !== currentUser.careerGoal;
+            freshCareerGoal !== currentUser.careerGoal ||
+            freshJlptLevel !== currentUser.jlptLevel ||
+            JSON.stringify(freshSavedThreads) !== JSON.stringify(currentUser.savedThreads || []);
 
           if (hasChanged) {
             const updatedUser = { 
@@ -233,7 +258,9 @@ function App() {
               name: freshName,
               avatar: freshAvatar,
               bio: freshBio,
-              careerGoal: freshCareerGoal
+              careerGoal: freshCareerGoal,
+              jlptLevel: freshJlptLevel,
+              savedThreads: freshSavedThreads
             };
             setCurrentUser(updatedUser);
             localStorage.setItem('session_user', JSON.stringify(updatedUser));
@@ -267,6 +294,12 @@ function App() {
   };
 
   const handleUpdateProfile = async (updatedFields) => {
+    if (updatedFields.avatar && currentUser && currentUser.avatar && updatedFields.avatar !== currentUser.avatar) {
+      if (currentUser.avatar.includes('/storage/v1/object/public/images/')) {
+        deleteFileByUrlFromSupabase(currentUser.avatar);
+      }
+    }
+
     const updatedUser = {
       ...currentUser,
       ...updatedFields
@@ -381,7 +414,7 @@ function App() {
     setProfileModalClosing(false);
 
     const users = await getSharedArray('users', []);
-    const matchedUser = users.find(u => (u.email || '').trim().toLowerCase() === (email || '').trim().toLowerCase());
+    const matchedUser = users.find(u => u && u.email && u.email.trim().toLowerCase() === (email || '').trim().toLowerCase());
     
     const threads = await getSharedArray('threads', []);
     let totalReplies = 0;
@@ -455,6 +488,7 @@ function App() {
             score={surveyScore}
             roadmap={surveyRoadmap}
             onViewChange={setActiveView}
+            currentUser={currentUser}
           />
         );
       case 'survey':
@@ -464,7 +498,7 @@ function App() {
 
 
       case 'community':
-        return <Community currentUser={currentUser} onViewProfile={handleOpenProfileModal} />;
+        return <Community currentUser={currentUser} onViewProfile={handleOpenProfileModal} onUpdateProfile={handleUpdateProfile} onViewChange={setActiveView} />;
       case 'profile':
         return <Profile currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />;
       case 'admin':
@@ -479,7 +513,7 @@ function App() {
             onViewProfile={handleOpenProfileModal}
           />
         ) : (
-          <Home score={surveyScore} roadmap={surveyRoadmap} onViewChange={setActiveView} />
+          <Home score={surveyScore} roadmap={surveyRoadmap} onViewChange={setActiveView} currentUser={currentUser} />
         );
       default:
         return (
@@ -487,6 +521,7 @@ function App() {
             score={surveyScore}
             roadmap={surveyRoadmap}
             onViewChange={setActiveView}
+            currentUser={currentUser}
           />
         );
     }
@@ -635,7 +670,7 @@ function App() {
                 flexShrink: 0
               }}
             >
-              {profileModalUser.avatar?.startsWith('data:image') ? (
+              {profileModalUser.avatar && (profileModalUser.avatar.startsWith('data:') || profileModalUser.avatar.startsWith('http') || profileModalUser.avatar.startsWith('/')) ? (
                 <img src={profileModalUser.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 profileModalUser.avatar || '🧑‍💻'

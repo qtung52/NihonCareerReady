@@ -1,8 +1,75 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, X, HelpCircle, Trophy, Star, RefreshCw, Info } from 'lucide-react';
+import { Check, X, HelpCircle, Trophy, Star, RefreshCw, Info, Flame, Zap } from 'lucide-react';
 import { getSharedArray, setSharedArray } from '../lib/sharedStore';
 import { MANNERS_DATA } from '../data/mannersData';
+
+// ─── LEVEL SYSTEM CONSTANTS ───────────────────────────────────────────────
+const LEVEL_CONFIG = [
+  { rank: 'E', label: 'Tân binh',       minXp: 0,    maxXp: 49,   color: '#78909c', bg: 'rgba(120,144,156,0.12)', gradient: 'linear-gradient(135deg,#78909c,#546e7a)',     topPercent: 100 },
+  { rank: 'D', label: 'Người học',      minXp: 50,   maxXp: 199,  color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  gradient: 'linear-gradient(135deg,#27ae60,#1e8449)',    topPercent: 80  },
+  { rank: 'C', label: 'Học viên',       minXp: 200,  maxXp: 499,  color: '#2980b9', bg: 'rgba(41,128,185,0.12)', gradient: 'linear-gradient(135deg,#2980b9,#21618c)',    topPercent: 55  },
+  { rank: 'B', label: 'Thực thụ',       minXp: 500,  maxXp: 999,  color: '#8e44ad', bg: 'rgba(142,68,173,0.12)', gradient: 'linear-gradient(135deg,#8e44ad,#6c3483)',    topPercent: 30  },
+  { rank: 'A', label: 'Bậc thầy',       minXp: 1000, maxXp: 2499, color: '#e67e22', bg: 'rgba(230,126,34,0.12)', gradient: 'linear-gradient(135deg,#e67e22,#d35400)',    topPercent: 15  },
+  { rank: 'S', label: 'Huyền thoại',    minXp: 2500, maxXp: Infinity, color: '#c0392b', bg: 'rgba(192,57,43,0.12)', gradient: 'linear-gradient(135deg,#f39c12,#c0392b)', topPercent: 2   },
+];
+
+function getUserLevel(xp) {
+  for (let i = LEVEL_CONFIG.length - 1; i >= 0; i--) {
+    if (xp >= LEVEL_CONFIG[i].minXp) {
+      const cfg = LEVEL_CONFIG[i];
+      const next = LEVEL_CONFIG[i + 1];
+      const progressInLevel = next ? ((xp - cfg.minXp) / (next.minXp - cfg.minXp)) : 1;
+      return { ...cfg, xp, nextRank: next ? next.rank : null, nextXp: next ? next.minXp : null, progressInLevel: Math.min(1, progressInLevel) };
+    }
+  }
+  return { ...LEVEL_CONFIG[0], xp, nextRank: LEVEL_CONFIG[1].rank, nextXp: LEVEL_CONFIG[1].minXp, progressInLevel: xp / 50 };
+}
+
+function calculateTotalXp(challenges = [], flippedCount = 0, bookmarksCount = 0, audioCount = 0, streak = 0) {
+  // XP from challenges
+  const challengeXp = challenges.reduce((acc, c) => {
+    const xpPerQ = c.difficulty === 'easy' ? 10 : c.difficulty === 'medium' ? 20 : c.difficulty === 'hard' ? 40 : c.difficulty === 'extreme' ? 80 : 15;
+    return acc + Math.round(c.score * xpPerQ);
+  }, 0);
+  // XP from flipping cards (+5 each)
+  const cardXp = flippedCount * 5;
+  // XP from bookmarks (+2 each)
+  const bookmarkXp = bookmarksCount * 2;
+  // XP from audio (+3 each)
+  const audioXp = audioCount * 3;
+  return challengeXp + cardXp + bookmarkXp + audioXp;
+}
+
+const STREAK_KEY = 'nihon_streak_data';
+
+function getStreakData() {
+  try {
+    const raw = localStorage.getItem(STREAK_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') {
+      return {
+        streak: typeof parsed.streak === 'number' && !isNaN(parsed.streak) ? parsed.streak : 0,
+        lastStudyDate: parsed.lastStudyDate || null,
+        maxStreak: typeof parsed.maxStreak === 'number' && !isNaN(parsed.maxStreak) ? parsed.maxStreak : 0
+      };
+    }
+    return { streak: 0, lastStudyDate: null, maxStreak: 0 };
+  } catch (e) {
+    return { streak: 0, lastStudyDate: null, maxStreak: 0 };
+  }
+}
+function updateStreakData() {
+  const today = new Date().toDateString();
+  const data = getStreakData();
+  if (data.lastStudyDate === today) return data;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  const newStreak = data.lastStudyDate === yesterday ? data.streak + 1 : 1;
+  const updated = { streak: newStreak, lastStudyDate: today, maxStreak: Math.max(newStreak, data.maxStreak || 0) };
+  try { localStorage.setItem(STREAK_KEY, JSON.stringify(updated)); } catch {}
+  return updated;
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 // Confetti-like Canvas Animation component
 function ConfettiCanvas({ active }) {
@@ -206,7 +273,9 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   const [audioListenedCount, setAudioListenedCount] = useState(() => {
     try {
       const val = localStorage.getItem('nihon_audio_listened_count');
-      return val ? parseInt(val, 10) : 0;
+      if (!val) return 0;
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 0 : num;
     } catch {
       return 0;
     }
@@ -219,7 +288,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   const [cardsFlipped, setCardsFlipped] = useState(() => {
     try {
       const val = JSON.parse(localStorage.getItem('nihon_cards_flipped'));
-      return Array.isArray(val) ? Array.from(new Set(val)) : [];
+      return Array.isArray(val) ? Array.from(new Set(val.filter(Boolean))) : [];
     } catch {
       return [];
     }
@@ -228,7 +297,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   const [challengesCompleted, setChallengesCompleted] = useState(() => {
     try {
       const val = JSON.parse(localStorage.getItem('nihon_challenges_completed'));
-      return Array.isArray(val) ? val : [];
+      return Array.isArray(val) ? val.filter(Boolean) : [];
     } catch {
       return [];
     }
@@ -237,7 +306,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   const [bookmarkedCards, setBookmarkedCards] = useState(() => {
     try {
       const val = JSON.parse(localStorage.getItem('nihon_bookmarked_cards'));
-      return Array.isArray(val) ? val : [];
+      return Array.isArray(val) ? val.filter(Boolean) : [];
     } catch {
       return [];
     }
@@ -253,6 +322,20 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   const [isDifficultyClosing, setIsDifficultyClosing] = useState(false);
   const [isPracticeClosing, setIsPracticeClosing] = useState(false);
   const [cardQuizStates, setCardQuizStates] = useState({});
+  const [streakData, setStreakData] = useState(() => {
+    const data = getStreakData();
+    return data && typeof data === 'object' ? data : { streak: 0, lastStudyDate: null, maxStreak: 0 };
+  });
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [isResetClosing, setIsResetClosing] = useState(false);
+
+  const handleCloseResetModal = () => {
+    setIsResetClosing(true);
+    setTimeout(() => {
+      setShowResetModal(false);
+      setIsResetClosing(false);
+    }, 250);
+  };
 
   const handleCloseLeaderboard = () => {
     setIsLeaderboardClosing(true);
@@ -279,7 +362,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   };
 
 
-  const syncScoreToSharedStore = async (newScore, completedList) => {
+  const syncScoreToSharedStore = async (newScore, completedList, extraFields = {}) => {
     try {
       const session = JSON.parse(localStorage.getItem('session_user'));
       if (!session || !session.email) return;
@@ -287,7 +370,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
       const users = await getSharedArray('users', []);
       const nextUsers = users.map(u =>
         (u.email && u.email.trim().toLowerCase() === session.email.trim().toLowerCase())
-          ? { ...u, challengeScore: newScore, challengesCompleted: completedList }
+          ? { ...u, challengeScore: newScore, challengesCompleted: completedList, ...extraFields }
           : u
       );
       await setSharedArray('users', nextUsers);
@@ -356,51 +439,25 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
     const loadSharedUsers = async () => {
       try {
         const users = await getSharedArray('users', []);
-        setDbUsersList(users);
+        const validUsers = Array.isArray(users) ? users.filter(u => u && typeof u === 'object') : [];
+        setDbUsersList(validUsers);
 
-        const session = JSON.parse(localStorage.getItem('session_user'));
-        if (session && session.email && users.length > 0) {
-          const userDb = users.find(u => u.email && u.email.trim().toLowerCase() === session.email.trim().toLowerCase());
+        const rawSession = localStorage.getItem('session_user');
+        const session = rawSession ? JSON.parse(rawSession) : null;
+        if (session && session.email && validUsers.length > 0) {
+          const userDb = validUsers.find(u => u && u.email && u.email.trim().toLowerCase() === session.email.trim().toLowerCase());
           if (userDb) {
             if (Array.isArray(userDb.flippedCards)) {
-              setCardsFlipped(prev => {
-                const merged = Array.from(new Set([...prev, ...userDb.flippedCards]));
-                if (merged.length > userDb.flippedCards.length) {
-                  syncFlippedToSharedStore(merged);
-                }
-                return merged;
-              });
+              setCardsFlipped(Array.from(new Set(userDb.flippedCards.filter(Boolean))));
             }
             if (Array.isArray(userDb.challengesCompleted)) {
-              setChallengesCompleted(prev => {
-                if (prev.length === 0) {
-                  return userDb.challengesCompleted;
-                } else if (prev.length > userDb.challengesCompleted.length) {
-                  const newScore = prev.reduce((acc, c) => acc + c.score, 0);
-                  syncScoreToSharedStore(newScore, prev);
-                  return prev;
-                } else {
-                  return userDb.challengesCompleted;
-                }
-              });
+              setChallengesCompleted(userDb.challengesCompleted.filter(Boolean));
             }
             if (Array.isArray(userDb.bookmarkedCards)) {
-              setBookmarkedCards(prev => {
-                const merged = Array.from(new Set([...prev, ...userDb.bookmarkedCards]));
-                if (merged.length > userDb.bookmarkedCards.length) {
-                  syncBookmarkedToSharedStore(merged);
-                }
-                return merged;
-              });
+              setBookmarkedCards(userDb.bookmarkedCards.filter(Boolean));
             }
-            if (typeof userDb.audioListenedCount === 'number') {
-              setAudioListenedCount(prev => {
-                const max = Math.max(prev, userDb.audioListenedCount);
-                if (max > userDb.audioListenedCount) {
-                  syncAudioListenedToSharedStore(max);
-                }
-                return max;
-              });
+            if (typeof userDb.audioListenedCount === 'number' && !isNaN(userDb.audioListenedCount)) {
+              setAudioListenedCount(userDb.audioListenedCount);
             }
           }
         }
@@ -441,43 +498,57 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
   };
 
   const leaderboard = useMemo(() => {
-    const myTotalScore = challengesCompleted.reduce((acc, c) => acc + c.score, 0);
     let list = dbUsersList;
     if (!list || list.length === 0) {
       try {
-        list = JSON.parse(localStorage.getItem('users')) || [];
-      } catch { }
+        const rawUsers = localStorage.getItem('users');
+        list = rawUsers ? JSON.parse(rawUsers) : [];
+      } catch {
+        list = [];
+      }
     }
+    const validList = Array.isArray(list) ? list.filter(u => u && typeof u === 'object' && u.email) : [];
 
     let currentUserEmail = '';
     try {
-      const session = JSON.parse(localStorage.getItem('session_user'));
-      if (session) {
-        currentUserEmail = session.email || '';
-      }
+      const rawSession = localStorage.getItem('session_user');
+      const session = rawSession ? JSON.parse(rawSession) : null;
+      if (session) currentUserEmail = session.email || '';
     } catch (e) { }
 
     const ADMIN_EMAILS = ['admin@nihon.com', 'admin@nihon.edu.vn'];
 
-    const mapped = list
-      .filter(u => {
-        const email = (u.email || '').trim().toLowerCase();
-        return !ADMIN_EMAILS.includes(email);
-      })
+    // Compute XP for current user
+    const myFlipped = Array.isArray(cardsFlipped) ? cardsFlipped.length : 0;
+    const myBookmarks = Array.isArray(bookmarkedCards) ? bookmarkedCards.length : 0;
+    const myAudio = typeof audioListenedCount === 'number' && !isNaN(audioListenedCount) ? audioListenedCount : 0;
+    const myXp = calculateTotalXp(challengesCompleted || [], myFlipped, myBookmarks, myAudio);
+
+    const mapped = validList
+      .filter(u => u && u.email && !ADMIN_EMAILS.includes(u.email.trim().toLowerCase()))
       .map(u => {
         const isMe = (currentUserEmail && u.email && u.email.trim().toLowerCase() === currentUserEmail.trim().toLowerCase());
-        const score = isMe ? myTotalScore : (u.challengeScore !== undefined ? u.challengeScore : 0);
-
+        const userXp = isMe
+          ? myXp
+          : calculateTotalXp(
+              u.challengesCompleted || [],
+              Array.isArray(u.flippedCards) ? u.flippedCards.length : 0,
+              Array.isArray(u.bookmarkedCards) ? u.bookmarkedCards.length : 0,
+              typeof u.audioListenedCount === 'number' ? u.audioListenedCount : 0
+            );
+        const levelInfo = getUserLevel(userXp);
         return {
           name: u.name || 'Học viên ẩn danh',
           avatar: u.avatar || '🧑‍💻',
-          score,
+          xp: userXp,
+          levelInfo,
+          score: userXp,
           isMe
         };
       });
 
-    return mapped.sort((a, b) => b.score - a.score);
-  }, [challengesCompleted, dbUsersList]);
+    return mapped.sort((a, b) => b.xp - a.xp);
+  }, [challengesCompleted, dbUsersList, cardsFlipped, bookmarkedCards, audioListenedCount]);
 
   const cardsFlippedCount = useMemo(() => {
     const flippedList = Array.from(new Set(cardsFlipped || []));
@@ -889,6 +960,10 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
       const total = practiceItem.scenarios.length;
       const score = quizScore;
 
+      // Update streak on challenge completion
+      const updatedStreak = updateStreakData();
+      setStreakData(updatedStreak);
+
       setChallengesCompleted(prevChallenges => {
         const newChallenge = { 
           cardId, 
@@ -938,11 +1013,11 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
       const isNowFlipped = !prev[id];
       if (isNowFlipped) {
         setCardsFlipped(fList => fList.includes(id) ? fList : [...fList, id]);
+        // Update streak when flipping a card for the first time
+        const updated = updateStreakData();
+        setStreakData(updated);
       }
-      return {
-        ...prev,
-        [id]: isNowFlipped
-      };
+      return { ...prev, [id]: isNowFlipped };
     });
   };
 
@@ -1109,6 +1184,99 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
         </p>
       </div>
 
+      {/* ── LEVEL WIDGET ─────────────────────────────────────────────── */}
+      {(() => {
+        const totalXp = calculateTotalXp(challengesCompleted || [], (cardsFlipped || []).length, (bookmarkedCards || []).length, audioListenedCount || 0);
+        const lvl = getUserLevel(totalXp);
+        const progressPct = Math.round(lvl.progressInLevel * 100);
+        const { streak = 0, maxStreak = 0 } = streakData || {};
+        return (
+          <div className="level-widget" style={{
+            background: 'var(--jp-card-bg)',
+            borderRadius: '20px',
+            border: '1px solid var(--jp-border)',
+            padding: '1.5rem 1.75rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            boxShadow: `0 8px 30px ${lvl.color}14`,
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Decorative background orb */}
+            <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '130px', height: '130px', borderRadius: '50%', background: lvl.gradient, opacity: 0.08, pointerEvents: 'none' }} />
+
+            {/* Top row: label + badge icon */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 700, color: 'var(--jp-text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Cấp độ của bạn</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', marginTop: '2px' }}>
+                  <h2 style={{ margin: 0, fontSize: '2.4rem', fontWeight: 900, letterSpacing: '-1.5px', color: 'var(--jp-text)', lineHeight: 1 }}>Hạng {lvl.rank}</h2>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', fontWeight: 700, color: lvl.color }}>
+                  {lvl.label} · Top {lvl.topPercent}%
+                </p>
+              </div>
+              {/* Rank badge */}
+              <div style={{
+                width: '52px', height: '52px', borderRadius: '14px',
+                background: lvl.gradient,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 6px 18px ${lvl.color}35`,
+                flexShrink: 0
+              }}>
+                <span style={{ fontSize: '1.6rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>🎖️</span>
+              </div>
+            </div>
+
+            {/* XP Progress bar */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--jp-text-muted)', fontWeight: 700 }}>Tiến độ XP</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--jp-text)', fontWeight: 800 }}>
+                  {totalXp.toLocaleString()} / {lvl.nextXp ? lvl.nextXp.toLocaleString() : '∞'}
+                </span>
+              </div>
+              <div style={{ height: '10px', background: 'var(--jp-bg)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${progressPct}%`,
+                  background: lvl.gradient,
+                  borderRadius: '99px',
+                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: `0 2px 8px ${lvl.color}50`
+                }} />
+              </div>
+              {lvl.nextRank && (
+                <p style={{ margin: '5px 0 0', fontSize: '0.68rem', color: 'var(--jp-text-muted)', textAlign: 'right' }}>
+                  Còn {(lvl.nextXp - totalXp).toLocaleString()} XP để đạt Hạng {lvl.nextRank}
+                </p>
+              )}
+            </div>
+
+            {/* Streak row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: streak > 0 ? 'linear-gradient(135deg,#f39c12,#e74c3c)' : 'var(--jp-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: streak > 0 ? '0 3px 10px rgba(231,76,60,0.3)' : 'none' }}>
+                  <span style={{ fontSize: '1rem' }}>{streak > 0 ? '🔥' : '💤'}</span>
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: streak > 0 ? '#e74c3c' : 'var(--jp-text-muted)' }}>
+                    {streak} ngày streak
+                  </p>
+                  {maxStreak > 0 && <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--jp-text-muted)' }}>Kỷ lục: {maxStreak} ngày</p>}
+                </div>
+              </div>
+              {streak > 0 && (
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#27ae60', background: 'rgba(39,174,96,0.12)', padding: '3px 10px', borderRadius: '99px', border: '1px solid rgba(39,174,96,0.2)' }}>Tiếp tục!</span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+      {/* ─────────────────────────────────────────────────────────────── */}
+
       {/* Progress Dashboard */}
       <div className="progress-dashboard" style={{
         backdropFilter: 'blur(12px)',
@@ -1236,7 +1404,7 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--jp-text-muted)', fontWeight: 700 }}>
-                🏆 Bảng xếp hạng Thử thách
+                🏆 Bảng xếp hạng Cấp độ
               </span>
               <span
                 onClick={() => setShowLeaderboardInfo(prev => !prev)}
@@ -1278,22 +1446,20 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
                 }} onClick={(e) => e.stopPropagation()}>
                   <strong style={{ color: 'var(--jp-blue)', display: 'block', marginBottom: '0.4rem' }}>💡 Cách tính điểm</strong>
                   <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-                    <li>Mỗi câu đúng = <strong>+1 điểm</strong></li>
-                    <li>Điểm cộng dồn từ tất cả lần thi</li>
-                    <li>Thi lại để cải thiện điểm số</li>
-                    <li>Bấm <strong>"🎯 Làm thử thách tổng hợp"</strong> để bắt đầu tích lũy điểm</li>
+                    <li>Lật thẻ lần đầu: <strong>+5 XP/thẻ</strong></li>
+                    <li>Thử thách Dễ: <strong>+10 XP/câu đúng</strong></li>
+                    <li>Thử thách T.Bình: <strong>+20 XP/câu đúng</strong></li>
+                    <li>Thử thách Khó: <strong>+40 XP/câu đúng</strong></li>
+                    <li>Thử thách Cực Khó: <strong>+80 XP/câu đúng</strong></li>
+                    <li>Bookmark thẻ: <strong>+2 XP</strong></li>
+                    <li>Nghe audio: <strong>+3 XP</strong></li>
+                    <li>Tích lũy XP để thăng Hạng E→D→C→B→A→S</li>
                   </ul>
                 </div>
               )}
             </div>
             <button
-              onClick={() => {
-                if (window.confirm('Bạn có chắc muốn đặt lại toàn bộ tiến trình học và các thử thách đã lưu không?')) {
-                  setCardsFlipped([]);
-                  setChallengesCompleted([]);
-                  setBookmarkedCards([]);
-                }
-              }}
+              onClick={() => setShowResetModal(true)}
               style={{
                 background: 'none',
                 border: 'none',
@@ -1320,55 +1486,29 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
             border: '1px solid var(--jp-border)'
           }}>
             {leaderboard.slice(0, 3).map((u, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '0.75rem',
-                  color: u.isMe ? 'var(--jp-red)' : 'var(--jp-text)',
-                  fontWeight: u.isMe ? 800 : 500,
-                  padding: '2px 0'
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden', maxWidth: '80%' }}>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: u.isMe ? 'var(--jp-red)' : 'var(--jp-text)', fontWeight: u.isMe ? 800 : 500, padding: '4px 0' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden', maxWidth: '70%' }}>
                   <span style={{ minWidth: '16px', display: 'inline-block', flexShrink: 0 }}>
                     {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    {u.avatar && (u.avatar.startsWith('data:') || u.avatar.startsWith('http') || u.avatar.startsWith('https')) ? (
-                      <img
-                        src={u.avatar}
-                        alt="avatar"
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          display: 'inline-block',
-                          border: '1px solid var(--jp-border)'
-                        }}
-                      />
-                    ) : (
-                      <span>{u.avatar || '🧑‍💻'}</span>
-                    )}
+                    {u.avatar && (u.avatar.startsWith('data:') || u.avatar.startsWith('http') || u.avatar.startsWith('https') || u.avatar.startsWith('/')) ? (
+                      <img src={u.avatar} alt="avatar" style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--jp-border)' }} />
+                    ) : (<span>{u.avatar || '🧑'}</span>)}
                   </span>
-                  <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexGrow: 1 }}>
+                  <span style={{ maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexGrow: 1 }}>
                     {u.name && u.name.startsWith('data:image') ? 'Học viên' : u.name}
                   </span>
                 </span>
-                <span style={{ fontWeight: 700 }}>
-                  {u.score}đ
+                {/* Level badge */}
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: u.levelInfo.color, background: u.levelInfo.bg, padding: '2px 7px', borderRadius: '99px', flexShrink: 0, border: `1px solid ${u.levelInfo.color}33` }}>
+                  Hạng {u.levelInfo.rank}
                 </span>
               </div>
             ))}
 
             {leaderboard.length > 3 && (
-              <button
-                onClick={() => setShowLeaderboardModal(true)}
-                className="leaderboard-view-more"
-              >
+              <button onClick={() => setShowLeaderboardModal(true)} className="leaderboard-view-more">
                 <span>Xem thêm ({leaderboard.length - 3} học viên)</span>
                 <span style={{ fontSize: '0.8rem' }}>→</span>
               </button>
@@ -2527,68 +2667,37 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
               {leaderboard.map((u, idx) => {
                 const isMe = u.isMe;
                 const isTop3 = idx < 3;
+                const lvlInfo = u.levelInfo || getUserLevel(0);
                 return (
                   <div
                     key={idx}
                     className={`leaderboard-modal-item ${isMe ? 'is-me' : isTop3 ? 'top-three' : ''}`}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '16px',
-                      fontSize: '0.85rem',
-                      color: isMe ? 'var(--jp-red)' : 'var(--jp-text)',
-                      fontWeight: isMe ? 800 : 500,
-                      transition: 'transform 0.2s'
-                    }}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderRadius: '16px', fontSize: '0.85rem', color: isMe ? 'var(--jp-red)' : 'var(--jp-text)', fontWeight: isMe ? 800 : 500, transition: 'transform 0.2s' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span style={{
-                        width: '24px',
-                        fontWeight: 800,
-                        fontSize: isTop3 ? '1.15rem' : '0.8rem',
-                        color: 'var(--jp-text-muted)'
-                      }}>
+                      <span style={{ width: '24px', fontWeight: 800, fontSize: isTop3 ? '1.15rem' : '0.8rem', color: 'var(--jp-text-muted)' }}>
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
                       </span>
-                      {u.avatar && (u.avatar.startsWith('data:') || u.avatar.startsWith('http') || u.avatar.startsWith('https')) ? (
-                        <img
-                          src={u.avatar}
-                          alt="avatar"
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            objectFit: 'cover',
-                            border: '1.5px solid var(--jp-border)'
-                          }}
-                        />
+                      {u.avatar && (u.avatar.startsWith('data:') || u.avatar.startsWith('http') || u.avatar.startsWith('https') || u.avatar.startsWith('/')) ? (
+                        <img src={u.avatar} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${lvlInfo.color}` }} />
                       ) : (
-                        <span style={{ fontSize: '1.25rem' }}>{u.avatar || '🧑‍💻'}</span>
+                        <span style={{ fontSize: '1.4rem' }}>{u.avatar || '🧑'}</span>
                       )}
-                      <span style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '180px'
-                      }}>
-                        {u.name && u.name.startsWith('data:image') ? 'Học viên' : u.name}
-                        {isMe && <span style={{
-                          fontSize: '0.62rem',
-                          background: 'var(--jp-red)',
-                          color: 'white',
-                          padding: '1px 6px',
-                          borderRadius: '10px',
-                          marginLeft: '6px',
-                          fontWeight: 700
-                        }}>Bạn</span>}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {u.name && u.name.startsWith('data:image') ? 'Học viên' : u.name}
+                          {isMe && <span style={{ fontSize: '0.6rem', background: 'var(--jp-red)', color: 'white', padding: '1px 6px', borderRadius: '10px', fontWeight: 700, flexShrink: 0 }}>Bạn</span>}
+                        </span>
+                        <span style={{ fontSize: '0.65rem', color: lvlInfo.color, fontWeight: 700 }}>{lvlInfo.label}</span>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>{u.score}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--jp-text-muted)' }}>điểm</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                      {/* Rank badge */}
+                      <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'white', background: lvlInfo.gradient, padding: '3px 10px', borderRadius: '99px', boxShadow: `0 3px 10px ${lvlInfo.color}40`, letterSpacing: '0.02em' }}>
+                        Hạng {lvlInfo.rank}
+                      </span>
+                      <span style={{ fontSize: '0.62rem', color: 'var(--jp-text-muted)', fontWeight: 600 }}>{u.xp.toLocaleString()} XP</span>
                     </div>
                   </div>
                 );
@@ -2596,13 +2705,8 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
             </div>
 
             {/* Footer */}
-            <div style={{
-              textAlign: 'center',
-              marginTop: '1.25rem',
-              fontSize: '0.7rem',
-              color: 'var(--jp-text-muted)'
-            }}>
-              💡 Tích lũy thêm điểm bằng cách tham gia Thử thách tổng hợp!
+            <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.7rem', color: 'var(--jp-text-muted)' }}>
+              ✨ Tích lũy XP bằng cách học thẻ, làm thử thách và nghe phát âm!
             </div>
           </div>
         </div>,
@@ -3014,6 +3118,154 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
         document.body
       )}
 
+      {/* Custom Reset Progress Modal Portal */}
+      {showResetModal && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            animation: isResetClosing ? 'fadeOut 0.2s ease-in forwards' : 'fadeIn 0.2s ease-out forwards'
+          }}
+          onClick={handleCloseResetModal}
+        >
+          <div
+            className="leaderboard-modal-card"
+            style={{
+              width: '90%',
+              maxWidth: '420px',
+              borderRadius: '24px',
+              padding: '2rem',
+              color: 'var(--jp-text)',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+              textAlign: 'center',
+              boxShadow: '0 24px 50px rgba(0, 0, 0, 0.2)',
+              animation: isResetClosing ? 'scaleDown 0.2s ease-in forwards' : 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Warning Icon */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              background: 'rgba(232, 54, 93, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              color: 'var(--jp-red)'
+            }}>
+              <span style={{ fontSize: '2rem', lineHeight: 1 }}>⚠️</span>
+            </div>
+
+            {/* Content */}
+            <div>
+              <h3 style={{
+                fontSize: '1.3rem',
+                fontWeight: 800,
+                color: 'var(--jp-blue)',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Đặt lại Tiến trình?
+              </h3>
+              <p style={{
+                fontSize: '0.85rem',
+                color: 'var(--jp-text-muted)',
+                lineHeight: 1.6,
+                margin: 0
+              }}>
+                Hành động này sẽ xóa toàn bộ tiến trình học tập, điểm số, thẻ đã lật và bookmark của bạn. Tiến trình lưu trên hệ thống cũng sẽ bị xóa sạch và <strong>không thể khôi phục</strong>.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                onClick={handleCloseResetModal}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  border: '1px solid var(--jp-border)',
+                  background: 'none',
+                  color: 'var(--jp-text)',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'var(--jp-bg)'}
+                onMouseLeave={(e) => e.target.style.background = 'none'}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={async () => {
+                  handleCloseResetModal();
+
+                  setCardsFlipped([]);
+                  setChallengesCompleted([]);
+                  setBookmarkedCards([]);
+                  setAudioListenedCount(0);
+
+                  localStorage.setItem('nihon_cards_flipped', JSON.stringify([]));
+                  localStorage.setItem('nihon_challenges_completed', JSON.stringify([]));
+                  localStorage.setItem('nihon_bookmarked_cards', JSON.stringify([]));
+                  localStorage.setItem('nihon_audio_listened_count', '0');
+
+                  const resetStreak = { streak: 0, lastStudyDate: null, maxStreak: 0 };
+                  try {
+                    localStorage.setItem('nihon_streak_data', JSON.stringify(resetStreak));
+                  } catch (e) {}
+                  setStreakData(resetStreak);
+
+                  // Sync cleared data to shared store (database)
+                  await syncScoreToSharedStore(0, [], {
+                    flippedCards: [],
+                    bookmarkedCards: [],
+                    audioListenedCount: 0
+                  });
+
+                  // Dispatch event to sync other views (Home Page)
+                  window.dispatchEvent(new Event('nihon_stats_updated'));
+                }}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, var(--jp-red) 0%, #c0392b 100%)',
+                  color: 'white',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(188, 0, 45, 0.2)',
+                  transition: 'transform 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+              >
+                Đồng ý xóa
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Keyframe animations and dark mode overrides for modal and dashboard */}
       <style>{`
         @keyframes popDown {
@@ -3073,6 +3325,18 @@ export default function Dictionary({ dictionary = MANNERS_DATA }) {
         @keyframes scaleDown {
           from { transform: scale(1); opacity: 1; }
           to { transform: scale(0.95); opacity: 0; }
+        }
+
+        /* Level Widget */
+        .level-widget {
+          transition: box-shadow 0.3s ease;
+        }
+        .level-widget:hover {
+          box-shadow: 0 12px 40px rgba(0,0,0,0.08) !important;
+        }
+        :root[data-theme="dark"] .level-widget {
+          background: rgba(26, 29, 46, 0.9) !important;
+          border-color: rgba(255,255,255,0.1) !important;
         }
 
         /* Progress Dashboard glassmorphism themes */
