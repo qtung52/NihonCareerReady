@@ -620,6 +620,7 @@ export default function ChatBox({ currentUser }) {
         .btn-sparkles {
           width: 38px;
           height: 38px;
+          aspect-ratio: 1 / 1;
           border-radius: 50%;
           border: 1px solid var(--jp-border);
           background: var(--jp-card-bg);
@@ -1082,16 +1083,25 @@ export default function ChatBox({ currentUser }) {
                 zIndex: 101
               }}
             >
-              <button
-                type="button"
+              <span
                 className={`btn-sparkles ${showTemplates ? 'active' : ''}`}
                 onClick={() => GROQ_API_KEY && setShowTemplates(!showTemplates)}
-                disabled={!GROQ_API_KEY}
                 title={GROQ_API_KEY ? "Xem gợi ý câu hỏi mẫu" : "Trợ lý AI đang tắt"}
-                style={{ marginBottom: '1px', opacity: GROQ_API_KEY ? 1 : 0.5, cursor: GROQ_API_KEY ? 'pointer' : 'not-allowed' }}
+                style={{ 
+                  marginBottom: '1px', 
+                  opacity: GROQ_API_KEY ? 1 : 0.5, 
+                  cursor: GROQ_API_KEY ? 'pointer' : 'not-allowed',
+                  pointerEvents: GROQ_API_KEY ? 'auto' : 'none',
+                  aspectRatio: '1 / 1',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0
+                }}
               >
                 <Sparkles size={16} />
-              </button>
+              </span>
 
               <textarea
                 ref={textareaRef}
