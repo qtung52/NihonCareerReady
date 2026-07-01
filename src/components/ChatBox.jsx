@@ -158,13 +158,25 @@ export default function ChatBox({ currentUser }) {
   const abortControllerRef = useRef(null);
   const streamingMsgIdRef = useRef(null);
   const textareaRef = useRef(null);
+  const activeUtterancesRef = useRef([]);
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
-    }
-  }, [inputValue]);
+    const adjustHeight = () => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = '0px';
+        const scrollHeight = textareaRef.current.scrollHeight;
+        textareaRef.current.style.height = `${scrollHeight}px`;
+        if (scrollHeight > 150) {
+          textareaRef.current.style.overflowY = 'auto';
+        } else {
+          textareaRef.current.style.overflowY = 'hidden';
+        }
+      }
+    };
+    adjustHeight();
+    const timer = setTimeout(adjustHeight, 100);
+    return () => clearTimeout(timer);
+  }, [inputValue, isOpen, isMinimized]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -379,11 +391,49 @@ export default function ChatBox({ currentUser }) {
   const handleSpeakMessage = (text) => {
     try {
       window.speechSynthesis.cancel();
+      activeUtterancesRef.current = []; // Clear old references
+      
       const cleanText = text.replace(/[*#`_~]/g, '').replace(/\[.*?\]/g, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'vi-VN';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
+      
+      // Split text into Japanese segments and Non-Japanese segments
+      const segments = cleanText.split(/([\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\uff66-\uff9f]+)/g);
+      
+      segments.forEach((seg) => {
+        const trimmed = seg.trim();
+        if (!trimmed) return;
+        
+        const jpChars = (trimmed.match(/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\uff66-\uff9f]/g) || []).length;
+        const viAccents = (trimmed.match(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ]/ig) || []).length;
+        const enWords = (trimmed.match(/\b(the|and|you|that|was|for|are|with|have|this|from|your|hello|interview|resume|company|japan|work|salary|nomikai|ojigi|boss|manager|english|japanese|vietnamese|cv|status|mode|api|key)\b/gi) || []).length;
+
+        let lang = 'vi-VN';
+        if (jpChars > 0) {
+          lang = 'ja-JP';
+        } else if (enWords > 0 && viAccents === 0) {
+          lang = 'en-US';
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(trimmed);
+        utterance.lang = lang;
+        
+        if (window.speechSynthesis.getVoices) {
+          const voices = window.speechSynthesis.getVoices();
+          const matchingVoice = voices.find(v => v.lang.startsWith(lang));
+          if (matchingVoice) {
+            utterance.voice = matchingVoice;
+          }
+        }
+        
+        utterance.rate = lang === 'ja-JP' ? 1.0 : 0.95;
+        
+        // Keep reference to prevent GC in iOS Safari
+        utterance.onend = () => {
+          activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
+        };
+        activeUtterancesRef.current.push(utterance);
+        
+        window.speechSynthesis.speak(utterance);
+      });
     } catch (e) { /* skip */ }
   };
 
@@ -407,13 +457,17 @@ export default function ChatBox({ currentUser }) {
   return (
     <>
       <style>{`
-        /* ===== LAUNCHER FAB ===== */
         .chat-launcher-modern {
           position: fixed;
           bottom: 24px;
           right: 24px;
-          width: 62px;
-          height: 62px;
+          width: 62px !important;
+          height: 62px !important;
+          min-height: unset !important;
+          max-height: 62px !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
           border-radius: 50%;
           background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
           color: white;
@@ -566,9 +620,11 @@ export default function ChatBox({ currentUser }) {
 
         /* Avatar glow */
         .avatar-glow {
-          width: 40px;
-          height: 40px;
-          aspect-ratio: 1 / 1;
+          width: 40px !important;
+          height: 40px !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -577,7 +633,6 @@ export default function ChatBox({ currentUser }) {
           background: linear-gradient(135deg, rgba(124, 58, 237, 0.4), rgba(236, 72, 153, 0.4));
           border: 2px solid rgba(236, 72, 153, 0.5);
           box-shadow: 0 0 16px rgba(236, 72, 153, 0.6), 0 0 32px rgba(124, 58, 237, 0.3);
-          flex-shrink: 0;
           animation: avatarPulse 3s ease-in-out infinite;
         }
         @keyframes avatarPulse {
@@ -591,8 +646,13 @@ export default function ChatBox({ currentUser }) {
           border: 1px solid rgba(255, 255, 255, 0.1);
           color: rgba(255, 255, 255, 0.75);
           cursor: pointer;
-          width: 30px;
-          height: 30px;
+          width: 30px !important;
+          height: 30px !important;
+          min-height: unset !important;
+          max-height: 30px !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -946,8 +1006,24 @@ export default function ChatBox({ currentUser }) {
           box-shadow: 0 0 8px #4ade80;
           animation: breathe 2s infinite ease-in-out;
         }
+        .status-dot-active {
+          width: 8px !important;
+          height: 8px !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
+          border-radius: 50%;
+          background-color: #4ade80;
+          border: 1.5px solid #1a0a2e;
+          box-shadow: 0 0 8px #4ade80;
+          animation: breathe 2s infinite ease-in-out;
+        }
         .status-dot-offline {
-          width: 8px; height: 8px;
+          width: 8px !important;
+          height: 8px !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
           border-radius: 50%;
           background-color: #fb923c;
           border: 1.5px solid #1a0a2e;
@@ -1096,8 +1172,10 @@ export default function ChatBox({ currentUser }) {
           border-color: rgba(236, 72, 153, 0.55);
           box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
         }
-        .chat-textarea {
-          flex: 1;
+        textarea.chat-textarea {
+          flex: none;
+          width: 100%;
+          min-width: 0;
           border: none;
           outline: none;
           background: transparent;
@@ -1106,17 +1184,39 @@ export default function ChatBox({ currentUser }) {
           line-height: 1.5;
           resize: none;
           font-family: inherit;
-          max-height: 120px;
-          overflow-y: auto;
-          padding: 0.15rem 0;
+          max-height: 150px;
+          overflow-y: hidden;
+          padding: 0.35rem 0 !important;
+          min-height: unset !important;
+          white-space: pre-wrap;
+          word-break: break-word;
+          overflow-wrap: break-word;
         }
-        .chat-textarea::placeholder { color: rgba(255, 255, 255, 0.3); }
-        .chat-textarea:disabled { cursor: not-allowed; }
+        textarea.chat-textarea::placeholder { color: rgba(255, 255, 255, 0.3); }
+        textarea.chat-textarea:disabled { cursor: not-allowed; }
+
+        .bot-avatar {
+          width: 32px !important;
+          height: 32px !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50% !important;
+          background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(236, 72, 153, 0.3));
+          border: 1px solid rgba(236, 72, 153, 0.3);
+          box-shadow: 0 0 10px rgba(236, 72, 153, 0.25);
+          font-size: 1rem;
+        }
 
         .send-btn {
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
+          width: 30px !important;
+          height: 30px !important;
+          min-height: unset !important;
+          max-height: 30px !important;
+          border-radius: 50% !important;
           background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
           border: none;
           display: flex;
@@ -1124,8 +1224,9 @@ export default function ChatBox({ currentUser }) {
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s;
-          aspect-ratio: 1 / 1;
-          flex-shrink: 0;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
         }
         .send-btn:hover:not(:disabled) {
           transform: scale(1.1);
@@ -1134,26 +1235,34 @@ export default function ChatBox({ currentUser }) {
         .send-btn:disabled { background: rgba(255,255,255,0.1); cursor: not-allowed; }
 
         .stop-btn {
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
+          width: 30px !important;
+          height: 30px !important;
+          min-height: unset !important;
+          max-height: 30px !important;
+          border-radius: 50% !important;
           background: rgba(239, 68, 68, 0.8);
           border: 1px solid rgba(239, 68, 68, 0.5);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          aspect-ratio: 1 / 1;
-          flex-shrink: 0;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
           transition: all 0.2s;
         }
         .stop-btn:hover { background: rgb(239, 68, 68); transform: scale(1.05); }
 
         /* Sparkles btn */
         .btn-sparkles {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
+          width: 28px !important;
+          height: 28px !important;
+          min-height: unset !important;
+          max-height: 28px !important;
+          border-radius: 50% !important;
+          aspect-ratio: 1 / 1 !important;
+          flex-shrink: 0 !important;
+          flex-grow: 0 !important;
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.1);
           color: rgba(255, 255, 255, 0.5);
@@ -1393,10 +1502,10 @@ export default function ChatBox({ currentUser }) {
           border-color: #bc002d;
           box-shadow: 0 0 0 3px rgba(188, 0, 45, 0.1);
         }
-        [data-chat-theme='light'] .chat-textarea {
+        [data-chat-theme='light'] textarea.chat-textarea {
           color: #2c3e50;
         }
-        [data-chat-theme='light'] .chat-textarea::placeholder {
+        [data-chat-theme='light'] textarea.chat-textarea::placeholder {
           color: rgba(15, 44, 89, 0.35);
         }
         [data-chat-theme='light'] .btn-sparkles {
@@ -1412,10 +1521,10 @@ export default function ChatBox({ currentUser }) {
           box-shadow: 0 0 8px rgba(188, 0, 45, 0.15);
         }
         [data-chat-theme='light'] .send-btn {
-          background: linear-gradient(135deg, #bc002d 0%, #e8365d 100%);
+          background: linear-gradient(135deg, #bc002d 0%, #e8365d 100%) !important;
         }
         [data-chat-theme='light'] .send-btn:hover:not(:disabled) {
-          box-shadow: 0 0 14px rgba(188, 0, 45, 0.5);
+          box-shadow: 0 0 14px rgba(188, 0, 45, 0.5) !important;
         }
         [data-chat-theme='light'] .model-tag {
           background: rgba(15, 44, 89, 0.05);
@@ -1552,6 +1661,19 @@ export default function ChatBox({ currentUser }) {
                       onClick={() => {
                         setInputValue(t.prompt);
                         setShowTemplates(false);
+                        setTimeout(() => {
+                          textareaRef.current?.focus();
+                          if (textareaRef.current) {
+                            textareaRef.current.style.height = '0px';
+                            const scrollHeight = textareaRef.current.scrollHeight;
+                            textareaRef.current.style.height = `${scrollHeight}px`;
+                            if (scrollHeight > 150) {
+                              textareaRef.current.style.overflowY = 'auto';
+                            } else {
+                              textareaRef.current.style.overflowY = 'hidden';
+                            }
+                          }
+                        }, 100);
                       }}
                     >
                       <span style={{ fontSize: '1.3rem', marginTop: '1px' }}>{t.emoji}</span>
@@ -1585,20 +1707,7 @@ export default function ChatBox({ currentUser }) {
                     {/* Bubble row */}
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', width: '100%', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
                       {!isUser && (
-                        <div style={{
-                          fontSize: '1rem',
-                          width: '32px',
-                          height: '32px',
-                          aspectRatio: '1 / 1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(236, 72, 153, 0.3))',
-                          borderRadius: '50%',
-                          border: '1px solid rgba(236, 72, 153, 0.3)',
-                          flexShrink: 0,
-                          boxShadow: '0 0 10px rgba(236, 72, 153, 0.25)'
-                        }}>
+                        <div className="bot-avatar">
                           🌸
                         </div>
                       )}
@@ -1659,19 +1768,7 @@ export default function ChatBox({ currentUser }) {
               {/* Typing indicator */}
               {isTyping && !isStreaming && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{
-                    fontSize: '1rem',
-                    width: '32px',
-                    height: '32px',
-                    aspectRatio: '1 / 1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(236, 72, 153, 0.3))',
-                    borderRadius: '50%',
-                    border: '1px solid rgba(236, 72, 153, 0.3)',
-                    flexShrink: 0,
-                  }}>
+                  <div className="bot-avatar">
                     🌸
                   </div>
                   <div style={{
@@ -1708,7 +1805,17 @@ export default function ChatBox({ currentUser }) {
               <textarea
                 ref={textareaRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  e.target.style.height = '0px';
+                  const scrollHeight = e.target.scrollHeight;
+                  e.target.style.height = `${scrollHeight}px`;
+                  if (scrollHeight > 150) {
+                    e.target.style.overflowY = 'auto';
+                  } else {
+                    e.target.style.overflowY = 'hidden';
+                  }
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder={
                   !GROQ_API_KEY
