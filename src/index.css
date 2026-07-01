@@ -2570,3 +2570,13 @@ span[style*="border-radius:50%"] {
   aspect-ratio: 1 / 1 !important;
   flex-shrink: 0 !important;
 }
+
+/* Safari backface-visibility bug fix for 3D card flips */
+.card-face,
+.card-front,
+.card-back,
+.card-bookmark-btn,
+.card-badge {
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+}
